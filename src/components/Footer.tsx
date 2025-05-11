@@ -135,7 +135,7 @@ const Footer = () => {
                   </a>
                 </li>
                 <li>
-                  <a href="/#contact" className="text-gray-700 hover:text-teal-600 transition-colors flex items-center">
+                  <a href="/contact-form" className="text-gray-700 hover:text-teal-600 transition-colors flex items-center">
                     <Mail className="w-4 h-4 mr-2" />
                     Contact
                   </a>
