@@ -173,7 +173,7 @@ const Header = () => {
 
             <MotionButton
               className="bg-black hover:bg-gray-800 rounded-full px-5 py-2 text-white mt-3 flex items-center justify-center"
-              onClick={() => window.location.href = '/contact-form-enhancement'}
+              onClick={() => window.location.href = '/contact-form'}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               transitionType="spring"
