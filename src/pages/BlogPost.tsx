@@ -10,10 +10,11 @@ import { BlogPost as BlogPostType } from '@/types/blog';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
+import SocialActions from '@/components/ui/social-actions';
 import {
-  Calendar, Clock, Share2, Bookmark, BookmarkCheck, Tag as TagIcon,
+  Calendar, Clock, Tag as TagIcon,
   ChevronLeft, ChevronRight, Copy, Printer, List,
-  BookmarkPlus, ThumbsUp, Eye, Link as LinkIcon, Hash
+  BookmarkPlus, Eye, Link as LinkIcon, Hash
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -33,8 +34,6 @@ const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<BlogPostType | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPostType[]>([]);
-  const [isSaved, setIsSaved] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [tableOfContents, setTableOfContents] = useState<{id: string, text: string, level: number}[]>([]);
@@ -58,14 +57,6 @@ const BlogPost = () => {
         setPost(foundPost);
         // Get related posts (recent posts for now, could be improved to get truly related content)
         setRelatedPosts(getRecentPosts(3).filter(p => p.id !== foundPost.id));
-
-        // Check if article is saved in local storage
-        const savedArticles = JSON.parse(localStorage.getItem('savedArticles') || '[]');
-        setIsSaved(savedArticles.some((id: string) => id === foundPost.id));
-
-        // Check if article is liked in local storage
-        const likedArticles = JSON.parse(localStorage.getItem('likedArticles') || '[]');
-        setIsLiked(likedArticles.some((id: string) => id === foundPost.id));
 
         // Generate table of contents from markdown content
         const headingRegex = /^(#{1,3})\s+(.+)$/gm;
@@ -154,77 +145,9 @@ const BlogPost = () => {
     }
   };
 
-  // Handle saving article for later
-  const handleSaveArticle = () => {
-    if (!post) return;
-
-    const savedArticles = JSON.parse(localStorage.getItem('savedArticles') || '[]');
-
-    if (isSaved) {
-      // Remove from saved articles
-      const updatedSavedArticles = savedArticles.filter((id: string) => id !== post.id);
-      localStorage.setItem('savedArticles', JSON.stringify(updatedSavedArticles));
-      setIsSaved(false);
-      toast.success('Article removed from saved items');
-    } else {
-      // Add to saved articles
-      savedArticles.push(post.id);
-      localStorage.setItem('savedArticles', JSON.stringify(savedArticles));
-      setIsSaved(true);
-      toast.success('Article saved for later');
-    }
-  };
-
-  // Handle liking article
-  const handleLikeArticle = () => {
-    if (!post) return;
-
-    const likedArticles = JSON.parse(localStorage.getItem('likedArticles') || '[]');
-
-    if (isLiked) {
-      // Remove like
-      const updatedLikedArticles = likedArticles.filter((id: string) => id !== post.id);
-      localStorage.setItem('likedArticles', JSON.stringify(updatedLikedArticles));
-      setIsLiked(false);
-    } else {
-      // Add like
-      likedArticles.push(post.id);
-      localStorage.setItem('likedArticles', JSON.stringify(likedArticles));
-      setIsLiked(true);
-      toast.success('Thanks for your feedback!');
-    }
-  };
-
-  // Handle sharing article
-  const handleShareArticle = (platform?: string) => {
-    if (!post) return;
-
-    const url = window.location.href;
-    const title = post.title;
-
-    if (platform === 'copy') {
-      navigator.clipboard.writeText(url);
-      toast.success('Link copied to clipboard!');
-      return;
-    }
-
-    if (platform === 'twitter') {
-      window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
-      return;
-    }
-
-    if (platform === 'facebook') {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-      return;
-    }
-
-    if (platform === 'linkedin') {
-      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
-      return;
-    }
-
-    // If no platform specified, show share dialog
-    setShowShareDialog(true);
+  // Handle share dialog state
+  const handleShareDialogChange = (open: boolean) => {
+    setShowShareDialog(open);
   };
 
   // Handle printing article
@@ -298,63 +221,18 @@ const BlogPost = () => {
                   </div>
 
                   {/* Article Actions */}
-                  <div className="flex items-center gap-2 ml-auto">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <MotionButton
-                            size="sm"
-                            variant="outline"
-                            className={`rounded-full p-2 ${isLiked ? 'bg-teal-100 text-teal-700 border-teal-200' : 'bg-white text-gray-600'}`}
-                            whileHover={{ y: -2 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={handleLikeArticle}
-                          >
-                            <ThumbsUp className={`w-4 h-4 ${isLiked ? 'fill-teal-500' : ''}`} />
-                          </MotionButton>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{isLiked ? 'Unlike article' : 'Like article'}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <MotionButton
-                            size="sm"
-                            variant="outline"
-                            className={`rounded-full p-2 ${isSaved ? 'bg-teal-100 text-teal-700 border-teal-200' : 'bg-white text-gray-600'}`}
-                            whileHover={{ y: -2 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={handleSaveArticle}
-                          >
-                            {isSaved ? <BookmarkCheck className="w-4 h-4 fill-teal-500" /> : <Bookmark className="w-4 h-4" />}
-                          </MotionButton>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{isSaved ? 'Remove from saved' : 'Save for later'}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <MotionButton
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full p-2 bg-white text-gray-600"
-                            whileHover={{ y: -2 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => handleShareArticle()}
-                          >
-                            <Share2 className="w-4 h-4" />
-                          </MotionButton>
-                        </TooltipTrigger>
-                      </Tooltip>
-                    </TooltipProvider>
+                  <div className="ml-auto">
+                    {post && (
+                      <SocialActions
+                        contentId={post.id}
+                        contentType="article"
+                        contentTitle={post.title}
+                        contentUrl={window.location.href}
+                        size="sm"
+                        showShareDialog={showShareDialog}
+                        onShareDialogChange={handleShareDialogChange}
+                      />
+                    )}
                   </div>
                 </motion.div>
               </div>
@@ -791,167 +669,9 @@ const BlogPost = () => {
                         </div>
                       </div>
                     </motion.div>
-
-                    {/* Quick Actions */}
-                    <motion.div
-                      className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.4, delay: 0.8 }}
-                    >
-                      <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Actions</h3>
-                      <div className="space-y-3">
-                        <MotionButton
-                          variant="outline"
-                          className="w-full justify-start text-gray-700"
-                          whileHover={{ x: 5 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => handleShareArticle('copy')}
-                        >
-                          <Copy className="w-4 h-4 mr-2 text-teal-500" />
-                          Copy Link
-                        </MotionButton>
-
-                        <MotionButton
-                          variant="outline"
-                          className={`w-full justify-start ${isSaved ? 'text-teal-700 bg-teal-50 border-teal-100' : 'text-gray-700'}`}
-                          whileHover={{ x: 5 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={handleSaveArticle}
-                        >
-                          {isSaved ? <BookmarkCheck className="w-4 h-4 mr-2 text-teal-500 fill-teal-500" /> : <BookmarkPlus className="w-4 h-4 mr-2 text-teal-500" />}
-                          {isSaved ? 'Saved for Later' : 'Save for Later'}
-                        </MotionButton>
-
-                        <MotionButton
-                          variant="outline"
-                          className={`w-full justify-start ${isLiked ? 'text-teal-700 bg-teal-50 border-teal-100' : 'text-gray-700'}`}
-                          whileHover={{ x: 5 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={handleLikeArticle}
-                        >
-                          <ThumbsUp className={`w-4 h-4 mr-2 text-teal-500 ${isLiked ? 'fill-teal-500' : ''}`} />
-                          {isLiked ? 'Liked' : 'Like Article'}
-                        </MotionButton>
-                      </div>
-                    </motion.div>
                   </div>
                 </div>
               </div>
-
-              {/* Share Dialog */}
-              <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-                <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-gradient-to-br from-white to-gray-50 border-0">
-                  <div className="relative bg-gradient-to-r from-teal-500 to-teal-600 p-6 text-white">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
-                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-10 -mb-10 blur-xl"></div>
-
-                    <DialogTitle className="text-2xl font-bold text-white mb-2">Share this article</DialogTitle>
-                    <DialogDescription className="text-teal-100 opacity-90">
-                      Choose your preferred platform to share this content with your network
-                    </DialogDescription>
-                  </div>
-
-                  <div className="p-6">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                      <motion.div
-                        whileHover={{ y: -5, boxShadow: '0 10px 25px -5px rgba(29, 161, 242, 0.4)' }}
-                        className="group"
-                      >
-                        <button
-                          onClick={() => {
-                            handleShareArticle('twitter');
-                            setShowShareDialog(false);
-                          }}
-                          className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-[#1DA1F2]/10 text-[#1DA1F2] border border-[#1DA1F2]/20 hover:bg-[#1DA1F2] hover:text-white transition-colors duration-300"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform duration-300"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>
-                          <span className="text-sm font-medium">Twitter</span>
-                        </button>
-                      </motion.div>
-
-                      <motion.div
-                        whileHover={{ y: -5, boxShadow: '0 10px 25px -5px rgba(66, 103, 178, 0.4)' }}
-                        className="group"
-                      >
-                        <button
-                          onClick={() => {
-                            handleShareArticle('facebook');
-                            setShowShareDialog(false);
-                          }}
-                          className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-[#4267B2]/10 text-[#4267B2] border border-[#4267B2]/20 hover:bg-[#4267B2] hover:text-white transition-colors duration-300"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform duration-300"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-                          <span className="text-sm font-medium">Facebook</span>
-                        </button>
-                      </motion.div>
-
-                      <motion.div
-                        whileHover={{ y: -5, boxShadow: '0 10px 25px -5px rgba(0, 119, 181, 0.4)' }}
-                        className="group"
-                      >
-                        <button
-                          onClick={() => {
-                            handleShareArticle('linkedin');
-                            setShowShareDialog(false);
-                          }}
-                          className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-[#0077B5]/10 text-[#0077B5] border border-[#0077B5]/20 hover:bg-[#0077B5] hover:text-white transition-colors duration-300"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform duration-300"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                          <span className="text-sm font-medium">LinkedIn</span>
-                        </button>
-                      </motion.div>
-
-                      <motion.div
-                        whileHover={{ y: -5, boxShadow: '0 10px 25px -5px rgba(37, 211, 102, 0.4)' }}
-                        className="group"
-                      >
-                        <button
-                          onClick={() => {
-                            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(post.title + ' - ' + window.location.href)}`, '_blank');
-                            setShowShareDialog(false);
-                          }}
-                          className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 hover:bg-[#25D366] hover:text-white transition-colors duration-300"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform duration-300"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                          <span className="text-sm font-medium">WhatsApp</span>
-                        </button>
-                      </motion.div>
-                    </div>
-
-                    <div className="relative mt-6 bg-white rounded-lg p-2 border border-gray-200 shadow-sm">
-                      <div className="flex items-center">
-                        <div className="flex-1 overflow-hidden">
-                          <input
-                            type="text"
-                            readOnly
-                            value={window.location.href}
-                            className="w-full p-2 text-sm bg-transparent border-0 focus:outline-none focus:ring-0"
-                          />
-                        </div>
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <button
-                            className="ml-2 bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                            onClick={() => {
-                              navigator.clipboard.writeText(window.location.href);
-                              toast.success('Link copied to clipboard!');
-                            }}
-                          >
-                            Copy
-                          </button>
-                        </motion.div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 text-center text-sm text-gray-500">
-                      Thank you for sharing this article with your network!
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
 
               {/* Related Posts */}
               {relatedPosts.length > 0 && (

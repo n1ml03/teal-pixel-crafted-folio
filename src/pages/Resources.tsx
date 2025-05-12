@@ -9,7 +9,7 @@ import { Resource, resourceCategories, resources } from '@/data/resources';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
-import { toast } from "@/components/ui/sonner";
+import SocialActions from '@/components/ui/social-actions';
 import {
   Search,
   ExternalLink,
@@ -24,15 +24,11 @@ import {
   Download,
   Server,
   Shield,
-  Calendar,
   Star,
-  Heart,
-  Share2,
   Info,
   BarChart,
   Sparkles,
   Bookmark,
-  BookmarkCheck,
   Layers,
   Wrench,
   Puzzle,
@@ -42,12 +38,6 @@ import {
   BookText,
   FileBox
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 interface ResourceCardProps {
   resource: Resource;
@@ -56,8 +46,6 @@ interface ResourceCardProps {
 }
 
 const ResourceCard = ({ resource, index, onTagClick }: ResourceCardProps) => {
-  const [isSaved, setIsSaved] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
 
   // Function to get the appropriate icon based on category
@@ -127,87 +115,10 @@ const ResourceCard = ({ resource, index, onTagClick }: ResourceCardProps) => {
     }
   };
 
-  // Toggle save state
-  const toggleSave = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Save to localStorage
-    const savedResources = JSON.parse(localStorage.getItem('savedResources') || '[]');
-
-    if (isSaved) {
-      // Remove from saved resources
-      localStorage.setItem('savedResources', JSON.stringify(savedResources.filter((id: string) => id !== resource.id)));
-      setIsSaved(false);
-      toast.success('Resource removed from saved items');
-    } else {
-      // Add to saved resources
-      savedResources.push(resource.id);
-      localStorage.setItem('savedResources', JSON.stringify(savedResources));
-      setIsSaved(true);
-      toast.success('Resource saved for later');
-    }
+  // Handle share dialog state
+  const handleShareDialogChange = (open: boolean) => {
+    setShowShareDialog(open);
   };
-
-  // Toggle like state
-  const toggleLike = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Save to localStorage
-    const likedResources = JSON.parse(localStorage.getItem('likedResources') || '[]');
-
-    if (isLiked) {
-      // Remove like
-      localStorage.setItem('likedResources', JSON.stringify(likedResources.filter((id: string) => id !== resource.id)));
-      setIsLiked(false);
-    } else {
-      // Add like
-      likedResources.push(resource.id);
-      localStorage.setItem('likedResources', JSON.stringify(likedResources));
-      setIsLiked(true);
-      toast.success('Thanks for your feedback!');
-    }
-  };
-
-  // Handle sharing resource
-  const handleShareResource = (platform?: string) => {
-    const url = resource.url;
-    const title = resource.title;
-
-    if (platform === 'copy') {
-      navigator.clipboard.writeText(url);
-      toast.success('Link copied to clipboard!');
-      return;
-    }
-
-    if (platform === 'twitter') {
-      window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
-      return;
-    }
-
-    if (platform === 'facebook') {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-      return;
-    }
-
-    if (platform === 'linkedin') {
-      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
-      return;
-    }
-
-    // If no platform specified, use Web Share API if available, otherwise show share dialog
-    setShowShareDialog(true);
-  };
-
-  // Check if resource is saved/liked on component mount
-  useEffect(() => {
-    const savedResources = JSON.parse(localStorage.getItem('savedResources') || '[]');
-    const likedResources = JSON.parse(localStorage.getItem('likedResources') || '[]');
-
-    setIsSaved(savedResources.includes(resource.id));
-    setIsLiked(likedResources.includes(resource.id));
-  }, [resource.id]);
 
   return (
     <ScrollReveal delay={index * 0.1} threshold={0.05}>
@@ -364,84 +275,15 @@ const ResourceCard = ({ resource, index, onTagClick }: ResourceCardProps) => {
         <div className="p-5 border-t border-gray-100 bg-gray-50/50">
           <div className="flex items-center justify-between mb-4">
             <div className="flex space-x-2">
-              <motion.button
-                onClick={toggleLike}
-                className={`p-2 rounded-md transition-all ${
-                  isLiked
-                    ? 'bg-gray-100 text-teal-500'
-                    : 'bg-white text-gray-400 hover:bg-gray-50 border border-gray-100'
-                }`}
-                whileHover={{
-                  scale: 1.1,
-                  y: -2,
-                  boxShadow: "0 5px 10px rgba(0, 0, 0, 0.05)"
-                }}
-                whileTap={{ scale: 0.9 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 10
-                }}
-                aria-label={isLiked ? "Unlike" : "Like"}
-              >
-                <motion.div
-                  animate={isLiked ? { scale: [1, 1.2, 1] } : {}}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Heart className="w-4 h-4" fill={isLiked ? "currentColor" : "none"} />
-                </motion.div>
-              </motion.button>
-
-              <motion.button
-                onClick={toggleSave}
-                className={`p-2 rounded-md transition-all ${
-                  isSaved
-                    ? 'bg-gray-100 text-teal-500'
-                    : 'bg-white text-gray-400 hover:bg-gray-50 border border-gray-100'
-                }`}
-                whileHover={{
-                  scale: 1.1,
-                  y: -2,
-                  boxShadow: "0 5px 10px rgba(0, 0, 0, 0.05)"
-                }}
-                whileTap={{ scale: 0.9 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 10
-                }}
-                aria-label={isSaved ? "Unsave" : "Save"}
-              >
-                <motion.div
-                  animate={isSaved ? { scale: [1, 1.2, 1] } : {}}
-                  transition={{ duration: 0.3 }}
-                >
-                  {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
-                </motion.div>
-              </motion.button>
-
-              <motion.button
-                className="p-2 rounded-md bg-white text-gray-400 hover:bg-gray-50 transition-all border border-gray-100"
-                whileHover={{
-                  scale: 1.1,
-                  y: -2,
-                  boxShadow: "0 5px 10px rgba(0, 0, 0, 0.05)"
-                }}
-                whileTap={{ scale: 0.9 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 10
-                }}
-                aria-label="Share"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleShareResource();
-                }}
-              >
-                <Share2 className="w-4 h-4" />
-              </motion.button>
+              <SocialActions
+                contentId={resource.id}
+                contentType="resource"
+                contentTitle={resource.title}
+                contentUrl={resource.url}
+                size="sm"
+                showShareDialog={showShareDialog}
+                onShareDialogChange={handleShareDialogChange}
+              />
             </div>
 
             <div className="text-xs font-medium px-3 py-1.5 rounded-md bg-gray-100 text-gray-600 flex items-center gap-1">
@@ -505,257 +347,24 @@ const ResourceCard = ({ resource, index, onTagClick }: ResourceCardProps) => {
         </div>
       </motion.div>
 
-      {/* Share Dialog */}
-      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-        <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-gradient-to-br from-white to-gray-50 border-0">
-          <motion.div
-            className="relative bg-gradient-to-r from-teal-500 to-teal-600 p-6 text-white"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <motion.div
-              className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"
-              animate={{
-                scale: [1, 1.1, 1],
-                opacity: [0.5, 0.7, 0.5]
-              }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            ></motion.div>
-            <motion.div
-              className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-10 -mb-10 blur-xl"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.5, 0.7, 0.5]
-              }}
-              transition={{
-                duration: 6,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.5
-              }}
-            ></motion.div>
 
-            <DialogTitle className="text-2xl font-bold text-white mb-2">Share this resource</DialogTitle>
-            <DialogDescription className="text-teal-100 opacity-90">
-              Choose your preferred platform to share this content with your network
-            </DialogDescription>
-          </motion.div>
-
-          <motion.div
-            className="p-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-          >
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
-                whileHover={{
-                  y: -5,
-                  boxShadow: '0 10px 25px -5px rgba(29, 161, 242, 0.4)',
-                  transition: {
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 15
-                  }
-                }}
-                className="group"
-              >
-                <button
-                  onClick={() => {
-                    handleShareResource('twitter');
-                    setShowShareDialog(false);
-                  }}
-                  className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-[#1DA1F2]/10 text-[#1DA1F2] border border-[#1DA1F2]/20 hover:bg-[#1DA1F2] hover:text-white transition-all duration-300"
-                >
-                  <motion.svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-6 h-6"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    whileHover={{ rotate: [0, -10, 10, -10, 0] }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <path d="M22 5.8a8.49 8.49 0 0 1-2.36.64 4.13 4.13 0 0 0 1.81-2.27 8.21 8.21 0 0 1-2.61 1 4.1 4.1 0 0 0-7 3.74 11.64 11.64 0 0 1-8.45-4.29 4.16 4.16 0 0 0-.55 2.07 4.09 4.09 0 0 0 1.82 3.41 4.05 4.05 0 0 1-1.86-.51v.05a4.1 4.1 0 0 0 3.3 4 3.93 3.93 0 0 1-1.1.17 4.9 4.9 0 0 1-.77-.07 4.11 4.11 0 0 0 3.83 2.84A8.22 8.22 0 0 1 3 18.34a7.93 7.93 0 0 1-1-.06 11.57 11.57 0 0 0 6.29 1.85A11.59 11.59 0 0 0 20 8.45v-.53a8.43 8.43 0 0 0 2-2.12Z" />
-                  </motion.svg>
-                  <span className="text-sm font-medium">Twitter</span>
-                </button>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
-                whileHover={{
-                  y: -5,
-                  boxShadow: '0 10px 25px -5px rgba(66, 103, 178, 0.4)',
-                  transition: {
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 15
-                  }
-                }}
-                className="group"
-              >
-                <button
-                  onClick={() => {
-                    handleShareResource('facebook');
-                    setShowShareDialog(false);
-                  }}
-                  className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-[#4267B2]/10 text-[#4267B2] border border-[#4267B2]/20 hover:bg-[#4267B2] hover:text-white transition-all duration-300"
-                >
-                  <motion.svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-6 h-6"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    whileHover={{ rotate: [0, -10, 10, -10, 0] }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z" />
-                  </motion.svg>
-                  <span className="text-sm font-medium">Facebook</span>
-                </button>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.5 }}
-                whileHover={{
-                  y: -5,
-                  boxShadow: '0 10px 25px -5px rgba(0, 119, 181, 0.4)',
-                  transition: {
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 15
-                  }
-                }}
-                className="group"
-              >
-                <button
-                  onClick={() => {
-                    handleShareResource('linkedin');
-                    setShowShareDialog(false);
-                  }}
-                  className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-[#0077B5]/10 text-[#0077B5] border border-[#0077B5]/20 hover:bg-[#0077B5] hover:text-white transition-all duration-300"
-                >
-                  <motion.svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-6 h-6"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    whileHover={{ rotate: [0, -10, 10, -10, 0] }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z" />
-                  </motion.svg>
-                  <span className="text-sm font-medium">LinkedIn</span>
-                </button>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.6 }}
-                whileHover={{
-                  y: -5,
-                  boxShadow: '0 10px 25px -5px rgba(37, 211, 102, 0.4)',
-                  transition: {
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 15
-                  }
-                }}
-                className="group"
-              >
-                <button
-                  onClick={() => {
-                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(resource.title + ' - ' + resource.url)}`, '_blank');
-                    setShowShareDialog(false);
-                  }}
-                  className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/20 hover:bg-[#25D366] hover:text-white transition-all duration-300"
-                >
-                  <motion.svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-6 h-6"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    whileHover={{ rotate: [0, -10, 10, -10, 0] }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <path d="M17.6 6.32A8.39 8.39 0 0012.05 4 8.48 8.48 0 003.6 12.45a8.31 8.31 0 001.21 4.32L3.5 22l5.46-1.35a8.41 8.41 0 004 1 8.47 8.47 0 008.5-8.5 8.42 8.42 0 00-3.86-6.83zm-5.55 13A7 7 0 018 18.56l-.36-.21-3.76.93.95-3.47-.23-.37A6.9 6.9 0 014 12.45a7 7 0 017-7 7 7 0 017 7 7 7 0 01-5.95 6.87zm3.81-5.29c-.19-.11-1.22-.6-1.41-.66s-.33-.11-.47.1-.54.66-.66.8-.24.16-.43 0a5.57 5.57 0 01-2.8-2.43c-.21-.36.21-.33.61-1.11a.38.38 0 000-.35c0-.11-.47-1.11-.64-1.53s-.35-.36-.47-.36-.26 0-.4 0a.72.72 0 00-.55.25 2.36 2.36 0 00-.66 1.54 3.89 3.89 0 00.86 2.07 9.41 9.41 0 003.6 3.19 4.07 4.07 0 002.5.54 2.21 2.21 0 001.46-1 1.72 1.72 0 00.12-1c-.05-.11-.19-.16-.38-.21z" />
-                  </motion.svg>
-                  <span className="text-sm font-medium">WhatsApp</span>
-                </button>
-              </motion.div>
-            </div>
-
-            <motion.div
-              className="relative mt-6 bg-white rounded-lg p-2 border border-gray-200 shadow-sm"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.7 }}
-            >
-              <div className="flex items-center">
-                <div className="flex-1 overflow-hidden">
-                  <input
-                    type="text"
-                    readOnly
-                    value={resource.url}
-                    className="w-full p-2 text-sm bg-transparent border-0 focus:outline-none focus:ring-0"
-                  />
-                </div>
-                <motion.div
-                  whileHover={{
-                    scale: 1.05,
-                    transition: {
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 10
-                    }
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <button
-                    className="ml-2 bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-300"
-                    onClick={() => {
-                      navigator.clipboard.writeText(resource.url);
-                      toast.success('Link copied to clipboard!');
-                      setShowShareDialog(false);
-                    }}
-                  >
-                    Copy
-                  </button>
-                </motion.div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </DialogContent>
-      </Dialog>
     </ScrollReveal>
   );
 };
 
 const Resources = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  // These state variables are used in the useEffect but not directly in the JSX
+  const [, setSearchSuggestions] = useState<string[]>([]);
+  const [, setShowSuggestions] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedPricing, setSelectedPricing] = useState('');
   const [filteredResources, setFilteredResources] = useState<Resource[]>(resources);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
+  // Using searchFocused state in useEffect
+  const searchFocused = false;
 
   // Load search history from localStorage on component mount
   useEffect(() => {
@@ -817,8 +426,6 @@ const Resources = () => {
 
   // Enhanced search algorithm with relevance scoring
   useEffect(() => {
-    setIsSearching(true);
-
     // Debounce search to improve performance
     const searchTimer = setTimeout(() => {
       let result = resources;
@@ -897,7 +504,6 @@ const Resources = () => {
       }
 
       setFilteredResources(result);
-      setIsSearching(false);
     }, 300); // 300ms debounce
 
     return () => clearTimeout(searchTimer);
@@ -996,12 +602,7 @@ const Resources = () => {
     }
   };
 
-  // Apply a search suggestion
-  const applySuggestion = (suggestion: string) => {
-    setSearchQuery(suggestion);
-    saveSearchToHistory(suggestion);
-    setShowSuggestions(false);
-  };
+
 
   // Reset all filters
   const resetFilters = () => {
@@ -1039,25 +640,25 @@ const Resources = () => {
               <div className="text-center max-w-4xl mx-auto">
                 <Badge
                   variant="secondary"
-                  className="mb-4 bg-teal-50 text-teal-700 hover:bg-teal-100 px-5 py-2 text-sm font-medium inline-flex items-center"
+                  className="mb-4 bg-teal-50 text-teal-700 hover:bg-teal-100 px-4 py-1.5 text-sm font-medium item-center"
                 >
                   <Sparkles className="w-4 h-4 mr-2 text-teal-500" />
                   CURATED COLLECTION
                 </Badge>
 
                 <motion.h1
-                  className="text-5xl md:text-6xl font-bold mb-6 leading-tight"
+                  className="text-5xl md:text-5xl font-bold mb-6 leading-tight"
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6 }}
                 >
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-teal-500">
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-teal-500 to-blue-500">
                     Developer Resources & Tools
                   </span>
                 </motion.h1>
 
                 <motion.p
-                  className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed"
+                  className="text-lg text-gray-600 mb-8"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
@@ -1111,17 +712,6 @@ const Resources = () => {
               </div>
             </ScrollReveal>
           </div>
-
-          {/* Wave divider */}
-          {/* <div className="absolute bottom-0 left-0 right-0">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100" className="w-full h-auto">
-              <path
-                fill="#ffffff"
-                fillOpacity="1"
-                d="M0,64L60,58.7C120,53,240,43,360,48C480,53,600,75,720,80C840,85,960,75,1080,64C1200,53,1320,43,1380,37.3L1440,32L1440,100L1380,100C1320,100,1200,100,1080,100C960,100,840,100,720,100C600,100,480,100,360,100C240,100,120,100,60,100L0,100Z"
-              ></path>
-            </svg>
-          </div> */}
         </section>
 
         {/* Main content */}

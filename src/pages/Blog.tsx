@@ -10,7 +10,7 @@ import { blogPosts, blogCategories, blogTags } from '@/data/blog-posts';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
-import { Search, Calendar, Clock, Tag as TagIcon, ArrowRight } from 'lucide-react';
+import { Search, Calendar, Clock, Tag as TagIcon, ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Blog = () => {
@@ -64,26 +64,26 @@ const Blog = () => {
       <Header />
       <main id="main-content" className="pt-24 pb-16">
         {/* Hero Section */}
-        <section className="relative py-20 overflow-hidden">
+        <section className="relative py-24 overflow-hidden">
 
           <div className="container mx-auto px-4 relative z-10">
             <ScrollReveal>
               <div className="max-w-3xl mx-auto text-center">
                 <Badge
                   variant="secondary"
-                  className="mb-4 bg-teal-50 text-teal-700 hover:bg-teal-100 px-4 py-1.5 text-sm font-medium"
+                  className="mb-4 bg-teal-50 text-teal-700 hover:bg-teal-100 px-4 py-1.5 text-sm font-medium items-center"
                 >
-                  Blog
+                  <Sparkles className="w-4 h-4 mr-2 text-teal-500" />
+                  THOUGHT JOURNAL
                 </Badge>
                 <motion.h1
-                  className="text-4xl md:text-5xl font-bold mb-6 text-gray-800"
+                  className="text-5xl md:text-5xl font-bold mb-6 leading-tight"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6 }}
                 >
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-teal-400 relative">
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-teal-500 to-blue-500">
                     Insights & Articles
-                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-teal-500 rounded-full"></div>
                   </span>
                 </motion.h1>
                 <motion.p
@@ -97,7 +97,7 @@ const Blog = () => {
 
                 {/* Search Bar */}
                 <motion.div
-                  className="relative max-w-xl mx-auto"
+                  className="relative max-w-xl mx-auto mt-12"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.3 }}

@@ -137,7 +137,7 @@ const ContactForm = () => {
                 >
                   <Badge
                     variant="secondary"
-                    className="mb-6 bg-teal-50/80 text-teal-700 hover:bg-teal-100 px-6 py-2.5 text-sm font-medium inline-flex items-center backdrop-blur-sm border border-teal-100/50 shadow-sm"
+                    className="mb-6 bg-teal-50/80 text-teal-500 hover:bg-teal-50 px-6 py-2.5 text-sm font-medium inline-flex items-center backdrop-blur-sm border border-teal-100/50 shadow-sm"
                   >
                     <MessageSquare className="w-4 h-4 mr-2 text-teal-500" />
                     CONTACT ME

@@ -64,14 +64,6 @@ const ServiceCard = ({ title, description, features, number, index, iconComponen
             </div>
           ))}
         </div>
-
-        {/* Learn more link */}
-        {/* <motion.div
-          className="mt-8 inline-flex items-center text-teal-600 font-medium text-sm"
-          whileHover={{ x: 5 }}
-        >
-          Learn more <ArrowRight className="ml-1 w-4 h-4" />
-        </motion.div> */}
       </div>
     </motion.div>
   );

@@ -1,4 +1,4 @@
-import { ArrowUpRight, GithubIcon, ExternalLink, Calendar, Code } from "lucide-react";
+import { ArrowUpRight, GithubIcon, ExternalLink, Calendar, Code, Layers } from "lucide-react";
 import { motion } from 'framer-motion';
 import { Badge } from "@/components/ui/badge";
 import { MotionButton } from "@/components/ui/motion-button";
@@ -250,15 +250,16 @@ const ProjectsSection = () => {
           transition={{ duration: 0.6, delay: 0.6 }}
           viewport={{ once: true }}
         >
-          {/* <MotionButton
+          <MotionButton
+            onClick={() => window.location.href = '/projects'}
             className="bg-white hover:bg-gray-50 text-gray-800 border border-gray-200 rounded-full px-8 py-3 text-sm font-medium inline-flex items-center"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Code className="mr-2 h-4 w-4" />
-            View More on GitHub
+            <Layers className="mr-2 h-4 w-4" />
+            View All Projects
             <ArrowUpRight className="ml-2 h-4 w-4" />
-          </MotionButton> */}
+          </MotionButton>
         </motion.div>
       </div>
     </section>

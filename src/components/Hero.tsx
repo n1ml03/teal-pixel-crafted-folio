@@ -121,7 +121,7 @@ const Hero = () => {
                   transition={{ duration: 0.7, delay: 0.3 }}
                 >
                   <MotionButton
-                    className="bg-teal-600 hover:bg-teal-700 text-white rounded-full px-6 py-3 text-sm font-medium shadow-lg shadow-teal-200 flex items-center"
+                    className="bg-teal-600 hover:bg-teal-600 text-white rounded-full px-6 py-3 text-sm font-medium flex items-center"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => scrollToSection('contact')}
