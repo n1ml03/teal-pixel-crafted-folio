@@ -26,6 +26,7 @@ const Resources = lazy(() => import("./pages/Resources"));
 const Projects = lazy(() => import("./pages/Projects"));
 const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
 const ContactForm = lazy(() => import("./pages/ContactForm"));
+const TestingPlayground = lazy(() => import("./pages/TestingPlayground"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Loading fallback
@@ -82,6 +83,7 @@ const router = createBrowserRouter(
       <Route path="/projects" element={<Projects />} />
       <Route path="/projects/:slug" element={<ProjectDetail />} />
       <Route path="/contact-form" element={<ContactForm />} />
+      <Route path="/testing-playground" element={<TestingPlayground />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Route>

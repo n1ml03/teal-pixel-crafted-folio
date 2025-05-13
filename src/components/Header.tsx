@@ -9,7 +9,8 @@ import {
   BookOpen,
   Wrench,
   MessageSquare,
-  Layers
+  Layers,
+  TestTube
 } from "lucide-react";
 import { motion } from 'framer-motion';
 import { softSpringTransition } from '@/lib/motion';
@@ -124,6 +125,17 @@ const Header = () => {
           </MotionButton>
 
           <MotionButton
+            onClick={() => window.location.href = '/testing-playground'}
+            className={`flex items-center text-gray-700 hover:text-teal-500 transition-all duration-300 text-sm font-medium ${location.pathname.includes('/testing-playground') ? 'text-teal-500' : ''}`}
+            whileHover={{ y: -2, color: "rgb(20, 184, 166)" }}
+            whileTap={{ scale: 0.95 }}
+            variant="ghost"
+          >
+            <TestTube className="w-4 h-4 mr-1" />
+            Testing Playground
+          </MotionButton>
+
+          <MotionButton
             className="bg-black hover:bg-gray-800 rounded-full px-5 py-2 text-sm font-medium text-white flex items-center"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
@@ -194,6 +206,19 @@ const Header = () => {
             >
               <Wrench className="w-4 h-4 mr-2" />
               Resources
+            </MotionButton>
+
+            <MotionButton
+              onClick={() => window.location.href = '/testing-playground'}
+              className={`flex items-center text-gray-700 hover:text-teal-500 transition-colors py-2 border-b border-gray-100 px-4 rounded-lg hover:bg-gray-50 w-full justify-start ${location.pathname.includes('/testing-playground') ? 'text-teal-500 bg-gray-50' : ''}`}
+              whileHover={{ x: 5, backgroundColor: "rgb(249, 250, 251)" }}
+              whileTap={{ scale: 0.98 }}
+              variant="ghost"
+              transitionType="tween"
+              transitionDuration={0.2}
+            >
+              <TestTube className="w-4 h-4 mr-2" />
+              Testing Playground
             </MotionButton>
 
             <MotionButton

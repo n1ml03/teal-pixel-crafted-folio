@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, useScroll } from 'framer-motion';
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +13,8 @@ import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
 import SocialActions from '@/components/ui/social-actions';
 import {
   Calendar, Clock, Tag as TagIcon,
-  ChevronLeft, ChevronRight, Copy, Printer, List,
-  BookmarkPlus, Eye, Link as LinkIcon, Hash
+  ChevronLeft, ChevronRight, List,
+  Eye, Link as LinkIcon, Hash
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -25,10 +25,6 @@ import 'highlight.js/styles/github-dark.css';
 import '@/styles/markdown.css';
 import { Separator } from '@/components/ui/separator';
 import { toast } from "@/components/ui/sonner";
-import {
-  Dialog, DialogContent, DialogDescription, DialogTitle
-} from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
