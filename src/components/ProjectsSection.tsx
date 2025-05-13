@@ -201,21 +201,21 @@ const ProjectsSection = () => {
             All Projects
           </MotionButton>
           <MotionButton
-            className="bg-white text-gray-700 rounded-full px-5 py-2 text-sm border border-gray-200"
+            className="bg-white text-gray-700 rounded-full px-5 py-2 text-sm"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             Frontend
           </MotionButton>
           <MotionButton
-            className="bg-white text-gray-700 rounded-full px-5 py-2 text-sm border border-gray-200"
+            className="bg-white text-gray-700 rounded-full px-5 py-2 text-sm"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             Backend
           </MotionButton>
           <MotionButton
-            className="bg-white text-gray-700 rounded-full px-5 py-2 text-sm border border-gray-200"
+            className="bg-white text-gray-700 rounded-full px-5 py-2 text-sm"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { MotionButton } from "@/components/ui/motion-button";
-import { MotionLink } from "@/components/ui/motion-link";
 import { BlogPost } from '@/types/blog';
 import { blogPosts, blogCategories, blogTags } from '@/data/blog-posts';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
-import { Search, Calendar, Clock, Tag as TagIcon, ArrowRight, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, Tag as TagIcon, Sparkles } from 'lucide-react';
+import BlogPostCard from '@/components/utils/BlogPostCard.tsx';
 
 const Blog = () => {
   const [posts, setPosts] = useState<BlogPost[]>(blogPosts);
@@ -19,8 +18,8 @@ const Blog = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
 
-  // Filter posts based on search query, category, and tag
-  useEffect(() => {
+  // Memoized filter function for better performance
+  const filterPosts = useCallback(() => {
     let filteredPosts = [...blogPosts];
 
     // Filter by search query
@@ -29,7 +28,8 @@ const Blog = () => {
       filteredPosts = filteredPosts.filter(post =>
         post.title.toLowerCase().includes(query) ||
         post.excerpt.toLowerCase().includes(query) ||
-        post.content.toLowerCase().includes(query)
+        // Only search in content if necessary (can be expensive)
+        (post.content.length < 5000 ? post.content.toLowerCase().includes(query) : false)
       );
     }
 
@@ -49,6 +49,11 @@ const Blog = () => {
 
     setPosts(filteredPosts);
   }, [searchQuery, selectedCategory, selectedTag]);
+
+  // Apply filters when dependencies change
+  useEffect(() => {
+    filterPosts();
+  }, [filterPosts]);
 
   // Reset all filters
   const resetFilters = () => {
@@ -317,102 +322,6 @@ const Blog = () => {
   );
 };
 
-interface BlogPostCardProps {
-  post: BlogPost;
-  index: number;
-  onTagClick?: (tag: string) => void;
-}
 
-const BlogPostCard = ({ post, index, onTagClick }: BlogPostCardProps) => {
-  return (
-    <ScrollReveal delay={index * 0.1}>
-      <motion.article
-        className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 group"
-        whileHover={{ y: -5 }}
-      >
-        <div className="md:flex">
-          {/* Image with overlay effect */}
-          <div className="md:w-2/5 h-56 md:h-auto relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10"></div>
-            <img
-              src={post.coverImage.startsWith('./') ? post.coverImage.replace('./', '/') : post.coverImage}
-              alt={post.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              onError={(e) => {
-                console.error(`Failed to load image: ${post.coverImage}`);
-                // Fallback to a placeholder image if the original fails to load
-                e.currentTarget.src = "https://placehold.co/600x400?text=Image+Not+Found";
-              }}
-            />
-            {/* Category badge */}
-            <div className="absolute top-4 left-4 z-20">
-              <Badge className="bg-teal-500/80 backdrop-blur-sm text-white border-none px-3 py-1">
-                {post.category}
-              </Badge>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-6 md:w-3/5 relative">
-            {/* Featured indicator */}
-            {post.featured && (
-              <div className="absolute top-0 right-0 bg-teal-500 text-white text-xs px-3 py-1 rounded-bl-lg font-medium">
-                Featured
-              </div>
-            )}
-
-            <div className="flex items-center text-sm text-gray-500 mb-3">
-              <Calendar className="w-4 h-4 mr-1 text-teal-500" />
-              <span>{post.date}</span>
-              <span className="mx-2">•</span>
-              <Clock className="w-4 h-4 mr-1 text-teal-500" />
-              <span>{post.readingTime} min read</span>
-            </div>
-
-            <Link to={`/blog/${post.slug}`} className="block group-hover:translate-x-1 transition-transform duration-300">
-              <h2 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-teal-600 transition-colors">
-                {post.title}
-              </h2>
-            </Link>
-
-            <p className="text-gray-600 mb-4 line-clamp-2">
-              {post.excerpt}
-            </p>
-
-            <div className="flex flex-wrap gap-2 mb-4">
-              {post.tags.slice(0, 3).map((tag, i) => (
-                <motion.span
-                  key={i}
-                  className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full border border-transparent hover:border-gray-200 hover:bg-gray-200 transition-colors cursor-pointer"
-                  whileHover={{ y: -2 }}
-                  onClick={() => onTagClick && onTagClick(tag)}
-                >
-                  <TagIcon className="w-3 h-3 mr-1 text-teal-500" />
-                  {tag}
-                </motion.span>
-              ))}
-              {post.tags.length > 3 && (
-                <span className="text-xs text-gray-500 flex items-center">
-                  <span className="w-1 h-1 bg-gray-300 rounded-full mr-1"></span>
-                  +{post.tags.length - 3} more
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <MotionLink
-                href={`/blog/${post.slug}`}
-                className="inline-flex items-center text-teal-600 font-medium text-sm bg-teal-50 px-4 py-2 rounded-full group-hover:bg-teal-100 transition-colors"
-                whileHover={{ x: 5 }}
-              >
-                Read Article <ArrowRight className="ml-1 w-4 h-4" />
-              </MotionLink>
-            </div>
-          </div>
-        </div>
-      </motion.article>
-    </ScrollReveal>
-  );
-};
 
 export default Blog;

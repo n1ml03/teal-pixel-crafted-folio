@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { MotionButton } from "@/components/ui/motion-button";
-import { MotionLink } from "@/components/ui/motion-link";
 import { Resource, resourceCategories, resources } from '@/data/resources';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
-import SocialActions from '@/components/ui/social-actions';
+import ResourceCard from '@/components/utils/ResourceCard.tsx';
 import {
   Search,
-  ExternalLink,
   Tag as TagIcon,
   Filter,
   Code,
@@ -26,345 +24,28 @@ import {
   Shield,
   Star,
   Info,
-  BarChart,
   Sparkles,
   Bookmark,
   Layers,
   Wrench,
-  Puzzle,
   Globe,
   Boxes,
   Library,
   BookText,
-  FileBox
+  FileBox,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
-
-interface ResourceCardProps {
-  resource: Resource;
-  index: number;
-  onTagClick: (tag: string) => void;
-}
-
-const ResourceCard = ({ resource, index, onTagClick }: ResourceCardProps) => {
-  const [showShareDialog, setShowShareDialog] = useState(false);
-
-  // Function to get the appropriate icon based on category
-  const getCategoryIcon = () => {
-    const category = resourceCategories.find(cat => cat.name === resource.category);
-    switch(category?.icon) {
-      case 'TestTube': return <TestTube className="w-4 h-4 text-teal-500" />;
-      case 'Code': return <Code className="w-4 h-4 text-teal-500" />;
-      case 'Palette': return <Palette className="w-4 h-4 text-teal-500" />;
-      case 'Zap': return <Zap className="w-4 h-4 text-teal-500" />;
-      case 'GraduationCap': return <GraduationCap className="w-4 h-4 text-teal-500" />;
-      case 'Server': return <Server className="w-4 h-4 text-teal-500" />;
-      case 'Shield': return <Shield className="w-4 h-4 text-teal-500" />;
-      default: return <BookOpen className="w-4 h-4 text-teal-500" />;
-    }
-  };
-
-  // Function to get the appropriate icon based on resource type
-  const getResourceTypeIcon = () => {
-    switch(resource.type) {
-      case 'tool': return <Wrench className="w-4 h-4 text-gray-500" />;
-      case 'library': return <Library className="w-4 h-4 text-gray-500" />;
-      case 'framework': return <Boxes className="w-4 h-4 text-gray-500" />;
-      case 'language': return <Code className="w-4 h-4 text-gray-500" />;
-      case 'service': return <Globe className="w-4 h-4 text-gray-500" />;
-      case 'course': return <GraduationCap className="w-4 h-4 text-gray-500" />;
-      case 'guide': return <BookText className="w-4 h-4 text-gray-500" />;
-      case 'template': return <FileBox className="w-4 h-4 text-gray-500" />;
-      default: return <Puzzle className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  // Function to get pricing badge color - simplified
-  const getPricingBadgeColor = () => {
-    switch(resource.pricing) {
-      case 'free': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'freemium': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'paid': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'open-source': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      default: return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-    }
-  };
-
-  // Function to get difficulty badge color - simplified
-  const getDifficultyBadgeColor = () => {
-    switch(resource.difficulty) {
-      case 'beginner': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'intermediate': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'advanced': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'all-levels': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      default: return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-    }
-  };
-
-  // Function to get type badge color - simplified
-  const getTypeBadgeColor = () => {
-    switch(resource.type) {
-      case 'tool': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'library': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'framework': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'language': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'service': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'course': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'guide': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      case 'template': return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-      default: return 'bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all duration-300';
-    }
-  };
-
-  // Handle share dialog state
-  const handleShareDialogChange = (open: boolean) => {
-    setShowShareDialog(open);
-  };
-
-  return (
-    <ScrollReveal delay={index * 0.1} threshold={0.05}>
-      <motion.div
-        className="group relative bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col"
-        whileHover={{
-          y: -5,
-          boxShadow: "0 15px 30px rgba(0, 0, 0, 0.05)",
-          borderColor: "rgba(20, 184, 166, 0.3)"
-        }}
-        initial={{ opacity: 0, y: 30, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{
-          type: "spring",
-          stiffness: 200,
-          damping: 20,
-          mass: 0.8
-        }}
-      >
-        {/* Featured badge - positioned absolutely */}
-        {resource.featured && (
-          <div className="absolute top-4 right-4 z-10">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Badge className="bg-teal-500 text-white text-xs px-3 py-1 flex items-center gap-1 shadow-sm">
-                <Star className="w-3 h-3 fill-white" /> Featured
-              </Badge>
-            </motion.div>
-          </div>
-        )}
-
-        {/* Category color strip */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-teal-400 to-teal-500"></div>
-
-        {/* Resource header with logo and image */}
-        <div className="p-5 border-b border-gray-100">
-          <div className="flex items-start">
-            <motion.div
-              className="w-14 h-14 rounded-lg bg-white p-2 flex items-center justify-center overflow-hidden shadow-sm border border-gray-100 mr-4"
-              whileHover={{
-                scale: 1.08,
-                borderColor: "rgba(20, 184, 166, 0.5)",
-                boxShadow: "0 5px 15px rgba(20, 184, 166, 0.1)"
-              }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 15
-              }}
-            >
-              <motion.img
-                src={resource.image}
-                alt={`${resource.title} logo`}
-                className="w-full h-full object-contain"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-              />
-            </motion.div>
-            <div>
-              <motion.h3
-                className="text-lg font-bold text-gray-800 group-hover:text-teal-600 transition-colors duration-300"
-                whileHover={{ x: 3 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              >
-                {resource.title}
-              </motion.h3>
-              <div className="flex items-center text-sm text-gray-500 mt-2 flex-wrap gap-2">
-                <div className="flex items-center bg-gray-50 px-2 py-1 rounded-md">
-                  {getCategoryIcon()}
-                  <span className="ml-1 font-medium">{resource.category}</span>
-                </div>
-
-                {resource.type && (
-                  <Badge className={`${getTypeBadgeColor()} text-xs px-2 py-1 flex items-center gap-1`}>
-                    {getResourceTypeIcon()}
-                    {resource.type}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Resource content */}
-        <div className="p-5 flex-grow relative">
-          {/* Resource illustration */}
-
-          <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">{resource.description}</p>
-
-          {/* Additional info */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {resource.pricing && (
-              <Badge className={`${getPricingBadgeColor()} text-xs px-2 py-1 flex items-center gap-1`}>
-                {resource.pricing === 'free' && <Download className="w-3 h-3" />}
-                {resource.pricing === 'freemium' && <Star className="w-3 h-3" />}
-                {resource.pricing === 'paid' && <Bookmark className="w-3 h-3" />}
-                {resource.pricing === 'open-source' && <Code className="w-3 h-3" />}
-                {resource.pricing}
-              </Badge>
-            )}
-
-            {resource.difficulty && (
-              <Badge className={`${getDifficultyBadgeColor()} text-xs px-2 py-1 flex items-center gap-1`}>
-                <BarChart className="w-3 h-3" />
-                {resource.difficulty}
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-2 mb-3">
-            {resource.tags.slice(0, 3).map((tag, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -3, scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 15
-                }}
-              >
-                <Badge
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs px-2 py-1 cursor-pointer flex items-center transition-all duration-300"
-                  onClick={() => onTagClick(tag)}
-                >
-                  <TagIcon className="w-3 h-3 mr-1 text-gray-500" />
-                  {tag}
-                </Badge>
-              </motion.div>
-            ))}
-            {resource.tags.length > 3 && (
-              <motion.div
-                whileHover={{ y: -2, scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 15
-                }}
-              >
-                <Badge className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs px-2 py-1 transition-all duration-300">
-                  +{resource.tags.length - 3}
-                </Badge>
-              </motion.div>
-            )}
-          </div>
-        </div>
-
-        {/* Resource footer */}
-        <div className="p-5 border-t border-gray-100 bg-gray-50/50">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex space-x-2">
-              <SocialActions
-                contentId={resource.id}
-                contentType="resource"
-                contentTitle={resource.title}
-                contentUrl={resource.url}
-                size="sm"
-                showShareDialog={showShareDialog}
-                onShareDialogChange={handleShareDialogChange}
-              />
-            </div>
-
-            <div className="text-xs font-medium px-3 py-1.5 rounded-md bg-gray-100 text-gray-600 flex items-center gap-1">
-              {getResourceTypeIcon()}
-              {resource.type === 'tool' ? 'Tool' :
-               resource.type === 'library' ? 'Library' :
-               resource.type === 'framework' ? 'Framework' :
-               resource.type === 'language' ? 'Language' :
-               resource.type === 'service' ? 'Service' :
-               resource.type === 'course' ? 'Course' :
-               resource.type === 'guide' ? 'Guide' :
-               resource.type === 'template' ? 'Template' : 'Resource'}
-            </div>
-          </div>
-
-          <MotionLink
-            href={resource.url}
-            className="inline-flex items-center text-white font-medium text-sm bg-teal-500 px-4 py-3 rounded-lg hover:bg-teal-600 transition-all w-full justify-center shadow-sm group"
-            whileHover={{
-              scale: 1.03,
-              boxShadow: "0 8px 20px -4px rgba(20, 184, 166, 0.4)",
-              y: -2
-            }}
-            whileTap={{ scale: 0.97 }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 15
-            }}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <motion.span
-              initial={{ opacity: 1 }}
-              whileHover={{ opacity: 1 }}
-              className="relative"
-            >
-              Visit Resource
-              <motion.span
-                className="absolute bottom-0 left-0 w-full h-0.5 bg-white/40 rounded-full"
-                initial={{ scaleX: 0, opacity: 0 }}
-                whileHover={{ scaleX: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              />
-            </motion.span>
-            <motion.span
-              className="ml-2"
-              animate={{
-                x: [0, 4, 0],
-                transition: {
-                  repeat: Infinity,
-                  duration: 1.2,
-                  ease: "easeInOut",
-                  repeatType: "reverse"
-                }
-              }}
-            >
-              <ExternalLink className="w-4 h-4" />
-            </motion.span>
-          </MotionLink>
-        </div>
-      </motion.div>
-
-
-    </ScrollReveal>
-  );
-};
 
 const Resources = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  // These state variables are used in the useEffect but not directly in the JSX
-  const [, setSearchSuggestions] = useState<string[]>([]);
-  const [, setShowSuggestions] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedPricing, setSelectedPricing] = useState('');
   const [filteredResources, setFilteredResources] = useState<Resource[]>(resources);
-  // Using searchFocused state in useEffect
-  const searchFocused = false;
+  const [isFilterExpanded, setIsFilterExpanded] = useState(true);
 
   // Load search history from localStorage on component mount
   useEffect(() => {
@@ -374,58 +55,8 @@ const Resources = () => {
     }
   }, []);
 
-  // Generate search suggestions based on current input
-  useEffect(() => {
-    if (searchQuery.length > 1) {
-      // Generate suggestions from resource titles, tags, and categories
-      const query = searchQuery.toLowerCase();
-
-      // Get suggestions from titles
-      const titleSuggestions = resources
-        .filter(resource => resource.title.toLowerCase().includes(query))
-        .map(resource => resource.title)
-        .slice(0, 3);
-
-      // Get suggestions from tags
-      const tagSuggestions = Array.from(new Set(
-        resources.flatMap(resource =>
-          resource.tags.filter(tag =>
-            tag.toLowerCase().includes(query)
-          )
-        )
-      )).slice(0, 3);
-
-      // Get suggestions from categories
-      const categorySuggestions = resourceCategories
-        .filter(category => category.name.toLowerCase().includes(query))
-        .map(category => category.name)
-        .slice(0, 2);
-
-      // Get suggestions from types
-      const typeSuggestions = Array.from(new Set(
-        resources
-          .map(resource => resource.type)
-          .filter(type => type.toLowerCase().includes(query))
-      )).slice(0, 2);
-
-      // Combine all suggestions and remove duplicates
-      const allSuggestions = Array.from(new Set([
-        ...titleSuggestions,
-        ...tagSuggestions,
-        ...categorySuggestions,
-        ...typeSuggestions
-      ])).slice(0, 5);
-
-      setSearchSuggestions(allSuggestions);
-      setShowSuggestions(allSuggestions.length > 0 && searchFocused);
-    } else {
-      setSearchSuggestions([]);
-      setShowSuggestions(false);
-    }
-  }, [searchQuery, searchFocused]);
-
-  // Enhanced search algorithm with relevance scoring
-  useEffect(() => {
+  // Memoized search and filter function to improve performance
+  const filterResources = useCallback(() => {
     // Debounce search to improve performance
     const searchTimer = setTimeout(() => {
       let result = resources;
@@ -504,10 +135,15 @@ const Resources = () => {
       }
 
       setFilteredResources(result);
-    }, 300); // 300ms debounce
+    }, 100); // Reduced debounce time for faster response
 
     return () => clearTimeout(searchTimer);
   }, [searchQuery, selectedCategory, selectedTag, selectedType, selectedPricing]);
+
+  // Apply filters when dependencies change
+  useEffect(() => {
+    filterResources();
+  }, [filterResources]);
 
   // Save search to history
   const saveSearchToHistory = (query: string) => {
@@ -524,85 +160,9 @@ const Resources = () => {
     if (searchQuery.trim()) {
       // Save to history
       saveSearchToHistory(searchQuery);
-
-      // Explicitly trigger search (even though it's already handled by useEffect)
-      // This ensures the search is performed when the user clicks the search button
-      const query = searchQuery.toLowerCase();
-
-      // Calculate relevance score for each resource
-      const scoredResources = resources.map(resource => {
-        let score = 0;
-
-        // Title match (highest weight)
-        if (resource.title.toLowerCase() === query) {
-          score += 100; // Exact title match
-        } else if (resource.title.toLowerCase().includes(query)) {
-          score += 50; // Partial title match
-        }
-
-        // Category match
-        if (resource.category.toLowerCase().includes(query)) {
-          score += 30;
-        }
-
-        // Tag matches (good relevance)
-        const tagMatches = resource.tags.filter(tag =>
-          tag.toLowerCase().includes(query)
-        ).length;
-        score += tagMatches * 25;
-
-        // Type match
-        if (resource.type.toLowerCase().includes(query)) {
-          score += 20;
-        }
-
-        // Description match (lowest weight but still valuable)
-        if (resource.description.toLowerCase().includes(query)) {
-          score += 15;
-        }
-
-        // Pricing match
-        if (resource.pricing && resource.pricing.toLowerCase().includes(query)) {
-          score += 15;
-        }
-
-        // Difficulty match
-        if (resource.difficulty && resource.difficulty.toLowerCase().includes(query)) {
-          score += 10;
-        }
-
-        return { resource, score };
-      });
-
-      // Filter resources with a score > 0 and sort by score
-      let result = scoredResources
-        .filter(item => item.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .map(item => item.resource);
-
-      // Apply additional filters
-      if (selectedCategory) {
-        result = result.filter(resource => resource.category === selectedCategory);
-      }
-
-      if (selectedTag) {
-        result = result.filter(resource => resource.tags.includes(selectedTag));
-      }
-
-      if (selectedType) {
-        result = result.filter(resource => resource.type === selectedType);
-      }
-
-      if (selectedPricing) {
-        result = result.filter(resource => resource.pricing === selectedPricing);
-      }
-
-      setFilteredResources(result);
-      setShowSuggestions(false);
+      // The filtering will be handled by the useEffect
     }
   };
-
-
 
   // Reset all filters
   const resetFilters = () => {
@@ -634,7 +194,6 @@ const Resources = () => {
       <main id="main-content" className="pt-24 pb-16">
         {/* Hero section */}
         <section className="relative py-24 overflow-hidden">
-
           <div className="container mx-auto px-4 relative z-10">
             <ScrollReveal>
               <div className="text-center max-w-4xl mx-auto">
@@ -723,23 +282,39 @@ const Resources = () => {
                 <div className="bg-white rounded-xl border border-gray-100 shadow-lg p-6 sticky top-24">
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-gray-800 flex items-center">
+                      <div className="flex items-center">
                         <Filter className="w-4 h-4 mr-2 text-teal-500" />
-                        Filters
-                      </h3>
-                      {(selectedCategory || selectedTag || selectedType || selectedPricing || searchQuery) && (
+                        <h3 className="font-bold text-gray-800">Filters</h3>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {(selectedCategory || selectedTag || selectedType || selectedPricing || searchQuery) && (
+                          <motion.button
+                            onClick={resetFilters}
+                            className="text-xs text-teal-600 hover:text-teal-700 flex items-center"
+                            whileHover={{ x: 2 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            Reset All
+                          </motion.button>
+                        )}
                         <motion.button
-                          onClick={resetFilters}
-                          className="text-xs text-teal-600 hover:text-teal-700 flex items-center"
-                          whileHover={{ x: 2 }}
+                          onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+                          className="p-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-200"
+                          whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
+                          aria-label={isFilterExpanded ? "Collapse filters" : "Expand filters"}
+                          title={isFilterExpanded ? "Collapse filters" : "Expand filters"}
                         >
-                          Reset All
+                          {isFilterExpanded ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
                         </motion.button>
-                      )}
+                      </div>
                     </div>
 
-                    {/* Search in sidebar */}
+                    {/* Search in sidebar - always visible */}
                     <div className="mb-6">
                       <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
                         <Search className="w-3.5 h-3.5 mr-1.5 text-teal-500" />
@@ -754,28 +329,28 @@ const Resources = () => {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                           />
-                          <motion.button
+                          <button
                             type="submit"
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-teal-500 hover:bg-teal-600 text-white p-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-center"
-                            whileHover={{
-                              scale: 1.1,
-                              boxShadow: "0 3px 10px rgba(20, 184, 166, 0.3)"
-                            }}
-                            whileTap={{ scale: 0.9 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 400,
-                              damping: 10
-                            }}
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-white p-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center hover:shadow-[0_3px_10px_rgba(20,184,166,0.3)]"
                             aria-label="Search"
                           >
                             <Search className="w-3.5 h-3.5" />
-                          </motion.button>
+                          </button>
                         </div>
                       </form>
                     </div>
 
-                    <div className="space-y-6">
+                    {/* Filter content - collapsible */}
+                    <motion.div
+                      className="space-y-6"
+                      initial={{ height: "auto", opacity: 1 }}
+                      animate={{
+                        height: isFilterExpanded ? "auto" : 0,
+                        opacity: isFilterExpanded ? 1 : 0
+                      }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      style={{ overflow: "hidden" }}
+                    >
                       {/* Categories */}
                       <div>
                         <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
@@ -849,7 +424,7 @@ const Resources = () => {
                       </div>
 
                       {/* Popular Tags */}
-                      <div>
+                      {/* <div>
                         <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
                           <TagIcon className="w-3.5 h-3.5 mr-1.5 text-teal-500" />
                           Popular Tags
@@ -870,7 +445,7 @@ const Resources = () => {
                             </Badge>
                           ))}
                         </div>
-                      </div>
+                      </div> */}
 
                       {/* Pricing */}
                       <div>
@@ -883,52 +458,46 @@ const Resources = () => {
                             const count = resources.filter(r => r.pricing === pricing).length;
                             const isSelected = selectedPricing === pricing;
 
-                            // Base colors
-                            let baseColor = '';
-                            let selectedColor = '';
-                            let textColor = '';
-                            let selectedTextColor = '';
-                            let hoverColor = '';
+                            // Color configurations for each pricing type
+                            const colorConfig = {
+                              'free': {
+                                base: 'bg-green-50 text-green-700',
+                                selected: 'bg-green-100 text-green-800',
+                                hover: 'hover:bg-green-100 hover:text-green-800',
+                                active: 'active:bg-green-200 active:text-green-900',
+                                countBg: isSelected ? 'bg-white/70' : 'bg-white/50'
+                              },
+                              'freemium': {
+                                base: 'bg-blue-50 text-blue-700',
+                                selected: 'bg-blue-100 text-blue-800',
+                                hover: 'hover:bg-blue-100 hover:text-blue-800',
+                                active: 'active:bg-blue-200 active:text-blue-900',
+                                countBg: isSelected ? 'bg-white/70' : 'bg-white/50'
+                              },
+                              'paid': {
+                                base: 'bg-purple-50 text-purple-700',
+                                selected: 'bg-purple-100 text-purple-800',
+                                hover: 'hover:bg-purple-100 hover:text-purple-800',
+                                active: 'active:bg-purple-200 active:text-purple-900',
+                                countBg: isSelected ? 'bg-white/70' : 'bg-white/50'
+                              },
+                              'open-source': {
+                                base: 'bg-orange-50 text-orange-700',
+                                selected: 'bg-orange-100 text-orange-800',
+                                hover: 'hover:bg-orange-100 hover:text-orange-800',
+                                active: 'active:bg-orange-200 active:text-orange-900',
+                                countBg: isSelected ? 'bg-white/70' : 'bg-white/50'
+                              }
+                            };
 
-                            switch(pricing) {
-                              case 'free':
-                                baseColor = 'bg-green-50';
-                                selectedColor = 'bg-green-100';
-                                textColor = 'text-green-700';
-                                selectedTextColor = 'text-green-800';
-                                hoverColor = 'hover:bg-green-100';
-                                break;
-                              case 'freemium':
-                                baseColor = 'bg-blue-50';
-                                selectedColor = 'bg-blue-100';
-                                textColor = 'text-blue-700';
-                                selectedTextColor = 'text-blue-800';
-                                hoverColor = 'hover:bg-blue-100';
-                                break;
-                              case 'paid':
-                                baseColor = 'bg-purple-50';
-                                selectedColor = 'bg-purple-100';
-                                textColor = 'text-purple-700';
-                                selectedTextColor = 'text-purple-800';
-                                hoverColor = 'hover:bg-purple-100';
-                                break;
-                              case 'open-source':
-                                baseColor = 'bg-orange-50';
-                                selectedColor = 'bg-orange-100';
-                                textColor = 'text-orange-700';
-                                selectedTextColor = 'text-orange-800';
-                                hoverColor = 'hover:bg-orange-100';
-                                break;
-                            }
-
-                            const bgColor = isSelected ? selectedColor : baseColor;
-                            const color = isSelected ? selectedTextColor : textColor;
-                            const hoverClass = isSelected ? '' : hoverColor;
+                            const config = colorConfig[pricing];
+                            const baseClasses = isSelected ? config.selected : config.base;
+                            const interactionClasses = isSelected ? config.active : `${config.hover} ${config.active}`;
 
                             return (
                               <Badge
                                 key={pricing}
-                                className={`cursor-pointer ${bgColor} ${color} ${hoverClass} px-3 py-1.5 flex items-center justify-between shadow-sm transition-all duration-300`}
+                                className={`cursor-pointer ${baseClasses} ${interactionClasses} px-3 py-1.5 flex items-center justify-between shadow-sm transition-all duration-300`}
                                 onClick={() => applyPricingFilter(pricing)}
                               >
                                 <div className="flex items-center gap-1.5">
@@ -938,7 +507,7 @@ const Resources = () => {
                                   {pricing === 'open-source' && <Code className="w-3.5 h-3.5" />}
                                   <span className="capitalize">{pricing}</span>
                                 </div>
-                                <span className={`ml-1 ${isSelected ? 'bg-white/70' : 'bg-white/50'} px-1.5 py-0.5 rounded-full text-xs`}>
+                                <span className={`ml-1 ${config.countBg} px-1.5 py-0.5 rounded-full text-xs`}>
                                   {count}
                                 </span>
                               </Badge>
@@ -946,7 +515,7 @@ const Resources = () => {
                           })}
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   </div>
                 </div>
               </div>
@@ -1083,25 +652,17 @@ const Resources = () => {
                           transition={{ duration: 0.5 }}
                         >
                           {filteredResources.filter(r => r.featured).map((resource, index) => (
-                            <motion.div
+                            <ScrollReveal
                               key={resource.id}
-                              initial={{ opacity: 0, y: 30, scale: 0.97 }}
-                              animate={{ opacity: 1, y: 0, scale: 1 }}
-                              transition={{
-                                duration: 0.6,
-                                delay: index * 0.15,
-                                type: "spring",
-                                stiffness: 100,
-                                damping: 15
-                              }}
+                              delay={index * 0.05} // Reduced delay for faster appearance
+                              threshold={0.05}
                             >
                               <ResourceCard
-                                key={resource.id}
                                 resource={resource}
                                 index={index}
                                 onTagClick={setSelectedTag}
                               />
-                            </motion.div>
+                            </ScrollReveal>
                           ))}
                         </motion.div>
                       </div>
@@ -1126,26 +687,18 @@ const Resources = () => {
                         {filteredResources
                           .filter(r => filteredResources.some(fr => fr.featured) ? !r.featured : true)
                           .map((resource, index) => (
-                            <motion.div
+                            <ScrollReveal
                               key={resource.id}
-                              initial={{ opacity: 0, y: 30 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{
-                                duration: 0.5,
-                                delay: index * 0.1,
-                                type: "spring",
-                                stiffness: 100,
-                                damping: 15
-                              }}
+                              delay={index * 0.05} // Reduced delay for faster appearance
+                              threshold={0.05}
                             >
                               <ResourceCard
                                 resource={resource}
                                 index={index}
                                 onTagClick={setSelectedTag}
                               />
-                            </motion.div>
-                          ))
-                        }
+                            </ScrollReveal>
+                          ))}
                       </motion.div>
                     </div>
                   </>

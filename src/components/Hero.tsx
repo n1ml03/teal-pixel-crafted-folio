@@ -4,8 +4,8 @@ import {
   Code,
   TestTube,
   Sparkles,
-  Github as GithubIcon,
-  Linkedin as LinkedinIcon,
+  Github,
+  Linkedin,
   ArrowRight,
   BookOpen,
   Cpu,
@@ -14,16 +14,43 @@ import {
   CheckCircle,
   Workflow
 } from "lucide-react";
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { MotionButton } from "@/components/ui/motion-button";
 import { MotionLink } from "@/components/ui/motion-link";
 import { Badge } from "@/components/ui/badge";
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 const Hero = () => {
   // Reference for scroll animations
   const heroRef = useRef<HTMLDivElement>(null);
+
+  // Use reduced motion hook for accessibility and performance
+  const prefersReducedMotion = useReducedMotion();
+
+  // State to track device performance
+  const [isLowPerformanceDevice, setIsLowPerformanceDevice] = useState(false);
+
+  // Detect device performance on component mount
+  useEffect(() => {
+    // Simple performance detection based on device memory and processor count
+    // This is a basic heuristic and can be improved
+    const detectLowPerformanceDevice = () => {
+      // Check if navigator.deviceMemory is available (Chrome, Edge, Opera)
+      const lowMemory = 'deviceMemory' in navigator && (navigator as any).deviceMemory < 4;
+
+      // Check processor cores if available
+      const lowCores = navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4;
+
+      // Check if it's a mobile device (simplified check)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      // Set as low performance if any of these conditions are true
+      return lowMemory || lowCores || isMobile;
+    };
+
+    setIsLowPerformanceDevice(detectLowPerformanceDevice());
+  }, []);
 
   // Smooth scroll function
   const scrollToSection = (sectionId: string) => {
@@ -61,20 +88,30 @@ const Hero = () => {
 
   return (
     <div ref={heroRef} className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
-      {/* Enhanced modern abstract background with gradients and shapes */}
+      {/* Enhanced modern abstract background with gradients and shapes - optimized for performance */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
-        {/* Animated gradient background */}
-        <motion.div
-          className="absolute inset-0 opacity-30"
-          animate={{
-            background: [
-              'radial-gradient(circle at 20% 30%, rgba(20, 184, 166, 0.15) 0%, rgba(56, 189, 248, 0.05) 50%, transparent 70%)',
-              'radial-gradient(circle at 60% 70%, rgba(20, 184, 166, 0.15) 0%, rgba(56, 189, 248, 0.05) 50%, transparent 70%)',
-              'radial-gradient(circle at 20% 30%, rgba(20, 184, 166, 0.15) 0%, rgba(56, 189, 248, 0.05) 50%, transparent 70%)'
-            ]
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-        />
+        {/* Static or conditionally animated gradient background */}
+        {!isLowPerformanceDevice && !prefersReducedMotion ? (
+          <motion.div
+            className="absolute inset-0 opacity-30"
+            animate={{
+              background: [
+                'radial-gradient(circle at 20% 30%, rgba(20, 184, 166, 0.15) 0%, rgba(56, 189, 248, 0.05) 50%, transparent 70%)',
+                'radial-gradient(circle at 60% 70%, rgba(20, 184, 166, 0.15) 0%, rgba(56, 189, 248, 0.05) 50%, transparent 70%)',
+                'radial-gradient(circle at 20% 30%, rgba(20, 184, 166, 0.15) 0%, rgba(56, 189, 248, 0.05) 50%, transparent 70%)'
+              ]
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          />
+        ) : (
+          // Static gradient for low-performance devices
+          <div
+            className="absolute inset-0 opacity-30"
+            style={{
+              background: 'radial-gradient(circle at 30% 50%, rgba(20, 184, 166, 0.15) 0%, rgba(56, 189, 248, 0.05) 50%, transparent 70%)'
+            }}
+          />
+        )}
 
         {/* Grid pattern overlay */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
@@ -82,60 +119,85 @@ const Hero = () => {
           backgroundSize: '60px 60px'
         }} />
 
-        {/* Animated floating elements */}
-        <div className="absolute top-[15%] right-[20%]">
-          <motion.div
-            className="w-16 h-16 rounded-xl bg-gradient-to-tr from-teal-400/10 to-teal-200/20 backdrop-blur-sm border border-white/20 transform rotate-12"
-            animate={{ rotate: [12, 5, 12], scale: [1, 1.05, 1] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          ></motion.div>
-        </div>
-
-        <div className="absolute bottom-[20%] left-[15%]">
-          <motion.div
-            className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-400/10 to-blue-200/20 backdrop-blur-sm border border-white/20"
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          ></motion.div>
-        </div>
-
-        <div className="absolute top-[40%] left-[10%]">
-          <motion.div
-            className="w-32 h-12 rounded-full bg-gradient-to-r from-purple-300/10 to-purple-100/20 backdrop-blur-sm border border-white/20"
-            animate={{ x: [0, 10, 0] }}
-            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-          ></motion.div>
-        </div>
-
-        {/* Tech icon floating elements */}
-        {techIcons.map((tech, index) => (
-          <motion.div
-            key={index}
-            className={`absolute rounded-full bg-gradient-to-tr ${tech.color} backdrop-blur-sm border border-white/20 flex items-center justify-center p-2 shadow-sm`}
-            style={{
-              top: `${15 + (index * 10)}%`,
-              left: `${70 + (index % 3) * 10}%`,
-              width: `${30 + (index % 3) * 5}px`,
-              height: `${30 + (index % 3) * 5}px`,
-              zIndex: 1
-            }}
-            animate={{
-              y: [0, -10, 0],
-              opacity: [0.7, 1, 0.7],
-              scale: [1, 1.05, 1]
-            }}
-            transition={{
-              duration: 3 + index,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: index * 0.2
-            }}
-          >
-            <div className="text-gray-600 opacity-70">
-              {tech.icon}
+        {/* Conditionally render animated floating elements based on device performance */}
+        {!isLowPerformanceDevice && !prefersReducedMotion && (
+          <>
+            <div className="absolute top-[15%] right-[20%]">
+              <motion.div
+                className="w-16 h-16 rounded-xl bg-gradient-to-tr from-teal-400/10 to-teal-200/20 backdrop-blur-sm border border-white/20 transform rotate-12"
+                animate={{ rotate: [12, 5, 12] }}
+                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+              ></motion.div>
             </div>
-          </motion.div>
-        ))}
+
+            <div className="absolute bottom-[20%] left-[15%]">
+              <motion.div
+                className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-400/10 to-blue-200/20 backdrop-blur-sm border border-white/20"
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+              ></motion.div>
+            </div>
+
+            <div className="absolute top-[40%] left-[10%]">
+              <motion.div
+                className="w-32 h-12 rounded-full bg-gradient-to-r from-purple-300/10 to-purple-100/20 backdrop-blur-sm border border-white/20"
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+              ></motion.div>
+            </div>
+          </>
+        )}
+
+        {/* Render fewer tech icons with simpler animations or static elements based on performance */}
+        {!isLowPerformanceDevice && !prefersReducedMotion ? (
+          // Render fewer tech icons with optimized animations for better performance
+          techIcons.slice(0, 4).map((tech, index) => (
+            <motion.div
+              key={index}
+              className={`absolute rounded-full bg-gradient-to-tr ${tech.color} backdrop-blur-sm border border-white/20 flex items-center justify-center p-2 shadow-sm`}
+              style={{
+                top: `${15 + (index * 15)}%`,
+                left: `${70 + (index % 2) * 12}%`,
+                width: `${30 + (index % 2) * 5}px`,
+                height: `${30 + (index % 2) * 5}px`,
+                zIndex: 1
+              }}
+              animate={{
+                y: [0, -5, 0],
+                opacity: [0.7, 0.9, 0.7]
+              }}
+              transition={{
+                duration: 4 + index,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: index * 0.5
+              }}
+            >
+              <div className="text-gray-600 opacity-70">
+                {tech.icon}
+              </div>
+            </motion.div>
+          ))
+        ) : (
+          // Static tech icons for low-performance devices
+          techIcons.slice(0, 3).map((tech, index) => (
+            <div
+              key={index}
+              className={`absolute rounded-full bg-gradient-to-tr ${tech.color} backdrop-blur-sm border border-white/20 flex items-center justify-center p-2 shadow-sm`}
+              style={{
+                top: `${15 + (index * 20)}%`,
+                left: `${75 + (index % 2) * 10}%`,
+                width: `${30 + (index % 2) * 5}px`,
+                height: `${30 + (index % 2) * 5}px`,
+                zIndex: 1
+              }}
+            >
+              <div className="text-gray-600 opacity-70">
+                {tech.icon}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="container mx-auto px-4">
@@ -175,19 +237,23 @@ const Hero = () => {
                     QA Engineer
                   </h1>
 
-                  {/* Decorative element */}
-                  <motion.div
-                    className="absolute -z-10 top-1/2 left-0 w-12 h-12 rounded-full bg-teal-400/10"
-                    animate={{
-                      scale: [1, 1.5, 1],
-                      opacity: [0.5, 0.8, 0.5]
-                    }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  />
+                  {/* Decorative element - conditionally animated */}
+                  {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                    <motion.div
+                      className="absolute -z-10 top-1/2 left-0 w-12 h-12 rounded-full bg-teal-400/10"
+                      animate={{
+                        scale: [1, 1.3, 1],
+                        opacity: [0.5, 0.7, 0.5]
+                      }}
+                      transition={{
+                        duration: 5,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                  ) : (
+                    <div className="absolute -z-10 top-1/2 left-0 w-12 h-12 rounded-full bg-teal-400/10 opacity-50" />
+                  )}
                 </div>
 
                 <motion.div
@@ -210,19 +276,23 @@ const Hero = () => {
                     </span> together.
                   </p>
 
-                  {/* Decorative element */}
-                  <motion.div
-                    className="absolute -z-10 -bottom-5 right-10 w-20 h-20 rounded-full bg-blue-400/5"
-                    animate={{
-                      scale: [1, 1.2, 1],
-                      opacity: [0.3, 0.6, 0.3]
-                    }}
-                    transition={{
-                      duration: 5,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  />
+                  {/* Decorative element - conditionally animated */}
+                  {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                    <motion.div
+                      className="absolute -z-10 -bottom-5 right-10 w-20 h-20 rounded-full bg-blue-400/5"
+                      animate={{
+                        scale: [1, 1.1, 1],
+                        opacity: [0.3, 0.5, 0.3]
+                      }}
+                      transition={{
+                        duration: 6,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                  ) : (
+                    <div className="absolute -z-10 -bottom-5 right-10 w-20 h-20 rounded-full bg-blue-400/5 opacity-30" />
+                  )}
                 </motion.div>
 
                 <motion.div
@@ -231,35 +301,42 @@ const Hero = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.7, delay: 0.3 }}
                 >
-                  {/* Enhanced contact button with animation */}
+                  {/* Enhanced contact button with optimized animation */}
                   <MotionButton
                     className="bg-gradient-to-r from-teal-600 to-teal-500 text-white rounded-full px-6 py-3 text-sm font-medium flex items-center shadow-md relative overflow-hidden group"
-                    whileHover={{
+                    whileHover={!isLowPerformanceDevice ? {
                       scale: 1.05,
                       boxShadow: "0 10px 25px -5px rgba(13, 148, 136, 0.5)"
-                    }}
+                    } : { scale: 1.02 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => scrollToSection('contact')}
                   >
                     <span className="relative z-10">Contact Me</span>
-                    <motion.span
-                      className="absolute inset-0 bg-gradient-to-r from-teal-500 to-teal-400 -z-0"
-                      initial={{ x: "-100%" }}
-                      whileHover={{ x: 0 }}
-                      transition={{ duration: 0.4 }}
-                    />
-                    <motion.div
-                      className="ml-2 w-4 h-4 relative z-10"
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        repeatType: "reverse"
-                      }}
-                    >
-                      <ArrowRight className="w-4 h-4" />
-                    </motion.div>
+                    {!isLowPerformanceDevice && !prefersReducedMotion && (
+                      <motion.span
+                        className="absolute inset-0 bg-gradient-to-r from-teal-500 to-teal-400 -z-0"
+                        initial={{ x: "-100%" }}
+                        whileHover={{ x: 0 }}
+                        transition={{ duration: 0.4 }}
+                      />
+                    )}
+                    <div className="ml-2 w-4 h-4 relative z-10">
+                      {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                        <motion.div
+                          animate={{ x: [0, 3, 0] }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            repeatType: "reverse"
+                          }}
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                        </motion.div>
+                      ) : (
+                        <ArrowRight className="w-4 h-4" />
+                      )}
+                    </div>
                   </MotionButton>
                 </motion.div>
 
@@ -278,7 +355,7 @@ const Hero = () => {
                     whileHover={{ y: -3, scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <GithubIcon size={20} />
+                    <Github size={20} />
                   </MotionLink>
                   <MotionLink
                     href="https://linkedin.com/in/pearleseed"
@@ -288,7 +365,7 @@ const Hero = () => {
                     whileHover={{ y: -3, scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <LinkedinIcon size={20} />
+                    <Linkedin size={20} />
                   </MotionLink>
                   <MotionLink
                     href="mailto:pearleseed@gmail.com"
@@ -315,7 +392,7 @@ const Hero = () => {
                     whileHover={{ y: -2, scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                   >
-                    <GithubIcon size={18} />
+                    <Github size={18} />
                     <span className="text-sm font-medium">GitHub</span>
                   </MotionLink>
                   <MotionLink
@@ -326,7 +403,7 @@ const Hero = () => {
                     whileHover={{ y: -2, scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                   >
-                    <LinkedinIcon size={18} />
+                    <Linkedin size={18} />
                     <span className="text-sm font-medium">LinkedIn</span>
                   </MotionLink>
                   <MotionLink
@@ -349,44 +426,52 @@ const Hero = () => {
                   </MotionLink>
                 </motion.div>
 
-                {/* Enhanced scroll down indicator */}
+                {/* Enhanced scroll down indicator - optimized for performance */}
                 <motion.div
                   className="hidden lg:flex items-center mt-16 text-gray-400 text-sm"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 1, duration: 1 }}
+                  transition={{ delay: 0.8, duration: 0.8 }}
                 >
                   <motion.div
                     className="relative"
                     onClick={() => scrollToSection('experience')}
-                    whileHover={{ scale: 1.1 }}
+                    whileHover={!isLowPerformanceDevice ? { scale: 1.1 } : { scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     style={{ cursor: 'pointer' }}
                   >
-                    <motion.div
-                      className="absolute -inset-2 rounded-full bg-gray-50/50 z-0"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      whileHover={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.2 }}
-                    />
-                    <motion.div
-                      className="flex items-center relative z-10"
-                    >
+                    {!isLowPerformanceDevice && !prefersReducedMotion ? (
                       <motion.div
-                        animate={{
-                          y: [0, 8, 0],
-                          opacity: [0.5, 1, 0.5]
-                        }}
-                        transition={{
-                          repeat: Infinity,
-                          duration: 2,
-                          ease: "easeInOut"
-                        }}
-                      >
-                        <ArrowDown className="w-5 h-5 mr-2 text-teal-500" />
-                      </motion.div>
+                        className="absolute -inset-2 rounded-full bg-gray-50/50 z-0"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        whileHover={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2 }}
+                      />
+                    ) : (
+                      <div className="absolute -inset-2 rounded-full bg-gray-50/30 z-0 opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                    )}
+                    <div className="flex items-center relative z-10">
+                      {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                        <motion.div
+                          animate={{
+                            y: [0, 5, 0],
+                            opacity: [0.6, 1, 0.6]
+                          }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 2.5,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          <ArrowDown className="w-5 h-5 mr-2 text-teal-500" />
+                        </motion.div>
+                      ) : (
+                        <div className="w-5 h-5 mr-2 text-teal-500">
+                          <ArrowDown className="w-5 h-5" />
+                        </div>
+                      )}
                       <span className="font-medium">Scroll to explore</span>
-                    </motion.div>
+                    </div>
                   </motion.div>
                 </motion.div>
               </ScrollReveal>
@@ -419,22 +504,26 @@ const Hero = () => {
                     <div className="mb-6 flex items-center">
                       <motion.div
                         className="w-16 h-16 rounded-full overflow-hidden mr-4 border-2 border-teal-200 shadow-md relative"
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                        whileHover={!isLowPerformanceDevice ? { scale: 1.05 } : { scale: 1.02 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 15 }}
                       >
-                        {/* Glow effect */}
-                        <motion.div
-                          className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-blue-400 rounded-full blur-md opacity-30 -z-10"
-                          animate={{
-                            opacity: [0.2, 0.4, 0.2],
-                            scale: [0.95, 1.05, 0.95]
-                          }}
-                          transition={{
-                            duration: 4,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                          }}
-                        />
+                        {/* Glow effect - conditionally rendered based on device performance */}
+                        {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                          <motion.div
+                            className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-blue-400 rounded-full blur-md opacity-30 -z-10"
+                            animate={{
+                              opacity: [0.2, 0.3, 0.2],
+                              scale: [0.97, 1.03, 0.97]
+                            }}
+                            transition={{
+                              duration: 5,
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
+                          />
+                        ) : (
+                          <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-blue-400 rounded-full blur-md opacity-20 -z-10" />
+                        )}
 
                         <img
                           src="/images/developer-portrait.jpg"
@@ -455,31 +544,30 @@ const Hero = () => {
                       </div>
                     </div>
 
-                    {/* Enhanced work preview images with 3D effect */}
+                    {/* Enhanced work preview images with optimized 3D effect */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                       <motion.div
                         className="group relative overflow-hidden rounded-xl aspect-video shadow-md"
-                        whileHover={{
-                          rotateY: 5,
-                          rotateX: -5,
-                          scale: 1.05,
-                          z: 10,
-                          boxShadow: "0 20px 30px -10px rgba(0, 0, 0, 0.2)"
+                        whileHover={!isLowPerformanceDevice && !prefersReducedMotion ? {
+                          rotateY: 3,
+                          rotateX: -3,
+                          scale: 1.03,
+                          z: 5,
+                          boxShadow: "0 15px 25px -10px rgba(0, 0, 0, 0.2)"
+                        } : {
+                          scale: 1.02,
+                          boxShadow: "0 10px 15px -5px rgba(0, 0, 0, 0.1)"
                         }}
-                        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
                       >
                         <img
                           src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000"
                           alt="Coding preview"
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          className={`w-full h-full object-cover ${!isLowPerformanceDevice ? "transition-transform duration-500 group-hover:scale-105" : ""}`}
+                          loading="eager"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end">
-                          <motion.div
-                            className="p-4 text-white w-full"
-                            initial={{ y: 20, opacity: 0 }}
-                            whileHover={{ y: 0, opacity: 1 }}
-                            transition={{ duration: 0.2, delay: 0.1 }}
-                          >
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+                          <div className="p-4 text-white w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                             <div className="flex items-center">
                               <div className="p-2 bg-teal-500/80 rounded-full mr-3">
                                 <Code className="w-4 h-4" />
@@ -489,33 +577,32 @@ const Hero = () => {
                                 <span className="text-xs text-gray-200">Frontend & Backend</span>
                               </div>
                             </div>
-                          </motion.div>
+                          </div>
                         </div>
                       </motion.div>
 
                       <motion.div
                         className="group relative overflow-hidden rounded-xl aspect-video shadow-md"
-                        whileHover={{
-                          rotateY: -5,
-                          rotateX: -5,
-                          scale: 1.05,
-                          z: 10,
-                          boxShadow: "0 20px 30px -10px rgba(0, 0, 0, 0.2)"
+                        whileHover={!isLowPerformanceDevice && !prefersReducedMotion ? {
+                          rotateY: -3,
+                          rotateX: -3,
+                          scale: 1.03,
+                          z: 5,
+                          boxShadow: "0 15px 25px -10px rgba(0, 0, 0, 0.2)"
+                        } : {
+                          scale: 1.02,
+                          boxShadow: "0 10px 15px -5px rgba(0, 0, 0, 0.1)"
                         }}
-                        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
                       >
                         <img
                           src="https://images.unsplash.com/photo-1607799279861-4dd421887fb3?q=80&w=1000"
                           alt="Testing preview"
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          className={`w-full h-full object-cover ${!isLowPerformanceDevice ? "transition-transform duration-500 group-hover:scale-105" : ""}`}
+                          loading="eager"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end">
-                          <motion.div
-                            className="p-4 text-white w-full"
-                            initial={{ y: 20, opacity: 0 }}
-                            whileHover={{ y: 0, opacity: 1 }}
-                            transition={{ duration: 0.2, delay: 0.1 }}
-                          >
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+                          <div className="p-4 text-white w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                             <div className="flex items-center">
                               <div className="p-2 bg-blue-500/80 rounded-full mr-3">
                                 <TestTube className="w-4 h-4" />
@@ -525,7 +612,7 @@ const Hero = () => {
                                 <span className="text-xs text-gray-200">Automation & QA</span>
                               </div>
                             </div>
-                          </motion.div>
+                          </div>
                         </div>
                       </motion.div>
                     </div>
@@ -538,18 +625,22 @@ const Hero = () => {
 
                       <h4 className="text-sm font-semibold mb-4 text-gray-700 flex items-center">
                         <span className="bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">Technologies I work with</span>
-                        <motion.div
-                          className="ml-2 w-1.5 h-1.5 rounded-full bg-teal-500"
-                          animate={{
-                            scale: [1, 1.5, 1],
-                            opacity: [0.5, 1, 0.5]
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                          }}
-                        />
+                        {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                          <motion.div
+                            className="ml-2 w-1.5 h-1.5 rounded-full bg-teal-500"
+                            animate={{
+                              scale: [1, 1.3, 1],
+                              opacity: [0.5, 0.8, 0.5]
+                            }}
+                            transition={{
+                              duration: 3,
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
+                          />
+                        ) : (
+                          <div className="ml-2 w-1.5 h-1.5 rounded-full bg-teal-500 opacity-70" />
+                        )}
                       </h4>
 
                       <div className="flex flex-wrap gap-3">
@@ -557,139 +648,184 @@ const Hero = () => {
                           <motion.div
                             key={index}
                             className="bg-white/80 backdrop-blur-sm rounded-lg p-2 shadow-sm flex items-center gap-2 border border-gray-100"
-                            whileHover={{
-                              y: -5,
-                              scale: 1.05,
-                              boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                            whileHover={!isLowPerformanceDevice ? {
+                              y: -3,
+                              scale: 1.03,
+                              boxShadow: "0 8px 12px -3px rgba(0,0,0,0.1)",
                               background: "rgba(255, 255, 255, 0.95)"
+                            } : {
+                              y: -2,
+                              scale: 1.02
                             }}
-                            initial={{ opacity: 0, y: 10 }}
+                            initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{
                               type: "spring",
-                              stiffness: 300,
-                              damping: 15,
-                              delay: 0.5 + (index * 0.1)
+                              stiffness: 250,
+                              damping: 20,
+                              delay: 0.3 + (Math.min(index, 3) * 0.1) // Limit delay multiplication for better performance
                             }}
                           >
-                            <img src={tech.icon} alt={tech.name} className="w-5 h-5" />
+                            <img
+                              src={tech.icon}
+                              alt={tech.name}
+                              className="w-5 h-5"
+                              loading="eager"
+                            />
                             <span className="text-xs font-medium text-gray-700">{tech.name}</span>
                           </motion.div>
                         ))}
                       </div>
                     </div>
 
-                    {/* Enhanced stats with animation */}
+                    {/* Enhanced stats with optimized animation */}
                     <div className="grid grid-cols-3 gap-4">
                       <motion.div
                         className="bg-gradient-to-br from-teal-50 to-teal-100/50 rounded-xl p-3 text-center border border-teal-100/50 shadow-sm relative overflow-hidden"
-                        whileHover={{
-                          y: -5,
-                          boxShadow: "0 15px 30px -5px rgba(0, 0, 0, 0.1)"
+                        whileHover={!isLowPerformanceDevice ? {
+                          y: -3,
+                          boxShadow: "0 12px 20px -5px rgba(0, 0, 0, 0.1)"
+                        } : {
+                          y: -2
                         }}
-                        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
                       >
-                        <motion.div
-                          className="absolute inset-0 bg-teal-200/20 -z-10"
-                          initial={{ y: "100%" }}
-                          whileHover={{ y: 0 }}
-                          transition={{ duration: 0.3 }}
-                        />
-                        <motion.div
-                          className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-teal-500 bg-clip-text text-transparent"
-                          animate={{ scale: [1, 1.1, 1] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        >1+</motion.div>
+                        {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                          <motion.div
+                            className="absolute inset-0 bg-teal-200/20 -z-10"
+                            initial={{ y: "100%" }}
+                            whileHover={{ y: 0 }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-teal-200/10 -z-10 transform translate-y-full hover:translate-y-0 transition-transform duration-300" />
+                        )}
+                        {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                          <motion.div
+                            className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-teal-500 bg-clip-text text-transparent"
+                            animate={{ scale: [1, 1.05, 1] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                          >1+</motion.div>
+                        ) : (
+                          <div className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-teal-500 bg-clip-text text-transparent">1+</div>
+                        )}
                         <div className="text-xs text-gray-600 font-medium">Years Experience</div>
                       </motion.div>
 
                       <motion.div
                         className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-3 text-center border border-blue-100/50 shadow-sm relative overflow-hidden"
-                        whileHover={{
-                          y: -5,
-                          boxShadow: "0 15px 30px -5px rgba(0, 0, 0, 0.1)"
+                        whileHover={!isLowPerformanceDevice ? {
+                          y: -3,
+                          boxShadow: "0 12px 20px -5px rgba(0, 0, 0, 0.1)"
+                        } : {
+                          y: -2
                         }}
-                        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
                       >
-                        <motion.div
-                          className="absolute inset-0 bg-blue-200/20 -z-10"
-                          initial={{ y: "100%" }}
-                          whileHover={{ y: 0 }}
-                          transition={{ duration: 0.3 }}
-                        />
-                        <motion.div
-                          className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent"
-                          animate={{ scale: [1, 1.1, 1] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-                        >5+</motion.div>
+                        {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                          <motion.div
+                            className="absolute inset-0 bg-blue-200/20 -z-10"
+                            initial={{ y: "100%" }}
+                            whileHover={{ y: 0 }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-blue-200/10 -z-10 transform translate-y-full hover:translate-y-0 transition-transform duration-300" />
+                        )}
+                        {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                          <motion.div
+                            className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent"
+                            animate={{ scale: [1, 1.05, 1] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+                          >5+</motion.div>
+                        ) : (
+                          <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">5+</div>
+                        )}
                         <div className="text-xs text-gray-600 font-medium">Projects</div>
                       </motion.div>
 
                       <motion.div
                         className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-3 text-center border border-purple-100/50 shadow-sm relative overflow-hidden"
-                        whileHover={{
-                          y: -5,
-                          boxShadow: "0 15px 30px -5px rgba(0, 0, 0, 0.1)"
+                        whileHover={!isLowPerformanceDevice ? {
+                          y: -3,
+                          boxShadow: "0 12px 20px -5px rgba(0, 0, 0, 0.1)"
+                        } : {
+                          y: -2
                         }}
-                        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
                       >
-                        <motion.div
-                          className="absolute inset-0 bg-purple-200/20 -z-10"
-                          initial={{ y: "100%" }}
-                          whileHover={{ y: 0 }}
-                          transition={{ duration: 0.3 }}
-                        />
-                        <motion.div
-                          className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent"
-                          animate={{ scale: [1, 1.1, 1] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
-                        >100%</motion.div>
+                        {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                          <motion.div
+                            className="absolute inset-0 bg-purple-200/20 -z-10"
+                            initial={{ y: "100%" }}
+                            whileHover={{ y: 0 }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-purple-200/10 -z-10 transform translate-y-full hover:translate-y-0 transition-transform duration-300" />
+                        )}
+                        {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                          <motion.div
+                            className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent"
+                            animate={{ scale: [1, 1.05, 1] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+                          >100%</motion.div>
+                        ) : (
+                          <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">100%</div>
+                        )}
                         <div className="text-xs text-gray-600 font-medium">Satisfaction</div>
                       </motion.div>
                     </div>
                   </div>
                 </div>
 
-                {/* Enhanced decorative elements with animation */}
-                <motion.div
-                  className="absolute -z-10 -top-6 -right-6 w-32 h-32 bg-gradient-to-br from-teal-100/50 to-teal-50/80 rounded-full blur-sm"
-                  animate={{
-                    scale: [1, 1.1, 1],
-                    rotate: [0, 10, 0]
-                  }}
-                  transition={{
-                    duration: 8,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                />
-                <motion.div
-                  className="absolute -z-10 -bottom-6 -left-6 w-32 h-32 bg-gradient-to-tr from-blue-100/50 to-blue-50/80 rounded-full blur-sm"
-                  animate={{
-                    scale: [1, 1.15, 1],
-                    rotate: [0, -10, 0]
-                  }}
-                  transition={{
-                    duration: 10,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                />
-
-                {/* Additional decorative elements */}
-                <motion.div
-                  className="absolute -z-10 top-1/2 right-1/3 w-16 h-16 bg-gradient-to-tr from-purple-100/30 to-purple-50/50 rounded-full blur-sm"
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.3, 0.6, 0.3]
-                  }}
-                  transition={{
-                    duration: 6,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 1
-                  }}
-                />
+                {/* Enhanced decorative elements with optimized animation */}
+                {!isLowPerformanceDevice && !prefersReducedMotion ? (
+                  <>
+                    <motion.div
+                      className="absolute -z-10 -top-6 -right-6 w-32 h-32 bg-gradient-to-br from-teal-100/50 to-teal-50/80 rounded-full blur-sm"
+                      animate={{
+                        scale: [1, 1.05, 1],
+                        rotate: [0, 5, 0]
+                      }}
+                      transition={{
+                        duration: 10,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                    <motion.div
+                      className="absolute -z-10 -bottom-6 -left-6 w-32 h-32 bg-gradient-to-tr from-blue-100/50 to-blue-50/80 rounded-full blur-sm"
+                      animate={{
+                        scale: [1, 1.08, 1],
+                        rotate: [0, -5, 0]
+                      }}
+                      transition={{
+                        duration: 12,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                    <motion.div
+                      className="absolute -z-10 top-1/2 right-1/3 w-16 h-16 bg-gradient-to-tr from-purple-100/30 to-purple-50/50 rounded-full blur-sm"
+                      animate={{
+                        scale: [1, 1.1, 1],
+                        opacity: [0.3, 0.5, 0.3]
+                      }}
+                      transition={{
+                        duration: 8,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="absolute -z-10 -top-6 -right-6 w-32 h-32 bg-gradient-to-br from-teal-100/50 to-teal-50/80 rounded-full blur-sm" />
+                    <div className="absolute -z-10 -bottom-6 -left-6 w-32 h-32 bg-gradient-to-tr from-blue-100/50 to-blue-50/80 rounded-full blur-sm" />
+                    <div className="absolute -z-10 top-1/2 right-1/3 w-16 h-16 bg-gradient-to-tr from-purple-100/30 to-purple-50/50 rounded-full blur-sm opacity-30" />
+                  </>
+                )}
               </motion.div>
             </div>
           </div>

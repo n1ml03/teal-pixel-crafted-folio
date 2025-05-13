@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { optimizeForAnimation, cleanupAnimationOptimization } from '@/lib/scroll-optimization';
 
@@ -6,6 +6,7 @@ interface SectionBackgroundProps {
   sectionId: string;
   variant?: 'hero' | 'services' | 'projects' | 'experience' | 'certifications' | 'contact';
   children?: React.ReactNode;
+  optimizeRendering?: boolean; // New prop to enable performance optimizations
 }
 
 /**
@@ -15,9 +16,12 @@ interface SectionBackgroundProps {
 const SectionBackground: React.FC<SectionBackgroundProps> = ({
   sectionId,
   variant = 'hero',
-  children
+  children,
+  optimizeRendering = false
 }) => {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = useState(false);
+  const [hasRenderedOnce, setHasRenderedOnce] = useState(false);
 
   // Use Framer Motion's scroll utilities for section-specific animations with optimized settings
   const { scrollYProgress } = useScroll({
@@ -33,9 +37,42 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
     mass: 0.5       // Lighter mass for more responsive movement
   });
 
+  // Set up intersection observer for optimized rendering
+  useEffect(() => {
+    if (optimizeRendering && sectionRef.current) {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          // Mark as in view when the section is visible
+          setIsInView(entry.isIntersecting);
+
+          // Once it's been in view, remember that for future renders
+          if (entry.isIntersecting) {
+            setHasRenderedOnce(true);
+          }
+        },
+        {
+          rootMargin: '100px 0px', // Start loading slightly before section comes into view
+          threshold: 0.1
+        }
+      );
+
+      observer.observe(sectionRef.current);
+
+      return () => {
+        if (sectionRef.current) {
+          observer.unobserve(sectionRef.current);
+        }
+      };
+    } else {
+      // If not optimizing, always consider it in view
+      setIsInView(true);
+      setHasRenderedOnce(true);
+    }
+  }, [optimizeRendering]);
+
   // Apply optimizations on mount
   useEffect(() => {
-    if (sectionRef.current) {
+    if (sectionRef.current && (isInView || hasRenderedOnce)) {
       // Optimize elements that will animate
       const selector = `#${sectionId} .section-bg-element`;
       optimizeForAnimation(selector, ['transform', 'opacity']);
@@ -45,11 +82,42 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
         cleanupAnimationOptimization(selector);
       };
     }
-  }, [sectionId]);
+  }, [sectionId, isInView, hasRenderedOnce]);
 
   // Transform scroll values for parallax effects with enhanced visibility
   const opacity = useTransform(smoothProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
   const scale = useTransform(smoothProgress, [0, 0.2, 0.8, 1], [0.9, 1.05, 1.05, 0.9]);
+
+  // Pre-define all transform values at the component level to avoid hooks in render functions
+  // Hero section transforms
+  const heroTop = useTransform(smoothProgress, [0, 1], [0, -30]);
+  const heroBottom = useTransform(smoothProgress, [0, 1], [30, 0]);
+  const heroMiddle = useTransform(smoothProgress, [0, 1], [0, 20]);
+
+  // Services section transforms
+  const servicesTop = useTransform(smoothProgress, [0, 1], [20, -20]);
+  const servicesBottom = useTransform(smoothProgress, [0, 1], [-20, 20]);
+  const servicesMiddle = useTransform(smoothProgress, [0, 1], [0, 30]);
+
+  // Projects section transforms
+  const projectsTop = useTransform(smoothProgress, [0, 1], [30, -30]);
+  const projectsBottom = useTransform(smoothProgress, [0, 1], [-20, 20]);
+  const projectsMiddle = useTransform(smoothProgress, [0, 1], [0, 30]);
+
+  // Experience section transforms
+  const experienceTop = useTransform(smoothProgress, [0, 1], [0, -40]);
+  const experienceBottom = useTransform(smoothProgress, [0, 1], [40, 0]);
+  const experienceMiddle = useTransform(smoothProgress, [0, 1], [20, -20]);
+
+  // Certifications section transforms
+  const certificationsTop = useTransform(smoothProgress, [0, 1], [20, -20]);
+  const certificationsBottom = useTransform(smoothProgress, [0, 1], [-20, 20]);
+  const certificationsMiddle = useTransform(smoothProgress, [0, 1], [0, 30]);
+
+  // Contact section transforms
+  const contactTop = useTransform(smoothProgress, [0, 1], [30, -30]);
+  const contactBottom = useTransform(smoothProgress, [0, 1], [-30, 30]);
+  const contactMiddle = useTransform(smoothProgress, [0, 1], [0, 20]);
 
   // Define background elements based on section variant
   const renderBackgroundElements = () => {
@@ -62,7 +130,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [0, -30])
+                y: heroTop
               }}
             />
             <motion.div
@@ -70,7 +138,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [30, 0])
+                y: heroBottom
               }}
             />
             <motion.div
@@ -78,7 +146,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [0, 20])
+                y: heroMiddle
               }}
             />
           </>
@@ -92,7 +160,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [20, -20])
+                y: servicesTop
               }}
             />
             <motion.div
@@ -100,7 +168,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [-20, 20])
+                y: servicesBottom
               }}
             />
             <motion.div
@@ -108,7 +176,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [0, 30])
+                y: servicesMiddle
               }}
             />
           </>
@@ -122,7 +190,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [30, -30])
+                y: projectsTop
               }}
             />
             <motion.div
@@ -130,7 +198,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [-20, 20])
+                y: projectsBottom
               }}
             />
             <motion.div
@@ -138,7 +206,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [0, 30])
+                y: projectsMiddle
               }}
             />
           </>
@@ -152,7 +220,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [0, -40])
+                y: experienceTop
               }}
             />
             <motion.div
@@ -160,7 +228,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [40, 0])
+                y: experienceBottom
               }}
             />
             <motion.div
@@ -168,7 +236,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [20, -20])
+                y: experienceMiddle
               }}
             />
           </>
@@ -182,7 +250,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [20, -20])
+                y: certificationsTop
               }}
             />
             <motion.div
@@ -190,7 +258,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [-20, 20])
+                y: certificationsBottom
               }}
             />
             <motion.div
@@ -198,7 +266,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [0, 30])
+                y: certificationsMiddle
               }}
             />
           </>
@@ -212,7 +280,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [30, -30])
+                y: contactTop
               }}
             />
             <motion.div
@@ -220,7 +288,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [-30, 30])
+                y: contactBottom
               }}
             />
             <motion.div
@@ -228,7 +296,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
               style={{
                 opacity,
                 scale,
-                y: useTransform(smoothProgress, [0, 1], [0, 20])
+                y: contactMiddle
               }}
             />
           </>
@@ -239,11 +307,14 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
     }
   };
 
+  // Only render background elements if section is in view or has been rendered once
+  const shouldRenderBackground = isInView || hasRenderedOnce;
+
   return (
     <div id={sectionId} ref={sectionRef} className="relative">
-      {/* Section-specific background elements */}
+      {/* Section-specific background elements - conditionally rendered for performance */}
       <div className="absolute inset-0 -z-5 overflow-hidden pointer-events-none">
-        {renderBackgroundElements()}
+        {shouldRenderBackground ? renderBackgroundElements() : null}
       </div>
 
       {/* Section content */}

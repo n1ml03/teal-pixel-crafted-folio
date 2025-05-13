@@ -138,7 +138,7 @@ export const resources: Resource[] = [
     category: 'Development',
     url: 'https://reactjs.org/',
     image: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg',
-    tags: ['Frontend', 'JavaScript', 'UI'],
+    tags: ['Frontend', 'JavaScript'],
     featured: true,
     type: 'library',
     pricing: 'open-source',
@@ -180,7 +180,7 @@ export const resources: Resource[] = [
     category: 'Development',
     url: 'https://code.visualstudio.com/',
     image: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vscode/vscode-original.svg',
-    tags: ['Editor', 'IDE', 'Development'],
+    tags: ['IDE', 'Development'],
     featured: true,
     type: 'tool',
     pricing: 'free',
@@ -250,7 +250,7 @@ export const resources: Resource[] = [
     category: 'Development',
     url: 'https://tailwindcss.com/',
     image: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg',
-    tags: ['CSS', 'Frontend', 'Design'],
+    tags: ['Frontend', 'Design'],
     featured: true,
     type: 'framework',
     pricing: 'open-source',
@@ -684,7 +684,7 @@ export const resources: Resource[] = [
     description: 'Datadog is the monitoring and security platform for cloud applications. It brings together data from servers, containers, databases, and third-party services to make your stack entirely observable.',
     category: 'DevOps',
     url: 'https://www.datadoghq.com/',
-    image: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/datadog/datadog-original.svg',
+    image: '/images/datadog.svg',
     tags: ['Monitoring', 'APM', 'Logging', 'Observability', 'Security'],
     featured: false,
     type: 'service',
@@ -726,7 +726,7 @@ export const resources: Resource[] = [
     description: 'For people who make websites. A List Apart explores the design, development, and meaning of web content, with a special focus on web standards and best practices.',
     category: 'Learning',
     url: 'https://alistapart.com/',
-    image: '/images/alistapart.png', // Placeholder for A List Apart logo
+    image: '/images/alistapart.svg', // Placeholder for A List Apart logo
     tags: ['Web Design', 'Web Development', 'Articles', 'Best Practices'],
     featured: false,
     type: 'guide',
@@ -736,20 +736,6 @@ export const resources: Resource[] = [
   },
   {
     id: '48',
-    title: 'Smashing Magazine',
-    description: 'An online magazine for web designers and developers, with a focus on practical, useful information. Delivers reliable, useful, and practical articles to web designers and developers.',
-    category: 'Learning',
-    url: 'https://www.smashingmagazine.com/',
-    image: '/images/smashingmagazine.png', // Placeholder for Smashing Magazine logo
-    tags: ['Web Design', 'Web Development', 'Articles', 'Tutorials', 'UI/UX'],
-    featured: false,
-    type: 'guide',
-    pricing: 'free', // Articles are free, membership for other content
-    difficulty: 'all-levels',
-    lastUpdated: '2024-01-18'
-  },
-  {
-    id: '49',
     title: 'web.dev',
     description: 'Learn to build for the modern web. Get the latest guidance on how to build great web experiences on web.dev.',
     category: 'Learning',
@@ -761,20 +747,6 @@ export const resources: Resource[] = [
     pricing: 'free',
     difficulty: 'all-levels',
     lastUpdated: '2024-01-22'
-  },
-  {
-    id: '50',
-    title: 'Can I use...',
-    description: 'Provides up-to-date browser support tables for support of front-end web technologies on desktop and mobile web browsers.',
-    category: 'Development',
-    url: 'https://caniuse.com/',
-    image: '/images/caniuse.png', // Placeholder for Can I use logo
-    tags: ['Browser Compatibility', 'HTML', 'CSS', 'JavaScript', 'Frontend'],
-    featured: false,
-    type: 'tool',
-    pricing: 'free',
-    difficulty: 'all-levels',
-    lastUpdated: '2024-01-10'
   }
 ];
 
