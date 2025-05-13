@@ -1,11 +1,9 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
-import DemoApp from '@/components/playground/DemoApp';
-import PlaygroundTabs from '@/components/playground/PlaygroundTabs';
 import {
   TestTube,
   Bug,
@@ -22,6 +20,11 @@ import {
 } from 'lucide-react';
 import { MotionButton } from "@/components/ui/motion-button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Lazy load heavy components
+const DemoApp = lazy(() => import('@/components/playground/DemoApp'));
+const PlaygroundTabs = lazy(() => import('@/components/playground/PlaygroundTabs'));
 
 const TestingPlayground: React.FC = () => {
   // Function to handle scroll to section
@@ -184,7 +187,15 @@ const TestingPlayground: React.FC = () => {
                 <ScrollReveal className="flex flex-col">
                   <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
                     <div className="mb-4 transform transition-transform duration-300 hover:scale-[1.01]">
-                      <DemoApp />
+                      <Suspense fallback={
+                        <div className="flex flex-col space-y-3">
+                          <Skeleton className="h-12 w-full rounded-lg" />
+                          <Skeleton className="h-32 w-full rounded-lg" />
+                          <Skeleton className="h-8 w-1/3 rounded-lg" />
+                        </div>
+                      }>
+                        <DemoApp />
+                      </Suspense>
                     </div>
 
                     <motion.div
@@ -237,7 +248,18 @@ const TestingPlayground: React.FC = () => {
                 <ScrollReveal className="flex flex-col">
                   <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
                     <div className="transform transition-transform duration-300 hover:scale-[1.01]">
-                      <PlaygroundTabs />
+                      <Suspense fallback={
+                        <div className="flex flex-col space-y-4">
+                          <div className="flex space-x-2">
+                            <Skeleton className="h-10 w-24 rounded-lg" />
+                            <Skeleton className="h-10 w-24 rounded-lg" />
+                            <Skeleton className="h-10 w-24 rounded-lg" />
+                          </div>
+                          <Skeleton className="h-64 w-full rounded-lg" />
+                        </div>
+                      }>
+                        <PlaygroundTabs />
+                      </Suspense>
                     </div>
                   </div>
                 </ScrollReveal>

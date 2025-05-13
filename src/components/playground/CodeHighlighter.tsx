@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MotionButton } from "@/components/ui/motion-button";
 import { toast } from "@/components/ui/sonner";
@@ -12,13 +12,15 @@ import {
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+// Import all themes but use them selectively
 import {
+  oneDark,
   vscDarkPlus,
   atomDark,
   dracula,
-  materialDark,
-  oneDark
+  materialDark
 } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
 
 interface CodeHighlighterProps {
   code: string;
@@ -65,7 +67,7 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
     navigator.clipboard.writeText(code);
     setCopied(true);
     toast.success('Code copied to clipboard!');
-    
+
     // Reset copied state after 2 seconds
     setTimeout(() => {
       setCopied(false);
@@ -82,8 +84,10 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
     const themes: CodeHighlighterProps['theme'][] = ['vscDarkPlus', 'atomDark', 'dracula', 'materialDark', 'oneDark'];
     const currentIndex = themes.indexOf(currentTheme);
     const nextIndex = (currentIndex + 1) % themes.length;
-    setCurrentTheme(themes[nextIndex]);
-    toast.success(`Theme changed to ${themes[nextIndex]}`);
+    const nextTheme = themes[nextIndex];
+
+    setCurrentTheme(nextTheme);
+    toast.success(`Theme changed to ${nextTheme}`);
   };
 
   // Function to get language-specific header color
@@ -160,7 +164,7 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
               Docs
             </MotionButton>
           )}
-          
+
           <MotionButton
             size="sm"
             variant="outline"
@@ -172,7 +176,7 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
             <span className="h-3.5 w-3.5 mr-1 flex items-center justify-center">🎨</span>
             Theme
           </MotionButton>
-          
+
           <MotionButton
             size="sm"
             variant="outline"
@@ -193,7 +197,7 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
               </>
             )}
           </MotionButton>
-          
+
           <MotionButton
             size="sm"
             variant="outline"
@@ -214,7 +218,7 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
               </>
             )}
           </MotionButton>
-          
+
           {expanded && (
             <MotionButton
               size="sm"
@@ -229,10 +233,10 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
           )}
         </div>
       </div>
-      
+
       {/* Code content with syntax highlighting */}
-      <div 
-        className={`overflow-auto ${expanded ? 'flex-grow' : ''}`} 
+      <div
+        className={`overflow-auto ${expanded ? 'flex-grow' : ''}`}
         style={{ maxHeight: expanded ? 'none' : maxHeight }}
       >
         <ReactMarkdown
@@ -240,7 +244,7 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
             code({ node, inline, className, children, ...props }) {
               const match = /language-(\w+)/.exec(className || '');
               const lang = match ? match[1] : language;
-              
+
               return !inline ? (
                 <SyntaxHighlighter
                   style={getTheme()}

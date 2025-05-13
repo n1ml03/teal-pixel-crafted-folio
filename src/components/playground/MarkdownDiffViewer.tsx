@@ -13,11 +13,11 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import {
+  oneDark,
   vscDarkPlus,
   atomDark,
   dracula,
-  materialDark,
-  oneDark
+  materialDark
 } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface MarkdownDiffViewerProps {
@@ -69,7 +69,7 @@ const MarkdownDiffViewer: React.FC<MarkdownDiffViewerProps> = ({
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     toast.success('Code copied to clipboard!');
-    
+
     // Reset copied state after 2 seconds
     setTimeout(() => {
       setCopied(false);
@@ -91,8 +91,10 @@ const MarkdownDiffViewer: React.FC<MarkdownDiffViewerProps> = ({
     const themes: MarkdownDiffViewerProps['theme'][] = ['vscDarkPlus', 'atomDark', 'dracula', 'materialDark', 'oneDark'];
     const currentIndex = themes.indexOf(currentTheme);
     const nextIndex = (currentIndex + 1) % themes.length;
-    setCurrentTheme(themes[nextIndex]);
-    toast.success(`Theme changed to ${themes[nextIndex]}`);
+    const nextTheme = themes[nextIndex];
+
+    setCurrentTheme(nextTheme);
+    toast.success(`Theme changed to ${nextTheme}`);
   };
 
   return (
@@ -114,7 +116,7 @@ const MarkdownDiffViewer: React.FC<MarkdownDiffViewerProps> = ({
             <ArrowLeftRight className="h-3.5 w-3.5 mr-1" />
             {viewMode === 'unified' ? 'Split View' : 'Unified View'}
           </MotionButton>
-          
+
           <MotionButton
             size="sm"
             variant="outline"
@@ -126,7 +128,7 @@ const MarkdownDiffViewer: React.FC<MarkdownDiffViewerProps> = ({
             <span className="h-3.5 w-3.5 mr-1 flex items-center justify-center">🎨</span>
             Theme
           </MotionButton>
-          
+
           <MotionButton
             size="sm"
             variant="outline"
@@ -147,7 +149,7 @@ const MarkdownDiffViewer: React.FC<MarkdownDiffViewerProps> = ({
               </>
             )}
           </MotionButton>
-          
+
           <MotionButton
             size="sm"
             variant="outline"
@@ -168,7 +170,7 @@ const MarkdownDiffViewer: React.FC<MarkdownDiffViewerProps> = ({
               </>
             )}
           </MotionButton>
-          
+
           {expanded && (
             <MotionButton
               size="sm"
@@ -183,10 +185,10 @@ const MarkdownDiffViewer: React.FC<MarkdownDiffViewerProps> = ({
           )}
         </div>
       </div>
-      
+
       {/* Code content with syntax highlighting */}
-      <div 
-        className={`overflow-auto ${expanded ? 'flex-grow' : ''}`} 
+      <div
+        className={`overflow-auto ${expanded ? 'flex-grow' : ''}`}
         style={{ maxHeight: expanded ? 'none' : maxHeight }}
       >
         {viewMode === 'unified' ? (
@@ -197,22 +199,30 @@ const MarkdownDiffViewer: React.FC<MarkdownDiffViewerProps> = ({
                 components={{
                   code({ node, inline, className, children, ...props }) {
                     return !inline ? (
-                      <SyntaxHighlighter
-                        style={getTheme()}
-                        language={language}
-                        showLineNumbers={showLineNumbers}
-                        wrapLines={true}
-                        customStyle={{
-                          margin: 0,
-                          borderRadius: 0,
-                          fontSize: '0.9rem',
-                          lineHeight: 1.5,
-                          backgroundColor: 'transparent'
-                        }}
-                        {...props}
-                      >
-                        {String(children).replace(/\n$/, '')}
-                      </SyntaxHighlighter>
+                      isLoadingTheme ? (
+                        <div className="bg-gray-900 p-4 animate-pulse">
+                          <Skeleton className="h-4 w-full mb-2" />
+                          <Skeleton className="h-4 w-full mb-2" />
+                          <Skeleton className="h-4 w-3/4" />
+                        </div>
+                      ) : (
+                        <SyntaxHighlighter
+                          style={themeStyle}
+                          language={language}
+                          showLineNumbers={showLineNumbers}
+                          wrapLines={true}
+                          customStyle={{
+                            margin: 0,
+                            borderRadius: 0,
+                            fontSize: '0.9rem',
+                            lineHeight: 1.5,
+                            backgroundColor: 'transparent'
+                          }}
+                          {...props}
+                        >
+                          {String(children).replace(/\n$/, '')}
+                        </SyntaxHighlighter>
+                      )
                     ) : (
                       <code className="bg-gray-800 text-gray-200 px-1 py-0.5 rounded text-sm" {...props}>
                         {children}
@@ -224,7 +234,7 @@ const MarkdownDiffViewer: React.FC<MarkdownDiffViewerProps> = ({
                 {`\`\`\`${language}\n${beforeCode}\n\`\`\``}
               </ReactMarkdown>
             </div>
-            
+
             <div className="p-4">
               <div className="text-green-400 font-medium mb-2">After:</div>
               <ReactMarkdown
@@ -294,7 +304,7 @@ const MarkdownDiffViewer: React.FC<MarkdownDiffViewerProps> = ({
                 {`\`\`\`${language}\n${beforeCode}\n\`\`\``}
               </ReactMarkdown>
             </div>
-            
+
             <div className="bg-gray-900 p-4">
               <div className="text-green-400 font-medium mb-2">After:</div>
               <ReactMarkdown

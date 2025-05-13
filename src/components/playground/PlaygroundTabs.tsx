@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from 'framer-motion';
 import {
@@ -11,16 +11,54 @@ import {
   Diff,
   FileCheck
 } from 'lucide-react';
-import TestCasesPanel from './TestCasesPanel';
-import BugReportsPanel from './BugReportsPanel';
-import AutomationPanel from './AutomationPanel';
-import TestRunner from './TestRunner';
-import TestCaseBuilder from './TestCaseBuilder';
-import BugComparison from './BugComparison';
-import TestReportGenerator from './TestReportGenerator';
 import { testCases, bugReports, automationScripts } from '@/data/testing-playground';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Skeleton component for tab content loading state
+const TabContentSkeleton = () => (
+  <div className="space-y-4 animate-pulse">
+    <div className="flex items-center mb-4">
+      <Skeleton className="h-5 w-5 mr-2 rounded-full" />
+      <Skeleton className="h-6 w-48 rounded-md" />
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {[1, 2, 3, 4].map((i) => (
+        <Card key={i} className="border border-gray-200 shadow-sm">
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center">
+                <Skeleton className="h-4 w-12 mr-2 rounded-md" />
+                <Skeleton className="h-5 w-32 rounded-md" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full rounded-md" />
+              <Skeleton className="h-4 w-full rounded-md" />
+              <Skeleton className="h-4 w-3/4 rounded-md" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  </div>
+);
+
+// Lazy load heavy components
+const TestCasesPanel = lazy(() => import('./TestCasesPanel'));
+const BugReportsPanel = lazy(() => import('./BugReportsPanel'));
+const AutomationPanel = lazy(() => import('./AutomationPanel'));
+const TestRunner = lazy(() => import('./TestRunner'));
+const TestCaseBuilder = lazy(() => import('./TestCaseBuilder'));
+const BugComparison = lazy(() => import('./BugComparison'));
+const TestReportGenerator = lazy(() => import('./TestReportGenerator'));
 
 const PlaygroundTabs: React.FC = () => {
   return (
@@ -85,31 +123,45 @@ const PlaygroundTabs: React.FC = () => {
       </TabsList>
 
       <TabsContent value="test-cases" className="mt-0">
-        <TestCasesPanel testCases={testCases} />
+        <Suspense fallback={<TabContentSkeleton />}>
+          <TestCasesPanel testCases={testCases} />
+        </Suspense>
       </TabsContent>
 
       <TabsContent value="bug-reports" className="mt-0">
-        <BugReportsPanel bugReports={bugReports} />
+        <Suspense fallback={<TabContentSkeleton />}>
+          <BugReportsPanel bugReports={bugReports} />
+        </Suspense>
       </TabsContent>
 
       <TabsContent value="automation" className="mt-0">
-        <AutomationPanel automationScripts={automationScripts} />
+        <Suspense fallback={<TabContentSkeleton />}>
+          <AutomationPanel automationScripts={automationScripts} />
+        </Suspense>
       </TabsContent>
 
       <TabsContent value="test-runner" className="mt-0">
-        <TestRunner />
+        <Suspense fallback={<TabContentSkeleton />}>
+          <TestRunner />
+        </Suspense>
       </TabsContent>
 
       <TabsContent value="test-builder" className="mt-0">
-        <TestCaseBuilder />
+        <Suspense fallback={<TabContentSkeleton />}>
+          <TestCaseBuilder />
+        </Suspense>
       </TabsContent>
 
       <TabsContent value="bug-comparison" className="mt-0">
-        <BugComparison />
+        <Suspense fallback={<TabContentSkeleton />}>
+          <BugComparison />
+        </Suspense>
       </TabsContent>
 
       <TabsContent value="report-generator" className="mt-0">
-        <TestReportGenerator />
+        <Suspense fallback={<TabContentSkeleton />}>
+          <TestReportGenerator />
+        </Suspense>
       </TabsContent>
 
       <TabsContent value="hints" className="mt-0">
