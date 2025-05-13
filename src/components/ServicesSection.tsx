@@ -126,12 +126,6 @@ const ServicesSection = () => {
       <div className="container mx-auto px-4">
         {/* Section header */}
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <Badge
-            variant="secondary"
-            className="mb-4 bg-teal-50 text-teal-700 hover:bg-teal-100 px-4 py-1.5 text-sm font-medium"
-          >
-            What I Offer
-          </Badge>
           <motion.h2
             className="text-4xl font-bold mb-4 text-gray-800 relative inline-block"
             initial={{ opacity: 0, y: 20 }}

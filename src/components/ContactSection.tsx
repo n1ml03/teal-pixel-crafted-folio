@@ -114,12 +114,6 @@ const ContactSection = () => {
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <Badge
-              variant="secondary"
-              className="mb-4 bg-teal-50 text-teal-700 hover:bg-teal-100 px-4 py-1.5 text-sm font-medium"
-            >
-              Get in Touch
-            </Badge>
             <h2 className="text-4xl font-bold mb-4 text-gray-800 relative inline-block">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-teal-400">
                 Let's collaborate on your next project
