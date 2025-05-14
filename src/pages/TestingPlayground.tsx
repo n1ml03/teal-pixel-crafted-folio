@@ -9,22 +9,18 @@ import {
   Bug,
   Code,
   Sparkles,
-  ArrowRight,
   CheckCircle2,
   Wrench,
   Braces,
-  Search,
   Play,
-  FileCheck,
-  MousePointerClick
+  ListChecks,
+  FileText
 } from 'lucide-react';
-import { MotionButton } from "@/components/ui/motion-button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Lazy load heavy components
-const DemoApp = lazy(() => import('@/components/playground/DemoApp'));
-const PlaygroundTabs = lazy(() => import('@/components/playground/PlaygroundTabs'));
+// Lazy load heavy components - optimized for better performance
+const IntegratedTestingEnvironment = lazy(() => import('@/components/playground/IntegratedTestingEnvironment'));
 
 const TestingPlayground: React.FC = () => {
   // Function to handle scroll to section
@@ -39,25 +35,57 @@ const TestingPlayground: React.FC = () => {
     <div className="flex flex-col min-h-screen">
       <Header />
       <div className="relative">
-        {/* Optimized background for better performance */}
+        {/* Enhanced background for consistent styling across all sections */}
         <EnhancedBackground optimizeForLowPerformance={true} />
 
-        <main id="main-content" className="flex-grow relative z-10">
-          {/* Hero Section - Styled like Resources page but wider */}
-          <section id="hero" className="relative py-32 overflow-hidden">
+        <main id="main-content" className="pt-24 pb-16">
+          {/* Hero Section*/}
+          <section id="hero" className="relative py-24 overflow-hidden">
+            {/* Consistent animated background elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <motion.div
+                className="absolute top-20 right-10 w-72 h-72 rounded-full bg-teal-100/30 blur-3xl"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.5, 0.3],
+                  x: [0, -30, 0],
+                  y: [0, 30, 0]
+                }}
+                transition={{
+                  duration: 15,
+                  repeat: Infinity,
+                  repeatType: "reverse"
+                }}
+              />
+              <motion.div
+                className="absolute bottom-20 left-10 w-64 h-64 rounded-full bg-blue-100/30 blur-3xl"
+                animate={{
+                  scale: [1, 1.3, 1],
+                  opacity: [0.2, 0.4, 0.2],
+                  x: [0, 40, 0],
+                  y: [0, -40, 0]
+                }}
+                transition={{
+                  duration: 18,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  delay: 2
+                }}
+              />
+            </div>
             <div className="container mx-auto px-4 relative z-10">
               <ScrollReveal>
-                <div className="text-center max-w-5xl mx-auto">
+                <div className="text-center max-w-4xl mx-auto">
                   <Badge
                     variant="secondary"
-                    className="mb-6 bg-teal-50 text-teal-700 hover:bg-teal-100 px-5 py-2 text-base font-medium items-center inline-flex rounded-full"
+                    className="mb-4 bg-teal-50 text-teal-700 hover:bg-teal-100 px-4 py-1.5 text-sm font-medium item-center"
                   >
-                    <TestTube className="w-5 h-5 mr-2 text-teal-500" />
-                    INTERACTIVE EXPERIENCE
+                    <TestTube className="w-4 h-4 mr-2 text-teal-500" />
+                    TESTING PLAYGROUND
                   </Badge>
 
                   <motion.h1
-                    className="text-5xl md:text-5xl lg:text-7xl font-bold mb-8 leading-tight"
+                    className="text-5xl md:text-5xl font-bold mb-6 leading-tight"
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
@@ -68,320 +96,438 @@ const TestingPlayground: React.FC = () => {
                   </motion.h1>
 
                   <motion.p
-                    className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto"
+                    className="text-lg text-gray-600 mb-8"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
                   >
-                    Experience how a QA engineer thinks and works. Explore the demo app, run tests, create test cases,
-                    compare bug fixes, generate reports, and learn about testing methodologies.
+                    Experience how a QA engineer thinks and works. Run tests, create test cases, and learn about testing methodologies.
                   </motion.p>
 
                   {/* Feature badges */}
                   <motion.div
-                    className="flex flex-wrap justify-center gap-4 mb-12"
+                    className="flex flex-wrap justify-center gap-4 mt-12"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.3 }}
                   >
-                    <Badge className="bg-purple-100 text-purple-800 border-purple-200 py-2 px-4 flex items-center shadow-sm transition-all duration-200 border hover:bg-purple-200">
-                      <Bug className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="text-sm font-medium">Bug Fixing</span>
-                    </Badge>
-
-                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 py-2 px-4 flex items-center shadow-sm transition-all duration-200 border hover:bg-blue-200">
-                      <CheckCircle2 className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="text-sm font-medium">Test Case Writing</span>
-                    </Badge>
-
-                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 py-2 px-4 flex items-center shadow-sm transition-all duration-200 border hover:bg-amber-200">
-                      <Search className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="text-sm font-medium">Exploratory Testing</span>
-                    </Badge>
-
-                    <Badge className="bg-green-100 text-green-800 border-green-200 py-2 px-4 flex items-center shadow-sm transition-all duration-200 border hover:bg-green-200">
-                      <Code className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="text-sm font-medium">Automation Testing</span>
-                    </Badge>
-
-                    <Badge className="bg-red-100 text-red-800 border-red-200 py-2 px-4 flex items-center shadow-sm transition-all duration-200 border hover:bg-red-200">
-                      <Play className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="text-sm font-medium">Test Execution</span>
-                    </Badge>
-
-                    <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 py-2 px-4 flex items-center shadow-sm transition-all duration-200 border hover:bg-indigo-200">
-                      <FileCheck className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="text-sm font-medium">Report Generation</span>
-                    </Badge>
+                    {[
+                      { icon: <Bug className="w-4 h-4" />, text: "Bug Fixing" },
+                      { icon: <CheckCircle2 className="w-4 h-4" />, text: "Test Case Writing" },
+                      { icon: <Code className="w-4 h-4" />, text: "Automation Testing" }
+                    ].map((item, index) => (
+                      <Badge
+                        key={index}
+                        className="bg-white/80 text-gray-700 border-gray-200 py-2 px-4 flex items-center shadow-sm transition-all duration-200 border hover:bg-gray-50"
+                      >
+                        <span className="text-teal-500 mr-2">{item.icon}</span>
+                        <span className="text-sm font-medium">{item.text}</span>
+                      </Badge>
+                    ))}
                   </motion.div>
-
-                  {/* Quick navigation buttons */}
-                  <div className="flex flex-wrap justify-center gap-5 mt-12">
-                    <MotionButton
-                      onClick={() => scrollToSection('demo-app')}
-                      className="bg-gradient-to-r from-teal-500 to-teal-600 text-white px-8 py-3 rounded-lg shadow-md flex items-center text-lg"
-                      whileHover={{
-                        scale: 1.05,
-                        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.15)",
-                        background: "linear-gradient(to right, #0d9488, #0891b2)"
-                      }}
-                    >
-                      <MousePointerClick className="h-5 w-5 mr-2" />
-                      Try Demo App
-                    </MotionButton>
-                    <MotionButton
-                      onClick={() => scrollToSection('qa-artifacts')}
-                      className="bg-white text-blue-700 border border-blue-200 px-8 py-3 rounded-lg shadow-sm flex items-center text-lg"
-                      whileHover={{
-                        scale: 1.05,
-                        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.1)",
-                        backgroundColor: "#f0f9ff"
-                      }}
-                    >
-                      <Braces className="h-5 w-5 mr-2" />
-                      View QA Artifacts
-                    </MotionButton>
-                    <MotionButton
-                      onClick={() => scrollToSection('tools-skills')}
-                      className="bg-white text-purple-700 border border-purple-200 px-8 py-3 rounded-lg shadow-sm flex items-center text-lg"
-                      whileHover={{
-                        scale: 1.05,
-                        boxShadow: "0 8px 20px rgba(0, 0, 0, 0.1)",
-                        backgroundColor: "#faf5ff"
-                      }}
-                    >
-                      <Sparkles className="h-5 w-5 mr-2" />
-                      Explore Tools
-                    </MotionButton>
-                  </div>
                 </div>
               </ScrollReveal>
             </div>
           </section>
 
-          {/* Demo Application Section - Now as a full-width section */}
-          <section id="demo-app" className="py-16 bg-gradient-to-b from-gray-50 to-white">
-            <div className="container px-4 mx-auto">
-              <ScrollReveal>
-                <div className="text-center max-w-3xl mx-auto mb-10">
-                  <motion.div
-                    className="inline-flex items-center px-4 py-1.5 rounded-full bg-gradient-to-r from-teal-100 to-blue-100 text-teal-800 mb-6 shadow-sm"
-                    whileHover={{ scale: 1.05, boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)" }}
-                  >
-                    <Wrench className="h-4 w-4 mr-2 text-teal-600" />
-                    <span className="text-sm font-medium">Interactive Demo</span>
-                  </motion.div>
+          {/* Interactive Application Section */}
+          <section id="demo-app" className="py-20 relative overflow-hidden">
+            {/* Consistent animated background elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <motion.div
+                className="absolute top-20 left-10 w-64 h-64 rounded-full bg-teal-100/30 blur-3xl"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.5, 0.3],
+                  x: [0, 30, 0],
+                  y: [0, -30, 0]
+                }}
+                transition={{
+                  duration: 15,
+                  repeat: Infinity,
+                  repeatType: "reverse"
+                }}
+              />
+              <motion.div
+                className="absolute bottom-20 right-10 w-72 h-72 rounded-full bg-blue-100/30 blur-3xl"
+                animate={{
+                  scale: [1, 1.3, 1],
+                  opacity: [0.2, 0.4, 0.2],
+                  x: [0, -40, 0],
+                  y: [0, 40, 0]
+                }}
+                transition={{
+                  duration: 18,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  delay: 2
+                }}
+              />
+            </div>
 
-                  <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-teal-600 via-teal-500 to-blue-500 bg-clip-text text-transparent">
-                    Demo Application
+            <div className="container px-4 mx-auto relative z-10">
+              <div className="max-w-7xl mx-auto">
+                <ScrollReveal className="flex flex-col">
+                  <motion.div
+                    className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-visible"
+                    whileHover={{
+                      y: -5,
+                      boxShadow: "0 20px 40px rgba(0, 0, 0, 0.08)"
+                    }}
+                  >
+                    {/* Feature highlights */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                      <motion.div
+                        className="bg-gradient-to-br from-teal-50 to-blue-50 p-6 rounded-xl border border-teal-100"
+                        whileHover={{ y: -3, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                      >
+                        <div className="flex items-center mb-2">
+                          <div className="bg-white p-2 rounded-full shadow-sm mr-3">
+                            <CheckCircle2 className="h-5 w-5 text-teal-500" />
+                          </div>
+                          <h3 className="font-medium text-teal-800">Task Management</h3>
+                        </div>
+                        <p className="text-sm text-teal-700">
+                          Add, complete, and delete tasks with visual feedback
+                        </p>
+                      </motion.div>
+
+                      <motion.div
+                        className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100"
+                        whileHover={{ y: -3, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                      >
+                        <div className="flex items-center mb-2">
+                          <div className="bg-white p-2 rounded-full shadow-sm mr-3">
+                            <Sparkles className="h-5 w-5 text-blue-500" />
+                          </div>
+                          <h3 className="font-medium text-blue-800">Filtering</h3>
+                        </div>
+                        <p className="text-sm text-blue-700">
+                          Filter tasks by status: All, Active, or Completed
+                        </p>
+                      </motion.div>
+
+                      <motion.div
+                        className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-100"
+                        whileHover={{ y: -3, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                      >
+                        <div className="flex items-center mb-2">
+                          <div className="bg-white p-2 rounded-full shadow-sm mr-3">
+                            <Bug className="h-5 w-5 text-purple-500" />
+                          </div>
+                          <h3 className="font-medium text-purple-800">Bug-Free</h3>
+                        </div>
+                        <p className="text-sm text-purple-700">
+                          All previous bugs have been fixed for a smooth experience
+                        </p>
+                      </motion.div>
+                    </div>
+
+                    {/* Integrated Testing Environment */}
+                    <div className="transform transition-all duration-300 mb-16 rounded-xl overflow-visible w-full py-4">
+                      <Suspense fallback={
+                        <div className="flex flex-col space-y-3 p-6 bg-gray-50/50 animate-pulse w-full">
+                          <Skeleton className="h-12 w-full rounded-lg" />
+                          <Skeleton className="h-32 w-full rounded-lg" />
+                          <Skeleton className="h-8 w-1/3 rounded-lg" />
+                          <div className="flex justify-between">
+                            <Skeleton className="h-6 w-24 rounded-lg" />
+                            <div className="flex space-x-2">
+                              <Skeleton className="h-6 w-16 rounded-lg" />
+                              <Skeleton className="h-6 w-16 rounded-lg" />
+                              <Skeleton className="h-6 w-16 rounded-lg" />
+                            </div>
+                          </div>
+                        </div>
+                      }>
+                        <IntegratedTestingEnvironment />
+                      </Suspense>
+                    </div>
+
+                    {/* Instructions and status */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+                      <motion.div
+                        className="bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 rounded-xl p-6"
+                        whileHover={{
+                          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)",
+                          scale: 1.02
+                        }}
+                      >
+                        <div className="flex items-start">
+                          <div className="bg-white p-2 rounded-full shadow-sm mr-3 flex-shrink-0">
+                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-green-800 mb-1">Status</h3>
+                            <p className="text-green-700 text-sm">
+                              All bugs in this application have been fixed! Check the "Fixed Bugs" tab in the QA Artifacts panel to see what was fixed.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6"
+                        whileHover={{
+                          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)",
+                          scale: 1.02
+                        }}
+                      >
+                        <div className="flex items-start">
+                          <div className="bg-white p-2 rounded-full shadow-sm mr-3 flex-shrink-0">
+                            <Wrench className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-blue-800 mb-1">How to Use</h3>
+                            <p className="text-blue-700 text-sm">
+                              Type a task and press Enter or click Add. Click the circle to mark as complete. Use the filter buttons to view different task states.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                </ScrollReveal>
+              </div>
+            </div>
+          </section>
+
+          {/* QA Artifacts Section - Modernized and Enhanced */}
+          <section id="qa-artifacts" className="py-20 relative overflow-hidden">
+            {/* Consistent animated background elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <motion.div
+                className="absolute top-40 right-10 w-72 h-72 rounded-full bg-blue-100/30 blur-3xl"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.2, 0.4, 0.2],
+                  x: [0, -30, 0],
+                  y: [0, 30, 0]
+                }}
+                transition={{
+                  duration: 18,
+                  repeat: Infinity,
+                  repeatType: "reverse"
+                }}
+              />
+              <motion.div
+                className="absolute bottom-40 left-10 w-64 h-64 rounded-full bg-teal-100/30 blur-3xl"
+                animate={{
+                  scale: [1, 1.3, 1],
+                  opacity: [0.3, 0.5, 0.3],
+                  x: [0, 40, 0],
+                  y: [0, -40, 0]
+                }}
+                transition={{
+                  duration: 15,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  delay: 2
+                }}
+              />
+            </div>
+
+            <div className="container px-4 mx-auto relative z-10">
+              <ScrollReveal>
+                <div className="text-center max-w-4xl mx-auto mb-12">
+                  <Badge
+                    variant="secondary"
+                    className="mb-4 bg-teal-50 text-teal-700 hover:bg-teal-100 px-6 py-1.5 text-sm font-medium item-center"
+                  >
+                    <TestTube className="w-4 h-4 mr-2 text-teal-500" />
+                    TESTING PLAYGROUND
+                  </Badge>
+
+                  <h2 className="text-4xl font-bold mb-5 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 bg-clip-text text-transparent">
+                    QA Artifacts
                   </h2>
 
-                  <p className="text-lg text-gray-600">
-                    This is a simple To-Do List application that demonstrates proper implementation
-                    of task management features. All previous bugs have been fixed for a smooth user experience.
+                  <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Explore comprehensive testing documentation including test cases, bug reports,
+                    automation scripts, and interactive testing tools. Learn how QA engineers ensure software quality.
                   </p>
                 </div>
               </ScrollReveal>
 
-              <div className="max-w-4xl mx-auto">
-                <ScrollReveal className="flex flex-col">
-                  <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
-                    <div className="mb-4 transform transition-transform duration-300 hover:scale-[1.01]">
-                      <Suspense fallback={
-                        <div className="flex flex-col space-y-3">
-                          <Skeleton className="h-12 w-full rounded-lg" />
-                          <Skeleton className="h-32 w-full rounded-lg" />
-                          <Skeleton className="h-8 w-1/3 rounded-lg" />
+              {/* Category navigation cards */}
+              <div className="max-w-5xl mx-auto mb-10">
+                <ScrollReveal>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <motion.div
+                      className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100 shadow-sm"
+                      whileHover={{ y: -3, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                    >
+                      <div className="flex items-center mb-3">
+                        <div className="bg-white p-2 rounded-full shadow-sm mr-3">
+                          <ListChecks className="h-5 w-5 text-blue-500" />
                         </div>
-                      }>
-                        <DemoApp />
-                      </Suspense>
-                    </div>
+                        <h3 className="font-medium text-blue-800">Documentation</h3>
+                      </div>
+                      <p className="text-sm text-blue-700 mb-2">
+                        Explore test cases and bug reports that document the testing process
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Badge className="bg-blue-100/80 text-blue-700 border-blue-200">Test Cases</Badge>
+                        <Badge className="bg-red-100/80 text-red-700 border-red-200">Bug Reports</Badge>
+                      </div>
+                    </motion.div>
 
                     <motion.div
-                      className="bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 rounded-xl p-5 mt-6"
-                      whileHover={{ boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)" }}
+                      className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-xl border border-purple-100 shadow-sm"
+                      whileHover={{ y: -3, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
                     >
-                      <div className="flex items-start">
-                        <div className="bg-white p-2 rounded-full shadow-sm mr-3 flex-shrink-0">
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      <div className="flex items-center mb-3">
+                        <div className="bg-white p-2 rounded-full shadow-sm mr-3">
+                          <Code className="h-5 w-5 text-purple-500" />
                         </div>
-                        <div>
-                          <h3 className="font-medium text-green-800 mb-1">Status</h3>
-                          <p className="text-green-700 text-sm">
-                            All bugs in this application have been fixed! Check the "Fixed Bugs" tab in the QA Artifacts panel below to see what was fixed.
-                          </p>
+                        <h3 className="font-medium text-purple-800">Automation</h3>
+                      </div>
+                      <p className="text-sm text-purple-700 mb-2">
+                        View automation scripts and run tests to verify application functionality
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Badge className="bg-purple-100/80 text-purple-700 border-purple-200">Automation Scripts</Badge>
+                        <Badge className="bg-green-100/80 text-green-700 border-green-200">Test Runner</Badge>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      className="bg-gradient-to-br from-teal-50 to-green-50 p-5 rounded-xl border border-teal-100 shadow-sm"
+                      whileHover={{ y: -3, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                    >
+                      <div className="flex items-center mb-3">
+                        <div className="bg-white p-2 rounded-full shadow-sm mr-3">
+                          <FileText className="h-5 w-5 text-teal-500" />
                         </div>
+                        <h3 className="font-medium text-teal-800">Tools</h3>
+                      </div>
+                      <p className="text-sm text-teal-700 mb-2">
+                        Interactive tools to create test cases, compare bug fixes, and generate reports
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Badge className="bg-teal-100/80 text-teal-700 border-teal-200">Test Builder</Badge>
+                        <Badge className="bg-amber-100/80 text-amber-700 border-amber-200">Bug Comparison</Badge>
                       </div>
                     </motion.div>
                   </div>
                 </ScrollReveal>
               </div>
-            </div>
-          </section>
 
-          {/* QA Artifacts Section - Now as a separate section below */}
-          <section id="qa-artifacts" className="py-16 bg-gradient-to-b from-white to-gray-50">
-            <div className="container px-4 mx-auto">
-              <ScrollReveal>
-                <div className="text-center max-w-3xl mx-auto mb-10">
-                  <motion.div
-                    className="inline-flex items-center px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 mb-6 shadow-sm"
-                    whileHover={{ scale: 1.05, boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)" }}
-                  >
-                    <Braces className="h-4 w-4 mr-2 text-blue-600" />
-                    <span className="text-sm font-medium">Documentation</span>
-                  </motion.div>
-
-                  <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 bg-clip-text text-transparent">
-                    QA Artifacts
-                  </h2>
-
-                  <p className="text-lg text-gray-600">
-                    Explore test cases, bug reports, automation scripts, and interactive testing tools.
-                    Run tests, create new test cases, compare bug fixes, and generate test reports.
-                  </p>
-                </div>
-              </ScrollReveal>
-
-              <div className="max-w-6xl mx-auto">
+              <div className="max-w-7xl mx-auto">
                 <ScrollReveal className="flex flex-col">
-                  <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
-                    <div className="transform transition-transform duration-300 hover:scale-[1.01]">
-                      <Suspense fallback={
-                        <div className="flex flex-col space-y-4">
-                          <div className="flex space-x-2">
-                            <Skeleton className="h-10 w-24 rounded-lg" />
-                            <Skeleton className="h-10 w-24 rounded-lg" />
-                            <Skeleton className="h-10 w-24 rounded-lg" />
-                          </div>
-                          <Skeleton className="h-64 w-full rounded-lg" />
+                  <motion.div
+                    className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-visible"
+                    whileHover={{
+                      y: -5,
+                      boxShadow: "0 20px 40px rgba(0, 0, 0, 0.08)"
+                    }}
+                  >
+                    {/* QA Artifacts Info */}
+                    <div className="p-5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 mb-8">
+                      <div className="flex items-start">
+                        <div className="bg-white p-2 rounded-full shadow-sm mr-3 flex-shrink-0">
+                          <Sparkles className="h-5 w-5 text-blue-600" />
                         </div>
-                      }>
-                        <PlaygroundTabs />
-                      </Suspense>
+                        <div>
+                          <h3 className="font-medium text-blue-800 mb-1">Integrated Testing Environment</h3>
+                          <p className="text-blue-700 text-sm">
+                            The Interactive Application and QA Artifacts sections have been integrated into a comprehensive testing environment.
+                            This allows you to test the application directly while using the QA tools to document and track your testing activities.
+                            Try running tests, creating test cases, tracking bugs, and generating reports - all while interacting with the application.
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+
+                    {/* Features list */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <motion.div
+                        className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-5"
+                        whileHover={{
+                          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)",
+                          scale: 1.02
+                        }}
+                      >
+                        <div className="flex items-start">
+                          <div className="bg-white p-2 rounded-full shadow-sm mr-3 flex-shrink-0">
+                            <Play className="h-5 w-5 text-purple-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-purple-800 mb-1">Test Runner</h3>
+                            <p className="text-purple-700 text-sm">
+                              Run automated tests against the interactive application to verify its functionality.
+                              View detailed test results and generate test reports.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        className="bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-200 rounded-xl p-5"
+                        whileHover={{
+                          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)",
+                          scale: 1.02
+                        }}
+                      >
+                        <div className="flex items-start">
+                          <div className="bg-white p-2 rounded-full shadow-sm mr-3 flex-shrink-0">
+                            <ListChecks className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-blue-800 mb-1">Test Builder</h3>
+                            <p className="text-blue-700 text-sm">
+                              Create custom test scenarios for the interactive application.
+                              Define test steps and expected results, then run your scenarios.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-5"
+                        whileHover={{
+                          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)",
+                          scale: 1.02
+                        }}
+                      >
+                        <div className="flex items-start">
+                          <div className="bg-white p-2 rounded-full shadow-sm mr-3 flex-shrink-0">
+                            <Bug className="h-5 w-5 text-red-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-red-800 mb-1">Bug Tracker</h3>
+                            <p className="text-red-700 text-sm">
+                              Document and track bugs discovered during testing.
+                              Manage bug status from discovery to resolution.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-5"
+                        whileHover={{
+                          boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)",
+                          scale: 1.02
+                        }}
+                      >
+                        <div className="flex items-start">
+                          <div className="bg-white p-2 rounded-full shadow-sm mr-3 flex-shrink-0">
+                            <FileText className="h-5 w-5 text-amber-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-amber-800 mb-1">Report Generator</h3>
+                            <p className="text-amber-700 text-sm">
+                              Generate comprehensive test reports that summarize your testing activities.
+                              Include test results, bug reports, and metrics.
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  </motion.div>
                 </ScrollReveal>
               </div>
-            </div>
-          </section>
-
-          {/* Tools & Skills Section - Enhanced with better card design and animations */}
-          <section id="tools-skills" className="py-20 bg-gradient-to-b from-gray-50 to-white">
-            <div className="container px-4 mx-auto">
-              <ScrollReveal>
-                <div className="text-center max-w-3xl mx-auto mb-16">
-                  <motion.div
-                    className="inline-flex items-center px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 mb-6 shadow-sm"
-                    whileHover={{ scale: 1.05, boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)" }}
-                  >
-                    <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
-                    <span className="text-sm font-medium">QA Toolkit</span>
-                  </motion.div>
-
-                  <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                    Tools & Skills Showcase
-                  </h2>
-
-                  <p className="text-lg text-gray-600">
-                    Modern QA engineers use a variety of tools and approaches to ensure software quality.
-                    Here's a glimpse of the essential skills in my testing toolkit.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {/* Manual Testing Card */}
-                  <motion.div
-                    className="bg-white p-8 rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    whileHover={{ y: -8, transition: { duration: 0.2 } }}
-                  >
-                    <div className="rounded-2xl bg-gradient-to-r from-purple-500 to-purple-600 w-14 h-14 flex items-center justify-center mb-6 shadow-md">
-                      <Search className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-3 text-gray-800">Manual Testing</h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      Exploratory testing, usability testing, and regression testing to find issues that automated tests might miss.
-                    </p>
-
-                    <div className="mt-6 pt-6 border-t border-gray-100">
-                      <MotionButton
-                        className="text-sm font-medium bg-purple-50 text-purple-700 px-4 py-2 rounded-lg flex items-center justify-center w-full"
-                        whileHover={{
-                          scale: 1.03,
-                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
-                        }}
-                      >
-                        Learn more
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </MotionButton>
-                    </div>
-                  </motion.div>
-
-                  {/* Automation Testing Card */}
-                  <motion.div
-                    className="bg-white p-8 rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
-                    whileHover={{ y: -8, transition: { duration: 0.2 } }}
-                  >
-                    <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 w-14 h-14 flex items-center justify-center mb-6 shadow-md">
-                      <Code className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-3 text-gray-800">Automation Testing</h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      Creating robust test frameworks with Cypress, Playwright, and Selenium to ensure consistent quality.
-                    </p>
-
-                    <div className="mt-6 pt-6 border-t border-gray-100">
-                      <MotionButton
-                        className="text-sm font-medium bg-blue-50 text-blue-700 px-4 py-2 rounded-lg flex items-center justify-center w-full"
-                        whileHover={{
-                          scale: 1.03,
-                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
-                        }}
-                      >
-                        Learn more
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </MotionButton>
-                    </div>
-                  </motion.div>
-
-                  {/* API Testing Card */}
-                  <motion.div
-                    className="bg-white p-8 rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    whileHover={{ y: -8, transition: { duration: 0.2 } }}
-                  >
-                    <div className="rounded-2xl bg-gradient-to-r from-green-500 to-green-600 w-14 h-14 flex items-center justify-center mb-6 shadow-md">
-                      <Braces className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-3 text-gray-800">API Testing</h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      Testing backend services and APIs using Postman, REST Assured, and custom scripts.
-                    </p>
-
-                    <div className="mt-6 pt-6 border-t border-gray-100">
-                      <MotionButton
-                        className="text-sm font-medium bg-green-50 text-green-700 px-4 py-2 rounded-lg flex items-center justify-center w-full"
-                        whileHover={{
-                          scale: 1.03,
-                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
-                        }}
-                      >
-                        Learn more
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </MotionButton>
-                    </div>
-                  </motion.div>
-                </div>
-              </ScrollReveal>
             </div>
           </section>
         </main>

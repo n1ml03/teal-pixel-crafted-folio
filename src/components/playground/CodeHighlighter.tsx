@@ -1,7 +1,7 @@
-import React, { useState, lazy, Suspense, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
 import { MotionButton } from "@/components/ui/motion-button";
 import { toast } from "@/components/ui/sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Copy,
   ExternalLink,
@@ -11,6 +11,7 @@ import {
   X
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+// @ts-ignore - Ignore type errors for SyntaxHighlighter
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // Import all themes but use them selectively
 import {
@@ -20,6 +21,15 @@ import {
   dracula,
   materialDark
 } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+// Define custom types for ReactMarkdown components
+type CodeProps = {
+  node: any;
+  inline: boolean;
+  className: string;
+  children: React.ReactNode;
+  [key: string]: any;
+};
 
 
 interface CodeHighlighterProps {
@@ -44,6 +54,7 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(theme);
+  const [isLoadingTheme, setIsLoadingTheme] = useState(false);
 
   // Function to get the syntax highlighting theme
   const getTheme = () => {
@@ -56,9 +67,6 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
         return dracula;
       case 'materialDark':
         return materialDark;
-      case 'oneDark':
-      default:
-        return oneDark;
     }
   };
 
@@ -86,8 +94,14 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
     const nextIndex = (currentIndex + 1) % themes.length;
     const nextTheme = themes[nextIndex];
 
+    setIsLoadingTheme(true);
     setCurrentTheme(nextTheme);
-    toast.success(`Theme changed to ${nextTheme}`);
+
+    // Simulate theme loading
+    setTimeout(() => {
+      setIsLoadingTheme(false);
+      toast.success(`Theme changed to ${nextTheme}`);
+    }, 300);
   };
 
   // Function to get language-specific header color
@@ -241,26 +255,35 @@ const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
       >
         <ReactMarkdown
           components={{
-            code({ node, inline, className, children, ...props }) {
+            code({ node, inline, className, children, ...props }: CodeProps) {
               const match = /language-(\w+)/.exec(className || '');
               const lang = match ? match[1] : language;
 
               return !inline ? (
-                <SyntaxHighlighter
-                  style={getTheme()}
-                  language={lang}
-                  showLineNumbers={showLineNumbers}
-                  wrapLines={true}
-                  customStyle={{
-                    margin: 0,
-                    borderRadius: 0,
-                    fontSize: '0.9rem',
-                    lineHeight: 1.5,
-                  }}
-                  {...props}
-                >
-                  {String(children).replace(/\n$/, '')}
-                </SyntaxHighlighter>
+                isLoadingTheme ? (
+                  <div className="bg-gray-900 p-4 animate-pulse">
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                ) : (
+                  <SyntaxHighlighter
+                    style={getTheme()}
+                    language={lang}
+                    showLineNumbers={showLineNumbers}
+                    wrapLines={true}
+                    customStyle={{
+                      margin: 0,
+                      borderRadius: 0,
+                      fontSize: '0.9rem',
+                      lineHeight: 1.5,
+                      backgroundColor: 'transparent'
+                    }}
+                    {...props}
+                  >
+                    {String(children).replace(/\n$/, '')}
+                  </SyntaxHighlighter>
+                )
               ) : (
                 <code className="bg-gray-800 text-gray-200 px-1 py-0.5 rounded text-sm" {...props}>
                   {children}

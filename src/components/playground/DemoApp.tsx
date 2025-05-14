@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Input } from "@/components/ui/input";
 import { MotionButton } from "@/components/ui/motion-button";
@@ -115,16 +115,16 @@ const DemoApp: React.FC = () => {
   };
 
   return (
-    <Card className="w-full shadow-md border-gray-200">
+    <Card className="border border-gray-200 shadow-md overflow-visible">
       <CardHeader className="bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-t-lg">
         <CardTitle className="text-xl font-bold flex items-center justify-between">
-          <span>To-Do List App</span>
+          <span>Task Management App</span>
           <Badge variant="outline" className="bg-white/20 text-white border-white/30">
-            Demo App
+            Interactive App
           </Badge>
         </CardTitle>
       </CardHeader>
-
+      
       <CardContent className="p-4">
         {/* Task Input */}
         <div className="flex gap-2 mb-4">
@@ -163,7 +163,7 @@ const DemoApp: React.FC = () => {
         </div>
 
         {/* Task List */}
-        <div className="space-y-2 max-h-[300px] overflow-y-auto p-1" data-testid="task-list">
+        <div className="space-y-2 max-h-[400px] overflow-y-auto p-1" data-testid="task-list">
           {filteredTasks().length === 0 ? (
             <div className="text-center py-6 text-gray-500">
               No tasks to display
