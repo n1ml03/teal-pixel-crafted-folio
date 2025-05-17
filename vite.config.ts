@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     chunkSizeWarningLimit: 1000, // Increase the warning limit to 1000 kB
-    minify: 'terser', // Use terser for better minification
+    minify: 'esbuild', // Use terser for better minification
     terserOptions: {
       compress: {
         drop_console: mode === 'production', // Remove console logs in production
