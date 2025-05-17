@@ -23,7 +23,8 @@ import {
   Boxes,
   Library,
   BookText,
-  FileBox
+  FileBox,
+  Puzzle
 } from 'lucide-react';
 import { MotionLink } from "@/components/ui/motion-link.tsx";
 

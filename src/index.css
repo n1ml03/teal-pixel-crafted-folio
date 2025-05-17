@@ -1,7 +1,18 @@
 
+/* Import fonts with display=swap to prevent layout shifts during font loading */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Source+Code+Pro:wght@300;400;500;600;700&display=swap');
 /* Import focus styles for accessibility */
 @import './components/ui/focus-styles.css';
+
+/* Font fallback system to prevent layout shifts */
+:root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Apply custom fonts only after they're loaded */
+.fonts-loaded {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
 
 @tailwind base;
 @tailwind components;
@@ -121,5 +132,153 @@
 
   .numbered-item::before {
     @apply content-[attr(data-number)] absolute -top-2 -left-2 text-6xl font-bold text-gray-100 z-0 pointer-events-none;
+  }
+
+  /* Responsive container classes */
+  .container-responsive {
+    @apply w-full px-4 mx-auto sm:px-6 md:px-8;
+    max-width: 100%;
+  }
+
+  @screen sm {
+    .container-responsive {
+      max-width: 640px;
+    }
+  }
+
+  @screen md {
+    .container-responsive {
+      max-width: 768px;
+    }
+  }
+
+  @screen lg {
+    .container-responsive {
+      max-width: 1024px;
+    }
+  }
+
+  @screen xl {
+    .container-responsive {
+      max-width: 1280px;
+    }
+  }
+
+  /* Playground specific components */
+  .playground-panel {
+    @apply bg-card rounded-lg border shadow-sm overflow-hidden;
+  }
+
+  .playground-card {
+    @apply bg-card rounded-lg border p-4 shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  /* Animation utility classes */
+  .animate-fade-in {
+    @apply animate-fade-in;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out forwards;
+  }
+
+  .animate-slide-down {
+    animation: slide-down 0.3s ease-out forwards;
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out forwards;
+  }
+
+  .animate-slide-in-left {
+    animation: slide-in-left 0.3s ease-out forwards;
+  }
+
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s infinite;
+  }
+
+  .animate-bounce-subtle {
+    animation: bounce-subtle 2s infinite;
+  }
+
+  /* Responsive typography */
+  .text-responsive-xl {
+    @apply text-2xl md:text-3xl lg:text-4xl font-bold;
+  }
+
+  .text-responsive-lg {
+    @apply text-xl md:text-2xl lg:text-3xl font-bold;
+  }
+
+  .text-responsive-md {
+    @apply text-lg md:text-xl font-medium;
+  }
+
+  .text-responsive-sm {
+    @apply text-sm md:text-base;
+  }
+}
+
+/* Custom animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
   }
 }

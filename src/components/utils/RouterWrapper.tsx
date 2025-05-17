@@ -1,4 +1,3 @@
-import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { PageTransition } from '@/components/ui/page-transition';
 

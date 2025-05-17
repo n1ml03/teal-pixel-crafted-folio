@@ -46,9 +46,37 @@ export function checkImageExists(src: string): Promise<boolean> {
  */
 export function getImageDimensions(src: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
+    // If src is empty or invalid, return default dimensions
+    if (!src || typeof src !== 'string' || src.trim() === '') {
+      console.warn('Invalid image source provided to getImageDimensions');
+      resolve({ width: 300, height: 200 }); // Default dimensions
+      return;
+    }
+
     const img = new Image();
-    img.onload = () => resolve({ width: img.width, height: img.height });
-    img.onerror = reject;
+
+    // Set a timeout to prevent hanging on slow-loading images
+    const timeout = setTimeout(() => {
+      console.warn(`Image load timed out for: ${src}`);
+      resolve({ width: 300, height: 200 }); // Default dimensions
+    }, 5000);
+
+    img.onload = () => {
+      clearTimeout(timeout);
+      // Ensure we have valid dimensions
+      const width = img.width || 300;
+      const height = img.height || 200;
+      resolve({ width, height });
+    };
+
+    img.onerror = () => {
+      clearTimeout(timeout);
+      console.warn(`Failed to load image for dimensions: ${src}`);
+      resolve({ width: 300, height: 200 }); // Default dimensions instead of rejecting
+    };
+
+    // Set crossOrigin to anonymous for CORS-enabled images
+    img.crossOrigin = 'anonymous';
     img.src = src;
   });
 }
@@ -97,9 +125,9 @@ export function generateSrcSet(src: string, widths: number[]): string {
  */
 export async function supportsWebP(): Promise<boolean> {
   if (!window.createImageBitmap) return false;
-  
+
   const webpData = 'data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQ//73v/+BiOh/AAA=';
   const blob = await fetch(webpData).then(r => r.blob());
-  
+
   return createImageBitmap(blob).then(() => true, () => false);
 }

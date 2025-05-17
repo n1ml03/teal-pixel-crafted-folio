@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getImageLoadingAttribute } from '@/lib/image-optimization';
+import { getImageLoadingAttribute, getImageDimensions } from '@/lib/image-optimization';
 import { cn } from '@/lib/utils';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -11,6 +11,8 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   className?: string;
   containerClassName?: string;
   showLoadingIndicator?: boolean;
+  aspectRatio?: string | number;
+  objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
 }
 
 /**
@@ -26,11 +28,16 @@ export const OptimizedImage = ({
   className = "",
   containerClassName = "",
   showLoadingIndicator = true,
+  aspectRatio = "16/9", // Default aspect ratio
+  objectFit = "cover",
+  width,
+  height,
   ...props
 }: OptimizedImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState<{width?: number, height?: number}>({});
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -72,23 +79,56 @@ export const OptimizedImage = ({
   const handleError = () => {
     console.error(`Failed to load image: ${src}`);
     setIsError(true);
-    
+
     // If there's a fallback, we'll try to load that instead
     if (fallbackSrc && imgRef.current) {
       imgRef.current.src = fallbackSrc;
     }
   };
 
+  // Fetch image dimensions if not provided
+  useEffect(() => {
+    // Only fetch dimensions if width or height is not provided
+    if ((!width || !height) && src && priority) {
+      getImageDimensions(src)
+        .then(dimensions => {
+          setImageDimensions(dimensions);
+        })
+        .catch(() => {
+          // If we can't get dimensions, we'll use the fallback aspect ratio
+          console.warn(`Could not get dimensions for image: ${src}`);
+        });
+    }
+  }, [src, width, height, priority]);
+
   // Determine loading attribute based on priority and visibility
   const loadingAttribute = getImageLoadingAttribute(priority, isVisible);
 
+  // Calculate aspect ratio style
+  const aspectRatioStyle = typeof aspectRatio === 'string'
+    ? { aspectRatio }
+    : { aspectRatio: `${aspectRatio}` };
+
+  // Determine width and height attributes for the image
+  const dimensionProps: {width?: number | string, height?: number | string} = {};
+
+  if (width) dimensionProps.width = width;
+  else if (imageDimensions.width) dimensionProps.width = imageDimensions.width;
+
+  if (height) dimensionProps.height = height;
+  else if (imageDimensions.height) dimensionProps.height = imageDimensions.height;
+
   return (
-    <div 
+    <div
       ref={containerRef}
       className={cn(
         "relative overflow-hidden",
         containerClassName
       )}
+      style={{
+        ...aspectRatioStyle,
+        contain: 'layout paint',
+      }}
     >
       {/* Loading indicator */}
       {showLoadingIndicator && !isLoaded && !isError && (
@@ -96,7 +136,7 @@ export const OptimizedImage = ({
           <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
-      
+
       {/* The actual image */}
       <img
         ref={imgRef}
@@ -106,10 +146,12 @@ export const OptimizedImage = ({
         onLoad={handleLoad}
         onError={handleError}
         className={cn(
-          "transition-opacity duration-300",
+          "transition-opacity duration-300 w-full h-full",
           isLoaded ? "opacity-100" : "opacity-0",
           className
         )}
+        style={{ objectFit }}
+        {...dimensionProps}
         {...props}
       />
     </div>
