@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -27,8 +27,9 @@ import { UserProgressService } from '@/services/UserProgressService';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-// Import challenges from data file
-import challenges from '@/data/challenges';
+// Import lightweight challenge metadata instead of full challenge data
+import challengesMeta from '@/data/challengesMeta';
+import { ChallengeLoaderService } from '@/services/ChallengeLoaderService';
 
 // Helper function to calculate level progress percentage
 const calculateLevelProgress = (user: { level: number; points: number }) => {
@@ -85,25 +86,33 @@ const Challenges = () => {
     );
   };
 
-  const handleStartChallenge = (id: string) => {
+  const handleStartChallenge = async (id: string) => {
+    // Preload challenge details before navigating
+    await ChallengeLoaderService.loadChallengeDetails(id);
     navigate(`/playground/challenge/${id}`);
   };
 
-  const handleDetailsClick = (id: string) => {
+  const handleDetailsClick = async (id: string) => {
+    // Preload challenge details before navigating
+    await ChallengeLoaderService.loadChallengeDetails(id);
     navigate(`/playground/challenge-details/${id}`);
   };
 
   // Create a map for faster lookup of user progress
-  const userProgressMap = userChallenges.reduce((map, progress) => {
-    map[progress.challengeId] = progress.progress;
-    return map;
-  }, {} as Record<string, number>);
+  const userProgressMap = useMemo(() => {
+    return userChallenges.reduce((map, progress) => {
+      map[progress.challengeId] = progress.progress;
+      return map;
+    }, {} as Record<string, number>);
+  }, [userChallenges]);
 
   // Add progress information to challenges more efficiently
-  const challengesWithProgress = challenges.map(challenge => ({
-    ...challenge,
-    progress: userProgressMap[challenge.id] || 0
-  }));
+  const challengesWithProgress = useMemo(() => {
+    return challengesMeta.map(challenge => ({
+      ...challenge,
+      progress: userProgressMap[challenge.id] || 0
+    }));
+  }, [userProgressMap]);
 
   // Filter challenges based on search query and filter
   const filteredChallenges = challengesWithProgress.filter(challenge => {
@@ -142,7 +151,7 @@ const Challenges = () => {
   return (
     <div className="min-h-screen relative">
       {/* Enhanced background with gradient and animated elements */}
-      <EnhancedBackground optimizeForLowPerformance={true} />
+      <EnhancedBackground optimizeForLowPerformance={true} reducedAnimations={true} />
 
       <main className="container py-6 pt-24 relative z-10">
         {/* Hero Section */}

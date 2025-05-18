@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { MotionButton } from "@/components/ui/motion-button";
 import { useIsMobile } from '@/hooks/use-mobile';
+import LazyImage from '@/components/ui/lazy-image';
 
 export interface Challenge {
   id: string;
@@ -88,18 +89,22 @@ export const ChallengeCard = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
+      transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
       className={cn("h-full", className)}
+      style={{ contain: 'content' }}
     >
       <Card className={cn(
         "h-full overflow-hidden transition-all duration-300 hover:shadow-md border border-gray-100",
         featured && "ring-2 ring-primary/50"
       )}>
         <div className="relative overflow-hidden aspect-video">
-          <img
+          <LazyImage
             src={thumbnail}
             alt={title}
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+            optimizeResponsive={true}
+            blurEffect={true}
+            loadingStrategy="lazy"
           />
           <DifficultyBadge level={difficulty} />
           {featured && (

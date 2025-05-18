@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { motion, useScroll, useTransform, useSpring, useMotionValueEvent } from 'framer-motion';
 import { throttle } from '@/lib/scroll-optimization';
+import { useLazyLoad, useIdleCallback } from '@/lib/render-optimization';
 
 interface EnhancedBackgroundProps {
   optimizeForLowPerformance?: boolean;
@@ -108,7 +109,18 @@ const EnhancedBackground: React.FC<EnhancedBackgroundProps> = ({
   const [isLowPerformanceDevice, setIsLowPerformanceDevice] = useState(optimizeForLowPerformance);
   const [isVisible, setIsVisible] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isInitialRender, setIsInitialRender] = useState(true);
   const cleanupRef = useRef<(() => void) | null>(null);
+
+  // Mark initial render complete after a short delay to prioritize LCP
+  useEffect(() => {
+    if (isInitialRender) {
+      const timer = setTimeout(() => {
+        setIsInitialRender(false);
+      }, 1000); // Delay animations until after LCP
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialRender]);
 
   // Enhanced device performance detection with more accurate metrics
   const detectPerformance = useCallback(() => {
@@ -158,15 +170,14 @@ const EnhancedBackground: React.FC<EnhancedBackgroundProps> = ({
 
     mediaQuery.addEventListener('change', handleMotionPreferenceChange);
 
-    // Mark as visible after a short delay to allow the page to load critical content first
-    // Use a longer delay for low-performance devices
-    const visibilityDelay = isLowPerformanceDevice ? 300 : 100;
-    const timeoutId = setTimeout(() => {
+    // Set visibility after a short delay
+    // Using setTimeout instead of requestIdleCallback to avoid hook issues
+    const timeoutDelay = isLowPerformanceDevice ? 300 : 100;
+    setTimeout(() => {
       setIsVisible(true);
-    }, visibilityDelay);
+    }, timeoutDelay);
 
     return () => {
-      clearTimeout(timeoutId);
       mediaQuery.removeEventListener('change', handleMotionPreferenceChange);
       // Execute any cleanup function stored in the ref
       if (cleanupRef.current) {
@@ -205,29 +216,29 @@ const EnhancedBackground: React.FC<EnhancedBackgroundProps> = ({
     // Use requestAnimationFrame to apply will-change property at the right time
     animationFrameId = requestAnimationFrame(applyWillChange);
 
-    // Set up intersection observer to optimize off-screen elements
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // If the background is not visible in the viewport, remove will-change
-        if (!entries[0].isIntersecting) {
+    // Use passive event listener for scroll to improve performance
+    const handleScroll = throttle(() => {
+      // Check if element is in viewport
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const isInViewport = rect.top < window.innerHeight && rect.bottom > 0;
+
+        if (!isInViewport) {
           removeWillChange();
         } else {
-          // Re-apply will-change when visible again
           requestAnimationFrame(applyWillChange);
         }
-      },
-      { threshold: 0.1 }
-    );
+      }
+    }, 100);
 
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
+    // Add passive scroll listener for better performance
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     // Store cleanup function in ref for access in component unmount
     cleanupRef.current = () => {
       cancelAnimationFrame(animationFrameId);
       removeWillChange();
-      observer.disconnect();
+      window.removeEventListener('scroll', handleScroll);
     };
 
     return () => {
@@ -239,14 +250,15 @@ const EnhancedBackground: React.FC<EnhancedBackgroundProps> = ({
 
   // Memoize the background to prevent unnecessary re-renders
   const memoizedBackground = useMemo(() => {
-    if (isLowPerformanceDevice || !isVisible) {
+    // During initial render or for low performance devices, use simple background
+    if (isLowPerformanceDevice || !isVisible || isInitialRender) {
       return <SimpleBackground />;
     }
     return <AnimatedBackground
       containerRef={containerRef}
       prefersReducedMotion={prefersReducedMotion}
     />;
-  }, [isLowPerformanceDevice, isVisible, prefersReducedMotion]);
+  }, [isLowPerformanceDevice, isVisible, prefersReducedMotion, isInitialRender]);
 
   // Return the memoized background to prevent unnecessary re-renders
   return memoizedBackground;

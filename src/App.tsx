@@ -1,5 +1,4 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -17,8 +16,9 @@ import ResourcePreloader from "@/components/utils/ResourcePreloader.tsx";
 import { SkipLink } from "@/components/ui/skip-link";
 import AccessibilityProvider from "@/components/utils/AccessibilityProvider.tsx";
 import { logCLS } from "@/lib/cls-monitoring";
+import { initBfCacheOptimization, checkBfCacheEligibility } from "@/lib/bfcache-optimization";
+import { initPerformanceMonitoring } from "@/lib/performance-monitoring";
 import ErrorBoundary from "@/components/utils/ErrorBoundary";
-import DebugInfo from "@/components/utils/DebugInfo";
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import("./pages/home/Home.tsx"));
@@ -50,29 +50,29 @@ const queryClient = new QueryClient();
 
 // Critical resources to preload
 const criticalResources = [
-  // Preload hero image - using prefetch for images to avoid warnings
+  // Preload LCP images with high priority
   {
-    href: "/images/developer-portrait.jpg",
+    href: "/images/developer-portrait.webp",
     as: "image",
-    type: "image/jpeg"
+    type: "image/jpeg",
+    fetchPriority: "high"
   },
-  // Preload profile image - using prefetch for images to avoid warnings
   {
-    href: "/images/profile.jpg",
+    href: "/images/coding-preview.webp",
     as: "image",
-    type: "image/jpeg"
+    type: "image/webp",
+    fetchPriority: "high"
+  },
+  {
+    href: "/images/testing-preview.webp",
+    as: "image",
+    type: "image/webp",
+    fetchPriority: "high"
   },
   // Load fonts directly as stylesheet
   {
     href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
     as: "style",
-    crossOrigin: "anonymous"
-  },
-  // Preload icons - using prefetch for images to avoid warnings
-  {
-    href: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg",
-    as: "image",
-    type: "image/svg+xml",
     crossOrigin: "anonymous"
   }
 ];
@@ -119,6 +119,30 @@ const App = () => {
     }
   }, []);
 
+  // Initialize bfcache optimization
+  useEffect(() => {
+    // Initialize bfcache optimization
+    const cleanupBfCache = initBfCacheOptimization();
+
+    // Check bfcache eligibility in development mode
+    if (process.env.NODE_ENV === 'development') {
+      const { eligible, reasons } = checkBfCacheEligibility();
+      if (!eligible) {
+        console.warn('Page may not be eligible for bfcache:', reasons);
+      } else {
+        console.log('Page is eligible for bfcache');
+      }
+    }
+
+    // Initialize performance monitoring
+    const cleanupPerformance = initPerformanceMonitoring();
+
+    return () => {
+      cleanupBfCache();
+      cleanupPerformance();
+    };
+  }, []);
+
   return (
     <ErrorBoundary>
       <AccessibilityProvider>
@@ -133,8 +157,7 @@ const App = () => {
                 crossOrigin?: "anonymous" | "use-credentials";
               }>} />
               <Toaster />
-              <Sonner />
-              <div id="app-container" style={{ minHeight: '100vh' }}>
+              <div id="app-container" style={{ minHeight: '100vh', contain: 'content' }}>
                 <Suspense fallback={<PageLoader />}>
                   <RouterProvider router={router} />
                 </Suspense>

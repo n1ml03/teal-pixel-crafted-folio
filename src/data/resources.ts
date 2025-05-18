@@ -277,7 +277,7 @@ export const resources: Resource[] = [
     description: 'Learn to code for free with interactive tutorials, programming challenges, and development projects.',
     category: 'Learning',
     url: 'https://www.freecodecamp.org/',
-    image: '/images/fcc.png', // Assuming local image
+    image: '/images/fcc.webp', // Assuming local image
     tags: ['Learning', 'Web Development', 'Programming'],
     featured: true,
     type: 'course',
@@ -390,7 +390,7 @@ export const resources: Resource[] = [
     description: 'The OWASP Zed Attack Proxy (ZAP) is one of the world’s most popular free security tools and is actively maintained by a dedicated international team of volunteers.',
     category: 'Security',
     url: 'https://www.zaproxy.org/',
-    image: '/images/owasp-zap.png', // Placeholder for ZAP logo
+    image: '/images/owasp-zap.webp', // Placeholder for ZAP logo
     tags: ['Security Testing', 'Vulnerability Scanner', 'Penetration Testing'],
     featured: false,
     type: 'tool',

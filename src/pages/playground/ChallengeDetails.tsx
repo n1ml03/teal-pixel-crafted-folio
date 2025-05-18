@@ -24,7 +24,8 @@ import { toast } from "@/components/ui/sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
-import challenges from '@/data/challenges';
+import challengesMeta from '@/data/challengesMeta';
+import { ChallengeLoaderService } from '@/services/ChallengeLoaderService';
 import { ChallengeWithTests } from '@/services/ChallengeService';
 
 // Interface for the extended challenge data needed in ChallengeDetails
@@ -94,8 +95,8 @@ const generateLongDescription = (challenge: ChallengeWithTests): string => {
 
 // Helper function to find related challenges
 const findRelatedChallenges = (currentChallenge: ChallengeWithTests): ExtendedChallenge['relatedChallenges'] => {
-  // Find challenges with the same category or tags
-  return challenges
+  // Find challenges with the same category or tags using the lightweight metadata
+  return challengesMeta
     .filter(c =>
       c.id !== currentChallenge.id &&
       (c.category === currentChallenge.category ||
@@ -152,48 +153,58 @@ const ChallengeDetails = () => {
 
   // Load challenge data based on ID
   useEffect(() => {
-    if (!challengeId) {
-      setError("Challenge ID is missing");
-      setIsLoading(false);
-      return;
-    }
+    const loadChallenge = async () => {
+      if (!challengeId) {
+        setError("Challenge ID is missing");
+        setIsLoading(false);
+        return;
+      }
 
-    // Find the challenge in the challenges array
-    const foundChallenge = challenges.find(c => c.id === challengeId);
+      try {
+        // Dynamically load the challenge details
+        const foundChallenge = await ChallengeLoaderService.loadChallengeDetails(challengeId);
 
-    if (!foundChallenge) {
-      setError(`Challenge with ID ${challengeId} not found`);
-      setIsLoading(false);
-      return;
-    }
-
-    // Extend the challenge with additional data
-    const extendedChallenge: ExtendedChallenge = {
-      ...foundChallenge,
-      longDescription: generateLongDescription(foundChallenge),
-      prerequisites: [
-        { id: 'prereq1', title: 'Basic Testing Concepts', completed: true },
-        { id: 'prereq2', title: `Basic ${foundChallenge.category} Knowledge`, completed: true }
-      ],
-      resources: [
-        {
-          id: 'res1',
-          title: `${foundChallenge.category} Documentation`,
-          url: 'https://developer.mozilla.org/en-US/docs/Web/API'
-        },
-        {
-          id: 'res2',
-          title: 'Testing Best Practices',
-          url: 'https://testautomationu.applitools.com/'
+        if (!foundChallenge) {
+          setError(`Challenge with ID ${challengeId} not found`);
+          setIsLoading(false);
+          return;
         }
-      ],
-      relatedChallenges: findRelatedChallenges(foundChallenge),
-      communityStats: defaultCommunityStats,
-      reviews: defaultReviews
+
+        // Extend the challenge with additional data
+        const extendedChallenge: ExtendedChallenge = {
+          ...foundChallenge,
+          longDescription: generateLongDescription(foundChallenge),
+          prerequisites: [
+            { id: 'prereq1', title: 'Basic Testing Concepts', completed: true },
+            { id: 'prereq2', title: `Basic ${foundChallenge.category} Knowledge`, completed: true }
+          ],
+          resources: [
+            {
+              id: 'res1',
+              title: `${foundChallenge.category} Documentation`,
+              url: 'https://developer.mozilla.org/en-US/docs/Web/API'
+            },
+            {
+              id: 'res2',
+              title: 'Testing Best Practices',
+              url: 'https://testautomationu.applitools.com/'
+            }
+          ],
+          relatedChallenges: findRelatedChallenges(foundChallenge),
+          communityStats: defaultCommunityStats,
+          reviews: defaultReviews
+        };
+
+        setChallenge(extendedChallenge);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error loading challenge:', error);
+        setError('Failed to load challenge data. Please try again.');
+        setIsLoading(false);
+      }
     };
 
-    setChallenge(extendedChallenge);
-    setIsLoading(false);
+    loadChallenge();
   }, [challengeId]);
 
   const handleSaveChallenge = () => {
@@ -201,7 +212,11 @@ const ChallengeDetails = () => {
     toast.success(isSaved ? "Challenge removed from saved" : "Challenge saved for later");
   };
 
-  const handleStartChallenge = () => {
+  const handleStartChallenge = async () => {
+    // Preload challenge details before navigating
+    if (challengeId) {
+      await ChallengeLoaderService.loadChallengeDetails(challengeId);
+    }
     // Use navigate instead of window.location for better SPA experience
     navigate(`/playground/challenge/${challengeId}`);
   };
@@ -214,7 +229,7 @@ const ChallengeDetails = () => {
   return (
     <div className="min-h-screen relative">
       {/* Enhanced background with gradient and animated elements */}
-      <EnhancedBackground optimizeForLowPerformance={true} />
+      <EnhancedBackground optimizeForLowPerformance={true} reducedAnimations={true} />
 
       <div className="container py-8 pt-24 relative z-10">
         <Button

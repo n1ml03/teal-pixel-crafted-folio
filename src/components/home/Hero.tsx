@@ -20,6 +20,7 @@ import { MotionLink } from "@/components/ui/motion-link.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { useRef, useState, useEffect } from 'react';
 import { ScrollReveal } from "@/components/ui/scroll-reveal.tsx";
+import OptimizedImage from "@/components/ui/optimized-image.tsx";
 
 const Hero = () => {
   // Reference for scroll animations
@@ -520,17 +521,18 @@ const Hero = () => {
                           <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-blue-400 rounded-full blur-md opacity-20 -z-10" />
                         )}
 
-                        <img
-                          src="/images/developer-portrait.jpg"
+                        <OptimizedImage
+                          src="/images/developer-portrait.webp"
                           alt="Developer portrait"
-                          className="w-full h-full object-cover"
-                          width="64"
-                          height="64"
-                          onError={(e) => {
-                            // Fallback to a default image if the local image fails to load
-                            e.currentTarget.src = "https://images.unsplash.com/photo-1580927752452-89d86da3fa0a?q=80&w=1000";
-                          }}
-                          style={{ aspectRatio: '1/1', contain: 'layout paint' }}
+                          className="w-full h-full"
+                          width={64}
+                          height={64}
+                          fallbackSrc="https://images.unsplash.com/photo-1580927752452-89d86da3fa0a?q=80&w=1000"
+                          priority={true}
+                          isLCP={true}
+                          fetchPriority="high"
+                          aspectRatio="1/1"
+                          objectFit="cover"
                         />
                       </motion.div>
                       <div>
@@ -558,14 +560,19 @@ const Hero = () => {
                         }}
                         transition={{ type: "spring", stiffness: 200, damping: 20 }}
                       >
-                        <img
-                          src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000"
+                        <OptimizedImage
+                          src="/images/coding-preview.webp"
+                          webpSrc="/images/coding-preview.webp"
+                          fallbackSrc="https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000"
                           alt="Coding preview"
-                          className={`w-full h-full object-cover ${!isLowPerformanceDevice ? "transition-transform duration-500 group-hover:scale-105" : ""}`}
-                          width="500"
-                          height="281"
-                          loading="eager"
-                          style={{ aspectRatio: '16/9', contain: 'layout paint' }}
+                          className={!isLowPerformanceDevice ? "transition-transform duration-500 group-hover:scale-105" : ""}
+                          width={500}
+                          height={281}
+                          priority={true}
+                          isLCP={true}
+                          fetchPriority="high"
+                          aspectRatio="16/9"
+                          objectFit="cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
                           <div className="p-4 text-white w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
@@ -596,14 +603,18 @@ const Hero = () => {
                         }}
                         transition={{ type: "spring", stiffness: 200, damping: 20 }}
                       >
-                        <img
-                          src="https://images.unsplash.com/photo-1607799279861-4dd421887fb3?q=80&w=1000"
+                        <OptimizedImage
+                          src="/images/testing-preview.webp"
+                          webpSrc="/images/testing-preview.webp"
+                          fallbackSrc="https://images.unsplash.com/photo-1607799279861-4dd421887fb3?q=80&w=1000"
                           alt="Testing preview"
-                          className={`w-full h-full object-cover ${!isLowPerformanceDevice ? "transition-transform duration-500 group-hover:scale-105" : ""}`}
-                          width="500"
-                          height="281"
-                          loading="eager"
-                          style={{ aspectRatio: '16/9', contain: 'layout paint' }}
+                          className={!isLowPerformanceDevice ? "transition-transform duration-500 group-hover:scale-105" : ""}
+                          width={500}
+                          height={281}
+                          priority={true}
+                          fetchPriority="high"
+                          aspectRatio="16/9"
+                          objectFit="cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
                           <div className="p-4 text-white w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">

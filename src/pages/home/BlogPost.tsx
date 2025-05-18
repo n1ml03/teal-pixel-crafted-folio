@@ -525,7 +525,7 @@ const BlogPost = () => {
                     <div className="flex flex-col md:flex-row items-start gap-6 relative z-10">
                       <div className="relative">
                         <img
-                          src="/images/profile.jpg"
+                          src="/images/profile.webp"
                           alt={post.author.name}
                           className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
                           onError={(e) => {

@@ -13,7 +13,7 @@ import CodeEditor from '@/components/playground/CodeEditor';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserProgressService } from '@/services/UserProgressService';
-import challenges from '@/data/challenges';
+import { ChallengeLoaderService } from '@/services/ChallengeLoaderService';
 
 // Default fallback sandbox URL in case a challenge doesn't have one
 const DEFAULT_SANDBOX_URL = 'https://jsonplaceholder.typicode.com/';
@@ -139,34 +139,44 @@ if (header.exists()) {
 
   // Load challenge data based on ID
   useEffect(() => {
-    if (!challengeId) {
-      setError("Challenge ID is missing");
-      setIsLoading(false);
-      return;
-    }
+    const loadChallenge = async () => {
+      if (!challengeId) {
+        setError("Challenge ID is missing");
+        setIsLoading(false);
+        return;
+      }
 
-    // Find the challenge in the challenges array
-    const foundChallenge = challenges.find(c => c.id === challengeId);
+      try {
+        // Dynamically load the challenge details
+        const foundChallenge = await ChallengeLoaderService.loadChallengeDetails(challengeId);
 
-    if (!foundChallenge) {
-      setError(`Challenge with ID ${challengeId} not found`);
-      setIsLoading(false);
-      return;
-    }
+        if (!foundChallenge) {
+          setError(`Challenge with ID ${challengeId} not found`);
+          setIsLoading(false);
+          return;
+        }
 
-    // Format the challenge data for the playground
-    const formattedChallenge = {
-      ...foundChallenge,
-      objectives: foundChallenge.objectives.map(obj => ({
-        ...obj,
-        completed: false // Initialize all objectives as not completed
-      })),
-      sandboxUrl: foundChallenge.sandboxUrl || DEFAULT_SANDBOX_URL
+        // Format the challenge data for the playground
+        const formattedChallenge = {
+          ...foundChallenge,
+          objectives: foundChallenge.objectives.map(obj => ({
+            ...obj,
+            completed: false // Initialize all objectives as not completed
+          })),
+          sandboxUrl: foundChallenge.sandboxUrl || DEFAULT_SANDBOX_URL
+        };
+
+        setChallenge(formattedChallenge);
+        setIsLoading(false);
+        setError(null);
+      } catch (error) {
+        console.error('Error loading challenge:', error);
+        setError('Failed to load challenge data. Please try again.');
+        setIsLoading(false);
+      }
     };
 
-    setChallenge(formattedChallenge);
-    setIsLoading(false);
-    setError(null);
+    loadChallenge();
   }, [challengeId]);
 
   const handleObjectiveToggle = (id: string) => {
@@ -186,19 +196,9 @@ if (header.exists()) {
       setAnimationMessage(`Completed: ${objective?.description.substring(0, 40)}...`);
       setShowObjectiveAnimation(true);
 
-      // Play a subtle success sound
-      try {
-        const audio = new Audio('/sounds/objective-complete.mp3');
-        audio.volume = 0.3;
-        audio.play().catch((error) => {
-          console.warn('Audio playback failed:', error);
-          // Fallback to browser notification if available
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Objective Completed!');
-          }
-        });
-      } catch (error) {
-        console.warn('Audio creation failed:', error);
+      // Fallback to browser notification if available
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Objective Completed!');
       }
     }
 
@@ -213,21 +213,11 @@ if (header.exists()) {
       setAnimationMessage("You've mastered all objectives in this challenge!");
       setShowChallengeAnimation(true);
 
-      // Play a more celebratory sound
-      try {
-        const audio = new Audio('/sounds/challenge-complete.mp3');
-        audio.volume = 0.5;
-        audio.play().catch((error) => {
-          console.warn('Audio playback failed:', error);
-          // Fallback to browser notification if available
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Challenge Completed!', {
-              body: 'Congratulations! You completed all objectives!'
-            });
-          }
+      // Fallback to browser notification if available
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Challenge Completed!', {
+          body: 'Congratulations! You completed all objectives!'
         });
-      } catch (error) {
-        console.warn('Audio creation failed:', error);
       }
 
       toast.success("Congratulations! You've completed all objectives!");
@@ -447,7 +437,7 @@ if (header.exists()) {
   return (
     <div className="min-h-screen relative">
       {/* Enhanced background with gradient and animated elements */}
-      <EnhancedBackground optimizeForLowPerformance={true} />
+      <EnhancedBackground optimizeForLowPerformance={true} reducedAnimations={true} />
 
       <div className="flex-1 overflow-hidden pt-24">
         {isLoading && (

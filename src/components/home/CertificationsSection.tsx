@@ -158,7 +158,7 @@ const CertificationsSection = () => {
     issuer: "NextGen QA Academy",
     date: "2025",
     description: "Certification for leveraging AI in software testing, including test script generation, smart defect prediction, and visual regression using machine learning.",
-    image: "./images/ai.png",
+    image: "./images/ai.webp",
     credentialUrl: "./NotFound",
     skills: ["AI Testing", "ML-based Automation", "Visual Regression"],
     category: "Testing",

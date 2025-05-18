@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
-import { useToast } from "@/hooks/use-toast.ts";
+import { toast } from "@/components/ui/sonner";
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -18,7 +18,7 @@ import { MotionButton } from "@/components/ui/motion-button.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 
 const ContactSection = () => {
-  const { toast } = useToast();
+  // Using sonner toast directly
   const [formState, setFormState] = useState({
     name: '',
     email: '',
@@ -49,9 +49,8 @@ const ContactSection = () => {
       });
 
       // Show success toast
-      toast({
-        title: "Message sent!",
-        description: "Thank you for your message. I'll get back to you soon.",
+      toast.success("Thank you for your message. I'll get back to you soon.", {
+        description: "Message sent!",
       });
     }, 1500);
   };

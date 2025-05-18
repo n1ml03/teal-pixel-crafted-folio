@@ -92,7 +92,14 @@ const Home = () => {
       sectionObserver.observe(section);
     });
 
-    // Mark page as loaded after critical content is visible
+    // Mark hero section as visible immediately to prioritize LCP
+    setVisibleSections(prev => ({
+      ...prev,
+      'hero': true
+    }));
+
+    // Mark page as loaded after critical content is visible, but with a delay
+    // to ensure LCP happens first
     const markAsLoaded = () => {
       if (!isLoaded) {
         setIsLoaded(true);
@@ -118,16 +125,17 @@ const Home = () => {
       <HomeResourcePreloader />
 
       {/* Global background with optimized loading and performance detection */}
-      {isLoaded ? (
+      <div
+        className="fixed top-0 left-0 right-0 bottom-0 -z-10 bg-gradient-to-br from-gray-50 via-blue-50 to-teal-50"
+        style={{ contain: 'paint layout' }} // Add CSS containment for better performance
+      ></div>
+
+      {/* Load enhanced background after initial render to prioritize LCP */}
+      {isLoaded && (
         <EnhancedBackground
           optimizeForLowPerformance={isLowPerformanceDevice}
           reducedAnimations={prefersReducedMotion || false}
         />
-      ) : (
-        <div
-          className="fixed top-0 left-0 right-0 bottom-0 -z-10 bg-gradient-to-br from-gray-50 via-blue-50 to-teal-50"
-          style={{ contain: 'paint layout' }} // Add CSS containment for better performance
-        ></div>
       )}
 
       <Header />
@@ -139,40 +147,50 @@ const Home = () => {
           <ValueBanner />
         </SectionBackground>
 
-        {/* Services section - lazy loaded */}
-        <SectionBackground sectionId="services-section" variant="services" optimizeRendering={true}>
-          <Suspense fallback={<SectionFallback />}>
-            {(isLoaded || visibleSections.services) && <ServicesSection />}
-          </Suspense>
-        </SectionBackground>
+        {/* Services section - lazy loaded with content-visibility */}
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}>
+          <SectionBackground sectionId="services-section" variant="services" optimizeRendering={true}>
+            <Suspense fallback={<SectionFallback />}>
+              {(isLoaded || visibleSections.services) && <ServicesSection />}
+            </Suspense>
+          </SectionBackground>
+        </div>
 
-        {/* Projects section - lazy loaded */}
-        <SectionBackground sectionId="projects-section" variant="projects" optimizeRendering={true}>
-          <Suspense fallback={<SectionFallback />}>
-            {(isLoaded || visibleSections.projects) && <ProjectsSection />}
-          </Suspense>
-        </SectionBackground>
+        {/* Projects section - lazy loaded with content-visibility */}
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}>
+          <SectionBackground sectionId="projects-section" variant="projects" optimizeRendering={true}>
+            <Suspense fallback={<SectionFallback />}>
+              {(isLoaded || visibleSections.projects) && <ProjectsSection />}
+            </Suspense>
+          </SectionBackground>
+        </div>
 
-        {/* Experience section - lazy loaded */}
-        <SectionBackground sectionId="experience-section" variant="experience" optimizeRendering={true}>
-          <Suspense fallback={<SectionFallback />}>
-            {(isLoaded || visibleSections.experience) && <ExperienceSection />}
-          </Suspense>
-        </SectionBackground>
+        {/* Experience section - lazy loaded with content-visibility */}
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}>
+          <SectionBackground sectionId="experience-section" variant="experience" optimizeRendering={true}>
+            <Suspense fallback={<SectionFallback />}>
+              {(isLoaded || visibleSections.experience) && <ExperienceSection />}
+            </Suspense>
+          </SectionBackground>
+        </div>
 
-        {/* Certifications section - lazy loaded */}
-        <SectionBackground sectionId="certifications-section" variant="certifications" optimizeRendering={true}>
-          <Suspense fallback={<SectionFallback />}>
-            {(isLoaded || visibleSections.certifications) && <CertificationsSection />}
-          </Suspense>
-        </SectionBackground>
+        {/* Certifications section - lazy loaded with content-visibility */}
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}>
+          <SectionBackground sectionId="certifications-section" variant="certifications" optimizeRendering={true}>
+            <Suspense fallback={<SectionFallback />}>
+              {(isLoaded || visibleSections.certifications) && <CertificationsSection />}
+            </Suspense>
+          </SectionBackground>
+        </div>
 
-        {/* Contact section - lazy loaded */}
-        <SectionBackground sectionId="contact-section" variant="contact" optimizeRendering={true}>
-          <Suspense fallback={<SectionFallback />}>
-            {(isLoaded || visibleSections.contact) && <ContactSection />}
-          </Suspense>
-        </SectionBackground>
+        {/* Contact section - lazy loaded with content-visibility */}
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}>
+          <SectionBackground sectionId="contact-section" variant="contact" optimizeRendering={true}>
+            <Suspense fallback={<SectionFallback />}>
+              {(isLoaded || visibleSections.contact) && <ContactSection />}
+            </Suspense>
+          </SectionBackground>
+        </div>
       </main>
 
       <Footer />

@@ -5,7 +5,7 @@ import Navigation from '@/components/playground/Navigation';
 import PlaygroundFooter from '@/components/playground/PlaygroundFooter';
 import TestingEnvironment from '@/components/playground/TestingEnvironment';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
-import PageTransition from '@/components/playground/PageTransition';
+import { PageTransition } from '@/components/ui/page-transition';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Loading spinner component for Suspense fallback
@@ -105,7 +105,7 @@ const PlaygroundRoutes = () => {
       <Route path="/playground" element={
         <Suspense fallback={<LoadingSpinner />}>
           <PlaygroundLayout>
-            <PageTransition mode="fade" duration={0.2} direction="up" exitBeforeEnter={true}>
+            <PageTransition>
               <Dashboard />
             </PageTransition>
           </PlaygroundLayout>
@@ -114,7 +114,7 @@ const PlaygroundRoutes = () => {
       <Route path="/" element={
         <Suspense fallback={<LoadingSpinner />}>
           <PlaygroundLayout>
-            <PageTransition mode="fade" duration={0.2} direction="up" exitBeforeEnter={true}>
+            <PageTransition>
               <Dashboard />
             </PageTransition>
           </PlaygroundLayout>
@@ -123,7 +123,7 @@ const PlaygroundRoutes = () => {
       <Route path="/challenges" element={
         <Suspense fallback={<LoadingSpinner />}>
           <PlaygroundLayout>
-            <PageTransition mode="fade" duration={0.2} direction="up" exitBeforeEnter={true}>
+            <PageTransition>
               <Challenges />
             </PageTransition>
           </PlaygroundLayout>

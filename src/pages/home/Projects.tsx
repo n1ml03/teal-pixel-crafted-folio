@@ -172,7 +172,7 @@ const Projects = () => {
                       transition={{ duration: 0.5, delay: 0.2 }}
                     >
                       {/* Decorative pattern */}
-                      <div className="absolute inset-0 bg-[url('/patterns/dot-pattern.png')] bg-repeat opacity-5"></div>
+                      <div className="absolute inset-0 bg-repeat opacity-5"></div>
 
                       <motion.div
                         className="text-gray-400 mb-6 bg-gray-50 rounded-full p-6 w-24 h-24 flex items-center justify-center mx-auto"
@@ -249,7 +249,7 @@ const ProjectCard = ({ project, index }: ProjectCardProps) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-30 group-hover:opacity-70 transition-opacity duration-300"></div>
 
         {/* Subtle pattern overlay */}
-        <div className="absolute inset-0 bg-[url('/patterns/dot-pattern.png')] bg-repeat opacity-10 mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-repeat opacity-10 mix-blend-overlay"></div>
 
         {/* Project links */}
         <div className="absolute bottom-4 right-4 flex space-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLazyImage, getResponsiveImageSources, OptimizedImageSources } from '@/lib/image-optimization';
 import { cn } from '@/lib/utils';
 
-interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
   alt: string;
   width?: number;
@@ -16,25 +16,17 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   loadingStrategy?: 'lazy' | 'eager';
   onLoad?: () => void;
   onError?: () => void;
-  fallbackSrc?: string;
-  webpSrc?: string;
-  isLCP?: boolean;
-  fetchPriority?: 'high' | 'low' | 'auto';
-  aspectRatio?: string;
-  objectFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
 }
 
 /**
- * OptimizedImage component for enhanced image loading
+ * LazyImage component for optimized image loading
  * Features:
  * - Lazy loading with IntersectionObserver
  * - Responsive image optimization with srcset
  * - Blur-up loading effect
  * - Fallback for image loading errors
- * - WebP format support
- * - LCP (Largest Contentful Paint) optimization
  */
-const OptimizedImage: React.FC<OptimizedImageProps> = ({
+export const LazyImage: React.FC<LazyImageProps> = ({
   src,
   alt,
   width,
@@ -48,23 +40,11 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
   loadingStrategy = 'lazy',
   onLoad,
   onError,
-  fallbackSrc,
-  webpSrc,
-  isLCP = false,
-  fetchPriority = 'auto',
-  aspectRatio,
-  objectFit = 'cover',
   ...props
 }) => {
   // Get optimized image sources if responsive optimization is enabled
   const [imageSources, setImageSources] = useState<OptimizedImageSources>({ src });
   const [dominantColor, setDominantColor] = useState<string>('#f0f0f0');
-
-  // Use the webpSrc if provided, otherwise use the original src
-  const finalSrc = webpSrc || src;
-  
-  // Use the fallbackSrc if provided for error cases
-  const errorFallbackSrc = fallbackSrc || src;
 
   // Set up lazy loading with IntersectionObserver
   const {
@@ -72,18 +52,17 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
     error,
     imageRef,
     currentSrc
-  } = useLazyImage(finalSrc, {
+  } = useLazyImage(imageSources.src, {
     rootMargin: '200px',
     placeholder: imageSources.placeholder,
     srcset: imageSources.srcset,
-    sizes: imageSources.sizes,
-    fallbackSrc: errorFallbackSrc
+    sizes: imageSources.sizes
   });
 
   // Generate optimized image sources on mount or when src changes
   useEffect(() => {
     if (optimizeResponsive) {
-      const sources = getResponsiveImageSources(finalSrc, {
+      const sources = getResponsiveImageSources(src, {
         widths: [640, 750, 828, 1080, 1200, 1920],
         format: 'original',
         quality: 80,
@@ -91,9 +70,9 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
       });
       setImageSources(sources);
     } else {
-      setImageSources({ src: finalSrc });
+      setImageSources({ src });
     }
-  }, [finalSrc, optimizeResponsive, blurEffect]);
+  }, [src, optimizeResponsive, blurEffect]);
 
   // Handle custom load and error callbacks
   useEffect(() => {
@@ -105,11 +84,8 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
     }
   }, [loaded, error, onLoad, onError]);
 
-  // Determine loading attribute based on priority and isLCP
-  const loadingAttr = priority || isLCP ? 'eager' : loadingStrategy;
-  
-  // Determine fetchPriority based on isLCP
-  const finalFetchPriority = isLCP ? 'high' : fetchPriority;
+  // Determine loading attribute based on priority
+  const loadingAttr = priority ? 'eager' : loadingStrategy;
 
   return (
     <div
@@ -121,7 +97,6 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
         width: width ? `${width}px` : '100%',
         height: height ? `${height}px` : 'auto',
         backgroundColor: dominantColor,
-        aspectRatio: aspectRatio,
         contain: 'paint layout' // Add CSS containment for better performance
       }}
     >
@@ -157,9 +132,8 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
         height={height}
         loading={loadingAttr}
         decoding="async"
-        fetchPriority={finalFetchPriority}
         style={{
-          objectFit,
+          objectFit: 'cover',
           objectPosition: 'center',
           width: '100%',
           height: '100%',
@@ -198,4 +172,4 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
   );
 };
 
-export default OptimizedImage;
+export default LazyImage;

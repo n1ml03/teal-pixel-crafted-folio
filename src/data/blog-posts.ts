@@ -506,7 +506,7 @@ public class UserApiTests {
 
 Robust API testing is essential for modern application development. Tools like Postman offer a user-friendly way to start, while libraries like REST Assured provide powerful automation capabilities for Java-based projects. By following best practices, you can build a comprehensive API testing strategy that ensures the quality and reliability of your services.
     `,
-    coverImage: './images/data-analysis.jpg',
+    coverImage: './images/data-analysis.webp',
     date: '2023-12-05',
     author: {
       name: 'Nam Le',
@@ -644,7 +644,7 @@ func testLoginFlow() throws {
 
 A comprehensive mobile app testing strategy is vital for delivering high-quality applications. By understanding the different types of testing, choosing the right mix of real devices and emulators, and leveraging appropriate tools like Appium, Espresso, or XCUITest, development teams can ensure their mobile apps meet user expectations for functionality, performance, and usability.
     `,
-    coverImage: './images/colorful-data.jpg',
+    coverImage: './images/colorful-data.webp',
     date: '2023-12-20',
     author: {
       name: 'Nam Le',
@@ -752,7 +752,7 @@ Imagine a new feature: "User can add item to cart."
 
 Test-Driven Development offers a powerful paradigm for building high-quality software. For QA engineers, embracing TDD principles means shifting from a late-cycle validation role to an early-cycle quality advocacy and enablement role. By contributing to the TDD process, QAs can help build more robust, maintainable, and bug-free applications, ultimately leading to greater customer satisfaction.
     `,
-    coverImage: './images/workspace.jpg',
+    coverImage: './images/workspace.webp',
     date: '2024-01-10',
     author: {
       name: 'Nam Le',

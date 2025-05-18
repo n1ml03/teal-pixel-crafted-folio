@@ -7,6 +7,10 @@
  * This helps prevent layout shifts caused by font loading
  */
 export function loadFonts(): void {
+  // Add fonts-loaded class immediately to use system fonts first
+  // This prevents layout shifts while waiting for custom fonts
+  document.documentElement.classList.add('fonts-loaded');
+
   // Check if the browser supports the Font Loading API
   if ('fonts' in document) {
     // Define the fonts we want to load
@@ -26,22 +30,23 @@ export function loadFonts(): void {
       });
     });
 
-    // When all fonts are loaded, add the class to the document
+    // When critical fonts are loaded, add the custom-fonts-loaded class
+    // This will swap from system fonts to custom fonts
     Promise.all(fontPromises)
       .then(() => {
-        document.documentElement.classList.add('fonts-loaded');
+        document.documentElement.classList.add('custom-fonts-loaded');
         console.log('All fonts loaded successfully');
       })
       .catch(error => {
         // If fonts fail to load, still add the class to use fallbacks
-        document.documentElement.classList.add('fonts-loaded');
+        document.documentElement.classList.add('custom-fonts-loaded');
         console.warn('Error loading fonts:', error);
       });
   } else {
     // For browsers that don't support the Font Loading API
     // Add the class after a short timeout to use fallbacks
     setTimeout(() => {
-      document.documentElement.classList.add('fonts-loaded');
+      document.documentElement.classList.add('custom-fonts-loaded');
     }, 300);
   }
 }

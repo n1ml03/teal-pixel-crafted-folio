@@ -6,6 +6,7 @@ interface ResourcePreloaderProps {
     as: 'image' | 'style' | 'script' | 'font';
     type?: string;
     crossOrigin?: 'anonymous' | 'use-credentials';
+    fetchPriority?: 'high' | 'low' | 'auto';
   }[];
 }
 
@@ -49,6 +50,11 @@ export const ResourcePreloader = ({ resources }: ResourcePreloaderProps) => {
 
       if (resource.crossOrigin) {
         link.crossOrigin = resource.crossOrigin;
+      }
+
+      // Add fetchPriority for modern browsers
+      if (resource.fetchPriority && 'fetchPriority' in HTMLImageElement.prototype) {
+        (link as any).fetchPriority = resource.fetchPriority;
       }
 
       // For stylesheets, ensure they're applied immediately

@@ -1,5 +1,7 @@
 import { Challenge } from '@/components/playground/ChallengeCard';
 import { TestResult } from '../types/playground';
+import { ChallengeLoaderService } from './ChallengeLoaderService';
+import challengesMeta from '@/data/challengesMeta';
 
 // Challenge progress interface
 export interface ChallengeProgress {
@@ -54,24 +56,14 @@ const generateId = (): string => {
 
 // ChallengeService class
 export class ChallengeService {
-  // Get all challenges
+  // Get all challenges - use lightweight metadata
   static async getChallenges(): Promise<Challenge[]> {
-    return Object.values(challengesStorage).map(challenge => ({
-      id: challenge.id,
-      title: challenge.title,
-      description: challenge.description,
-      thumbnail: challenge.thumbnail,
-      difficulty: challenge.difficulty,
-      duration: challenge.duration,
-      tags: challenge.tags,
-      category: challenge.category,
-      featured: challenge.featured
-    }));
+    return challengesMeta;
   }
 
-  // Get challenge by ID
+  // Get challenge by ID - use dynamic loading
   static async getChallenge(id: string): Promise<ChallengeWithTests | null> {
-    return challengesStorage[id] || null;
+    return ChallengeLoaderService.loadChallengeDetails(id);
   }
 
   // Create a new challenge
