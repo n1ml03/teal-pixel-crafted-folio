@@ -200,7 +200,7 @@ const Leaderboard = () => {
   return (
     <div className="min-h-screen relative">
       {/* Enhanced background with gradient and animated elements */}
-      <EnhancedBackground optimizeForLowPerformance={false} />
+      <EnhancedBackground optimizeForLowPerformance={true} reducedAnimations={true} />
 
       <div className="container py-6 pt-20 md:py-8 md:pt-24 relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
