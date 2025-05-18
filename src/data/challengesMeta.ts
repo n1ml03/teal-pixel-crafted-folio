@@ -1,12 +1,13 @@
-import { Challenge } from '../types/playground';
+import { Challenge } from '../components/playground/ChallengeCard';
 
-// Basic challenge metadata without heavy test functions
-export interface ChallengeMeta extends Omit<Challenge, 'objectives' | 'tests' | 'hints'> {
+// Basic challenge metadata
+export interface ChallengeMeta extends Challenge {
+  // These properties are already in the Challenge interface,
+  // but we're redefining them here to ensure type consistency
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   duration: string;
   tags: string[];
   category: string;
-  featured: boolean;
 }
 
 // Challenge 1: Accessibility Testing

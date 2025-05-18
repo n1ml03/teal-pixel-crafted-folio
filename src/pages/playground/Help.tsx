@@ -726,7 +726,7 @@ const Help = () => {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-6 bg-white/80 backdrop-blur-sm rounded-xl p-1 shadow-sm">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-6 bg-white/80 backdrop-blur-sm rounded-xl p-1 shadow-sm top-16 sm:top-20">
                 <TabsTrigger
                   value="getting-started"
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-300"
@@ -792,20 +792,6 @@ const Help = () => {
                                   <h3 className="text-lg font-semibold text-blue-900">{item.title}</h3>
                                 </div>
                                 <div className="text-sm text-gray-700 pl-9" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
-
-                                {/* Code examples with copy button if content contains code */}
-                                {item.content.includes('<pre><code>') && (
-                                  <div className="mt-4 relative">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="absolute top-2 right-2 h-8 w-8 p-0 bg-blue-100/80 hover:bg-blue-200/80 text-blue-700"
-                                      onClick={() => copyToClipboard(item.content.match(/<pre><code>([\s\S]*?)<\/code><\/pre>/)?.[1] || '')}
-                                    >
-                                      <Copy className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                )}
                               </div>
                             ))}
                         </div>
@@ -859,20 +845,6 @@ const Help = () => {
                                   <h3 className="text-lg font-semibold text-teal-900">{item.title}</h3>
                                 </div>
                                 <div className="text-sm text-gray-700 pl-9" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
-
-                                {/* Code examples with copy button if content contains code */}
-                                {item.content.includes('<pre><code>') && (
-                                  <div className="mt-4 relative">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="absolute top-2 right-2 h-8 w-8 p-0 bg-teal-100/80 hover:bg-teal-200/80 text-teal-700"
-                                      onClick={() => copyToClipboard(item.content.match(/<pre><code>([\s\S]*?)<\/code><\/pre>/)?.[1] || '')}
-                                    >
-                                      <Copy className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                )}
                               </div>
                             ))}
                         </div>

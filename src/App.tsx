@@ -16,8 +16,6 @@ import ResourcePreloader from "@/components/utils/ResourcePreloader.tsx";
 import { SkipLink } from "@/components/ui/skip-link";
 import AccessibilityProvider from "@/components/utils/AccessibilityProvider.tsx";
 import { logCLS } from "@/lib/cls-monitoring";
-import { initBfCacheOptimization, checkBfCacheEligibility } from "@/lib/bfcache-optimization";
-import { initPerformanceMonitoring } from "@/lib/performance-monitoring";
 import ErrorBoundary from "@/components/utils/ErrorBoundary";
 
 // Lazy load pages for code splitting
@@ -29,6 +27,10 @@ const Projects = lazy(() => import("./pages/home/Projects.tsx"));
 const ProjectDetail = lazy(() => import("./pages/home/ProjectDetail.tsx"));
 const ContactForm = lazy(() => import("./pages/home/ContactForm.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+
+// URL Shortener pages
+const URLShortenerPage = lazy(() => import("./pages/shorten/URLShortenerPage.tsx"));
+const URLRedirect = lazy(() => import("./components/shorten/URLRedirect.tsx"));
 
 // Testing Playground pages
 const PlaygroundRoutes = lazy(() => import("./pages/playground"));
@@ -91,6 +93,10 @@ const router = createBrowserRouter(
       <Route path="/projects/:slug" element={<ProjectDetail />} />
       <Route path="/contact-form" element={<ContactForm />} />
 
+      {/* URL Shortener Routes */}
+      <Route path="/url-shortener" element={<URLShortenerPage />} />
+      <Route path="/s/:shortCode" element={<URLRedirect />} />
+
       {/* Testing Playground Routes */}
       <Route path="/playground/*" element={
         <AuthProvider>
@@ -105,7 +111,11 @@ const router = createBrowserRouter(
   {
     // Add future flags to address React Router warnings
     future: {
-      v7_relativeSplatPath: true
+      v7_fetcherPersist: true,
+      v7_normalizeFormMethod: true,
+      v7_partialHydration: true,
+      v7_relativeSplatPath: true,
+      v7_skipActionErrorRevalidation: true
     }
   }
 );
@@ -117,30 +127,6 @@ const App = () => {
       const stopMonitoring = logCLS();
       return () => stopMonitoring();
     }
-  }, []);
-
-  // Initialize bfcache optimization
-  useEffect(() => {
-    // Initialize bfcache optimization
-    const cleanupBfCache = initBfCacheOptimization();
-
-    // Check bfcache eligibility in development mode
-    if (process.env.NODE_ENV === 'development') {
-      const { eligible, reasons } = checkBfCacheEligibility();
-      if (!eligible) {
-        console.warn('Page may not be eligible for bfcache:', reasons);
-      } else {
-        console.log('Page is eligible for bfcache');
-      }
-    }
-
-    // Initialize performance monitoring
-    const cleanupPerformance = initPerformanceMonitoring();
-
-    return () => {
-      cleanupBfCache();
-      cleanupPerformance();
-    };
   }, []);
 
   return (
@@ -162,8 +148,6 @@ const App = () => {
                   <RouterProvider router={router} />
                 </Suspense>
               </div>
-              {/* Add debug info component in development mode */}
-              {/* {process.env.NODE_ENV === 'development' && <DebugInfo />} */}
             </TooltipProvider>
           </ParallaxProvider>
         </QueryClientProvider>

@@ -216,20 +216,26 @@ const EnhancedBackground: React.FC<EnhancedBackgroundProps> = ({
     // Use requestAnimationFrame to apply will-change property at the right time
     animationFrameId = requestAnimationFrame(applyWillChange);
 
-    // Use passive event listener for scroll to improve performance
+    // Use optimized scroll handler with higher throttle value to reduce jitter
     const handleScroll = throttle(() => {
-      // Check if element is in viewport
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const isInViewport = rect.top < window.innerHeight && rect.bottom > 0;
+      // Skip processing if not visible to save resources
+      if (!isVisible || !containerRef.current) return;
 
-        if (!isInViewport) {
-          removeWillChange();
-        } else {
-          requestAnimationFrame(applyWillChange);
+      // Use requestAnimationFrame to ensure we're in the right frame
+      requestAnimationFrame(() => {
+        // Check if element is in viewport
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          const isInViewport = rect.top < window.innerHeight && rect.bottom > 0;
+
+          if (!isInViewport) {
+            removeWillChange();
+          } else {
+            applyWillChange(); // Direct call instead of nested requestAnimationFrame
+          }
         }
-      }
-    }, 100);
+      });
+    }, 200); // Increased throttle time to reduce frequency of updates
 
     // Add passive scroll listener for better performance
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -272,32 +278,35 @@ const AnimatedBackground: React.FC<{
   containerRef,
   prefersReducedMotion = false
 }) => {
-  // Use Framer Motion's scroll utilities for smoother animations
-  const { scrollY: scrollYProgress } = useScroll();
+  // Use Framer Motion's scroll utilities with optimized settings
+  const { scrollY: scrollYProgress } = useScroll({
+    // Use passive listener for better performance
+    target: typeof document !== 'undefined' ? document.documentElement : undefined,
+    layoutEffect: false, // Avoid layout thrashing
+  });
 
-  // Create smooth spring-based scroll value with optimized settings
-  // Use lighter spring settings for better performance
+  // Create smooth spring-based scroll value with more performance-focused settings
   const smoothScrollY = useSpring(scrollYProgress, {
-    stiffness: prefersReducedMotion ? 100 : 80, // Stiffer for reduced motion
-    damping: prefersReducedMotion ? 30 : 25,    // More damping for reduced motion
-    restDelta: 0.001,
-    mass: 0.5
+    stiffness: prefersReducedMotion ? 120 : 100, // Stiffer springs for less oscillation
+    damping: prefersReducedMotion ? 35 : 30,     // More damping to reduce oscillation
+    restDelta: 0.01,                            // Larger rest delta for earlier animation completion
+    mass: 0.2                                   // Lighter mass for faster response
   });
 
   // Transform scroll values to usable ranges for parallax effects
-  // Use smaller ranges for reduced motion preference
-  const parallaxRange = prefersReducedMotion ? 0.3 : 1; // Reduce parallax effect by 70% if reduced motion
+  // Significantly reduce parallax effect to minimize jitter
+  const parallaxRange = prefersReducedMotion ? 0.1 : 0.3; // Reduce parallax effect significantly for all users
 
-  // Create transform values directly - no nesting hooks inside useMemo
-  const topBlobY = useTransform(smoothScrollY, [0, 1], [0, -50 * parallaxRange]);
-  const middleBlobY = useTransform(smoothScrollY, [0, 1], [0, 25 * parallaxRange]);
-  const bottomBlobY = useTransform(smoothScrollY, [0, 1], [0, 75 * parallaxRange]);
+  // Create transform values with reduced movement range to minimize jitter
+  const topBlobY = useTransform(smoothScrollY, [0, 1], [0, -20 * parallaxRange]);
+  const middleBlobY = useTransform(smoothScrollY, [0, 1], [0, 10 * parallaxRange]);
+  const bottomBlobY = useTransform(smoothScrollY, [0, 1], [0, 30 * parallaxRange]);
 
-  // Additional transform values for floating elements
-  const topElementY = useTransform(smoothScrollY, [0, 0.5], [0, -15 * parallaxRange]);
-  const middleElementY = useTransform(smoothScrollY, [0.3, 0.6], [0, 20 * parallaxRange]);
-  const bottomElementY = useTransform(smoothScrollY, [0.5, 1], [0, 25 * parallaxRange]);
-  const gridPatternY = useTransform(smoothScrollY, [0, 1], [0, 15 * parallaxRange]);
+  // Additional transform values for floating elements with reduced movement
+  const topElementY = useTransform(smoothScrollY, [0, 0.5], [0, -5 * parallaxRange]);
+  const middleElementY = useTransform(smoothScrollY, [0.3, 0.6], [0, 8 * parallaxRange]);
+  const bottomElementY = useTransform(smoothScrollY, [0.5, 1], [0, 10 * parallaxRange]);
+  const gridPatternY = useTransform(smoothScrollY, [0, 1], [0, 5 * parallaxRange]);
 
   // Use React.memo to prevent unnecessary re-renders of static elements
   const StaticGradientBase = React.memo(() => (
