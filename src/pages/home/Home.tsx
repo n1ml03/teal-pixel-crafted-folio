@@ -133,8 +133,7 @@ const Home = () => {
       {/* Load enhanced background after initial render to prioritize LCP */}
       {isLoaded && (
         <EnhancedBackground
-          optimizeForLowPerformance={isLowPerformanceDevice}
-          reducedAnimations={prefersReducedMotion || false}
+          optimizeForLowPerformance={true} reducedAnimations={true}
         />
       )}
 
