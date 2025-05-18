@@ -248,9 +248,6 @@ const EnhancedBackground: React.FC<EnhancedBackgroundProps> = ({
     />;
   }, [isLowPerformanceDevice, isVisible, prefersReducedMotion]);
 
-  // Add a console log to help with debugging
-  console.log("EnhancedBackground rendering, isVisible:", isVisible, "isLowPerformanceDevice:", isLowPerformanceDevice);
-
   // Return the memoized background to prevent unnecessary re-renders
   return memoizedBackground;
 };

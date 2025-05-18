@@ -447,7 +447,7 @@ if (header.exists()) {
   return (
     <div className="min-h-screen relative">
       {/* Enhanced background with gradient and animated elements */}
-      <EnhancedBackground optimizeForLowPerformance={false} />
+      <EnhancedBackground optimizeForLowPerformance={true} />
 
       <div className="flex-1 overflow-hidden pt-24">
         {isLoading && (

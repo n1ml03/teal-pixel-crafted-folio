@@ -24,15 +24,15 @@ export const helpContent: HelpItem[] = [
     category: 'getting-started',
     content: `
       <p>Testing Playground is an interactive platform designed to help you learn and practice web testing skills in a safe, controlled environment.</p>
-      
+
       <p>Here's what you can do with Testing Playground:</p>
       <ul>
         <li>Complete testing challenges to improve your skills</li>
         <li>Use the sandbox environment to practice testing techniques</li>
         <li>Track your progress and earn achievements</li>
-        <li>Learn from step-by-step tutorials</li>
+        <li>Compete with others on the leaderboard</li>
       </ul>
-      
+
       <p>To get started, navigate to the Dashboard and select a challenge that interests you, or try the Sandbox environment to experiment freely.</p>
     `
   },
@@ -42,16 +42,15 @@ export const helpContent: HelpItem[] = [
     category: 'getting-started',
     content: `
       <p>The Testing Playground platform has several main sections:</p>
-      
+
       <ul>
         <li><strong>Dashboard</strong> - Your home base with challenges and progress tracking</li>
         <li><strong>Challenges</strong> - Structured testing exercises with specific objectives</li>
         <li><strong>Sandbox</strong> - An open environment for practicing testing techniques</li>
         <li><strong>Leaderboard</strong> - See how you rank compared to other users</li>
-        <li><strong>Tutorials</strong> - Step-by-step guides to learn testing concepts</li>
         <li><strong>Help & Support</strong> - Documentation and assistance</li>
       </ul>
-      
+
       <p>Use the navigation bar at the top of the page to move between these sections.</p>
     `
   },
@@ -61,7 +60,7 @@ export const helpContent: HelpItem[] = [
     category: 'getting-started',
     content: `
       <p>Challenges are structured testing exercises designed to help you practice specific testing skills.</p>
-      
+
       <p>Each challenge includes:</p>
       <ul>
         <li><strong>Objectives</strong> - Specific tasks you need to complete</li>
@@ -69,7 +68,7 @@ export const helpContent: HelpItem[] = [
         <li><strong>Testing Environment</strong> - A sandbox where you can interact with the target application</li>
         <li><strong>Hints</strong> - Optional help if you get stuck</li>
       </ul>
-      
+
       <p>To complete a challenge, work through each objective and mark them as completed. Your progress is automatically saved if you're logged in.</p>
     `
   },
@@ -79,7 +78,7 @@ export const helpContent: HelpItem[] = [
     category: 'getting-started',
     content: `
       <p>Your user profile tracks your progress and achievements across the Testing Playground.</p>
-      
+
       <p>Key profile features include:</p>
       <ul>
         <li><strong>Level</strong> - Increases as you complete challenges and earn points</li>
@@ -87,11 +86,11 @@ export const helpContent: HelpItem[] = [
         <li><strong>Challenge History</strong> - Record of challenges you've attempted and completed</li>
         <li><strong>Activity Log</strong> - Timeline of your recent actions on the platform</li>
       </ul>
-      
+
       <p>Access your profile through the user menu in the top-right corner of the navigation bar.</p>
     `
   },
-  
+
   // Testing Environment
   {
     id: 'te-1',
@@ -99,7 +98,7 @@ export const helpContent: HelpItem[] = [
     category: 'testing-environment',
     content: `
       <p>The Testing Environment is a powerful tool that allows you to interact with web applications and perform various testing activities.</p>
-      
+
       <p>Key components of the Testing Environment include:</p>
       <ul>
         <li><strong>Application Viewer</strong> - Displays the target web application</li>
@@ -108,7 +107,7 @@ export const helpContent: HelpItem[] = [
         <li><strong>Elements Inspector</strong> - Allows you to examine the DOM structure</li>
         <li><strong>Test Runner</strong> - Executes test scripts against the application</li>
       </ul>
-      
+
       <p>Use the tabs at the top of the Testing Environment to switch between these different views.</p>
     `
   },
@@ -118,7 +117,7 @@ export const helpContent: HelpItem[] = [
     category: 'testing-environment',
     content: `
       <p>The Testing Playground provides a code editor where you can write and run test scripts against the target application.</p>
-      
+
       <p>Basic test script structure:</p>
       <pre><code>// Example test script
 console.log('Testing if header exists...');
@@ -128,7 +127,7 @@ if (header.exists()) {
 } else {
   console.log('❌ Header not found');
 }</code></pre>
-      
+
       <p>Available testing functions:</p>
       <ul>
         <li><code>testElement(selector)</code> - Select an element for testing</li>
@@ -136,7 +135,7 @@ if (header.exists()) {
         <li><code>testAccessibility()</code> - Run accessibility checks</li>
         <li><code>testPerformance()</code> - Measure performance metrics</li>
       </ul>
-      
+
       <p>Click the "Run" button to execute your test script against the current application state.</p>
     `
   },
@@ -146,16 +145,16 @@ if (header.exists()) {
     category: 'testing-environment',
     content: `
       <p>The Testing Environment allows you to simulate different devices to test responsive design and mobile-specific behaviors.</p>
-      
+
       <p>Available device options:</p>
       <ul>
         <li><strong>Desktop</strong> - Standard desktop viewport</li>
         <li><strong>Tablet</strong> - Simulates tablet dimensions</li>
         <li><strong>Mobile</strong> - Simulates smartphone dimensions</li>
       </ul>
-      
+
       <p>You can also customize the viewport dimensions manually using the width and height controls.</p>
-      
+
       <p>Device simulation affects:</p>
       <ul>
         <li>Viewport size</li>
@@ -170,7 +169,7 @@ if (header.exists()) {
     category: 'testing-environment',
     content: `
       <p>The Network tab in the Testing Environment allows you to monitor all network requests made by the application.</p>
-      
+
       <p>Key features:</p>
       <ul>
         <li>View all HTTP requests and responses</li>
@@ -179,11 +178,11 @@ if (header.exists()) {
         <li>Filter requests by type, status, or domain</li>
         <li>Simulate network conditions (throttling)</li>
       </ul>
-      
+
       <p>This is particularly useful for API testing, performance analysis, and debugging network-related issues.</p>
     `
   },
-  
+
   // Bug Reporting
   {
     id: 'br-1',
@@ -191,7 +190,7 @@ if (header.exists()) {
     category: 'bug-reporting',
     content: `
       <p>Effective bug reporting is a critical skill for any tester. The Testing Playground includes a Bug Reporting Tool to help you practice documenting issues.</p>
-      
+
       <p>A good bug report includes:</p>
       <ul>
         <li><strong>Title</strong> - Clear, concise summary of the issue</li>
@@ -203,7 +202,7 @@ if (header.exists()) {
         <li><strong>Screenshots/Videos</strong> - Visual evidence of the issue</li>
         <li><strong>Severity/Priority</strong> - How serious and urgent the issue is</li>
       </ul>
-      
+
       <p>Use the Bug Reporting Tool in the Testing Environment to practice creating comprehensive bug reports.</p>
     `
   },
@@ -213,7 +212,7 @@ if (header.exists()) {
     category: 'bug-reporting',
     content: `
       <p>Screenshots are a crucial part of bug reporting, providing visual evidence of issues that might be difficult to describe in words.</p>
-      
+
       <p>Tips for effective screenshots:</p>
       <ul>
         <li>Capture the entire relevant area, not just a small portion</li>
@@ -222,7 +221,7 @@ if (header.exists()) {
         <li>For complex issues, take multiple screenshots showing the sequence of events</li>
         <li>Consider recording a short video for issues involving animation or interaction</li>
       </ul>
-      
+
       <p>The Testing Environment includes a Screenshot tool that allows you to capture the current state of the application for your bug reports.</p>
     `
   },
@@ -232,7 +231,7 @@ if (header.exists()) {
     category: 'bug-reporting',
     content: `
       <p>Properly categorizing bug severity helps development teams prioritize their work effectively.</p>
-      
+
       <p>Common severity levels:</p>
       <ul>
         <li><strong>Critical</strong> - Application crash, data loss, security vulnerability, or complete feature failure</li>
@@ -240,7 +239,7 @@ if (header.exists()) {
         <li><strong>Medium</strong> - Functionality issue with reasonable workarounds available</li>
         <li><strong>Low</strong> - Minor issues like cosmetic problems, typos, or non-critical functionality issues</li>
       </ul>
-      
+
       <p>When reporting bugs in the Testing Playground, practice assigning appropriate severity levels based on the impact of the issue.</p>
     `
   },
@@ -250,7 +249,7 @@ if (header.exists()) {
     category: 'bug-reporting',
     content: `
       <p>Clear, detailed steps to reproduce are essential for developers to understand and fix bugs efficiently.</p>
-      
+
       <p>Guidelines for writing reproduction steps:</p>
       <ul>
         <li>Start from a known, clean state (e.g., "Start from the homepage")</li>
@@ -260,7 +259,7 @@ if (header.exists()) {
         <li>Specify the exact location of elements when needed</li>
         <li>Keep steps atomic and focused on one action each</li>
       </ul>
-      
+
       <p>Example:</p>
       <ol>
         <li>Navigate to https://example.com/login</li>
@@ -276,7 +275,7 @@ export const faqs: FAQ[] = [
   {
     id: 'faq-1',
     question: 'What is Testing Playground?',
-    answer: 'Testing Playground is an interactive platform designed to help you learn and practice web testing skills in a safe, controlled environment. It includes challenges, tutorials, and a sandbox environment where you can experiment with different testing techniques.',
+    answer: 'Testing Playground is an interactive platform designed to help you learn and practice web testing skills in a safe, controlled environment. It includes challenges, a sandbox environment where you can experiment with different testing techniques, and a leaderboard to track your progress.',
     category: 'general'
   },
   {
@@ -300,7 +299,7 @@ export const faqs: FAQ[] = [
   {
     id: 'faq-5',
     question: 'Can I save my work and continue later?',
-    answer: 'Yes, if you\'re logged in, your progress is automatically saved. You can leave a challenge or tutorial and return later to continue where you left off.',
+    answer: 'Yes, if you\'re logged in, your progress is automatically saved. You can leave a challenge and return later to continue where you left off.',
     category: 'general'
   },
   {

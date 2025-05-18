@@ -214,9 +214,7 @@ const ChallengeDetails = () => {
   return (
     <div className="min-h-screen relative">
       {/* Enhanced background with gradient and animated elements */}
-      <EnhancedBackground optimizeForLowPerformance={false} />
-
-
+      <EnhancedBackground optimizeForLowPerformance={true} />
 
       <div className="container py-8 pt-24 relative z-10">
         <Button

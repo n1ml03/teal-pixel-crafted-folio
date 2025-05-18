@@ -6,6 +6,7 @@ import PlaygroundFooter from '@/components/playground/PlaygroundFooter';
 import TestingEnvironment from '@/components/playground/TestingEnvironment';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import PageTransition from '@/components/playground/PageTransition';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Loading spinner component for Suspense fallback
 const LoadingSpinner = () => (
@@ -21,8 +22,6 @@ const TestingPlayground = lazy(() => import('./TestingPlayground'));
 const ChallengeDetails = lazy(() => import('./ChallengeDetails'));
 const Leaderboard = lazy(() => import('./Leaderboard'));
 const Help = lazy(() => import('./Help'));
-const Tutorials = lazy(() => import('./Tutorials'));
-const TutorialDetail = lazy(() => import('./TutorialDetail'));
 
 // Layout component that includes Navigation and PlaygroundFooter
 const PlaygroundLayout = ({ children }: { children: React.ReactNode }) => {
@@ -37,7 +36,19 @@ const PlaygroundLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Route component for protected routes (without additional transitions)
+// Layout component without footer
+const PlaygroundLayoutNoFooter = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="min-h-screen flex flex-col relative">
+      <Navigation />
+      <div className="flex-1 flex flex-col relative">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// Route component for protected routes with footer (without additional transitions)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return (
     <Suspense fallback={<LoadingSpinner />}>
@@ -48,22 +59,35 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// Route component for protected routes without footer
+const ProtectedRouteNoFooter = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <PlaygroundLayoutNoFooter>
+        {children}
+      </PlaygroundLayoutNoFooter>
+    </Suspense>
+  );
+};
+
 // Create a simple Sandbox component
 const Sandbox = () => {
+  const isMobile = useIsMobile();
+
   return (
     <div className="relative flex flex-col">
       {/* Enhanced background with gradient and animated elements */}
       <EnhancedBackground optimizeForLowPerformance={false} />
 
-      <div className="container flex-1 py-6 pt-24 relative z-10">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Testing Sandbox</h1>
-          <p className="text-muted-foreground">
+      <div className="container flex-1 py-4 md:py-6 pt-20 md:pt-24 relative z-10">
+        <div className="mb-4 md:mb-6">
+          <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-2`}>Testing Sandbox</h1>
+          <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>
             Use this sandbox environment to practice your testing skills without any specific challenge objectives.
           </p>
         </div>
 
-        <div className="h-[calc(150vh-250px)]">
+        <div className={isMobile ? "h-[calc(100vh-180px)]" : "h-[calc(150vh-250px)]"}>
           <TestingEnvironment
             initialUrl="https://example.com"
             sandboxMode="open"
@@ -108,45 +132,33 @@ const PlaygroundRoutes = () => {
 
       {/* Protected routes with page transitions */}
       <Route path="/challenge/:challengeId" element={
-        <ProtectedRoute>
+        <ProtectedRouteNoFooter>
           <TestingPlayground />
-        </ProtectedRoute>
+        </ProtectedRouteNoFooter>
       } />
 
       <Route path="/challenge-details/:challengeId" element={
-        <ProtectedRoute>
+        <ProtectedRouteNoFooter>
           <ChallengeDetails />
-        </ProtectedRoute>
+        </ProtectedRouteNoFooter>
       } />
 
       <Route path="/leaderboard" element={
-        <ProtectedRoute>
+        <ProtectedRouteNoFooter>
           <Leaderboard />
-        </ProtectedRoute>
+        </ProtectedRouteNoFooter>
       } />
 
       <Route path="/sandbox" element={
-        <ProtectedRoute>
+        <ProtectedRouteNoFooter>
           <Sandbox />
-        </ProtectedRoute>
+        </ProtectedRouteNoFooter>
       } />
 
-      {/* Help and Tutorial routes */}
+      {/* Help route */}
       <Route path="/help" element={
         <ProtectedRoute>
           <Help />
-        </ProtectedRoute>
-      } />
-
-      <Route path="/tutorials" element={
-        <ProtectedRoute>
-          <Tutorials />
-        </ProtectedRoute>
-      } />
-
-      <Route path="/tutorials/:tutorialId" element={
-        <ProtectedRoute>
-          <TutorialDetail />
         </ProtectedRoute>
       } />
 

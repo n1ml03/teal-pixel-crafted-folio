@@ -413,10 +413,10 @@ export const CodeEditor = ({
         className
       )}
     >
-      <div className="flex items-center justify-between p-2 border-b bg-muted/50">
+      <div className={`flex items-center justify-between ${isMobile ? 'p-1.5' : 'p-2'} border-b bg-muted/50`}>
         <div className="flex items-center overflow-hidden">
-          <Code className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
-          <span className="text-sm font-medium truncate">{language.charAt(0).toUpperCase() + language.slice(1)}</span>
+          <Code className={`${isMobile ? 'h-3.5 w-3.5 mr-1.5' : 'h-4 w-4 mr-2'} text-muted-foreground flex-shrink-0`} />
+          <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium truncate`}>{language.charAt(0).toUpperCase() + language.slice(1)}</span>
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -424,12 +424,12 @@ export const CodeEditor = ({
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 px-2 hover:bg-primary/10"
+              className={`${isMobile ? 'h-6 w-6 p-0' : 'h-7 px-2'} hover:bg-primary/10`}
               onClick={handleRun}
               title="Run code"
             >
-              <Play className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-              <span className="text-xs hidden sm:inline-block truncate">Run</span>
+              <Play className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} flex-shrink-0`} />
+              {!isMobile && <span className="text-xs hidden sm:inline-block truncate">Run</span>}
             </Button>
           )}
 
@@ -437,12 +437,12 @@ export const CodeEditor = ({
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 px-2 hover:bg-primary/10"
+              className={`${isMobile ? 'h-6 w-6 p-0' : 'h-7 px-2'} hover:bg-primary/10`}
               onClick={handleSave}
               title="Save code"
             >
-              <Save className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-              <span className="text-xs hidden sm:inline-block truncate">Save</span>
+              <Save className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} flex-shrink-0`} />
+              {!isMobile && <span className="text-xs hidden sm:inline-block truncate">Save</span>}
             </Button>
           )}
 
@@ -450,16 +450,16 @@ export const CodeEditor = ({
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 px-2 hover:bg-primary/10"
+              className={`${isMobile ? 'h-6 w-6 p-0' : 'h-7 px-2'} hover:bg-primary/10`}
               onClick={handleCopy}
               title="Copy code"
             >
               {copied ? (
-                <Check className="h-3.5 w-3.5 mr-1 text-green-500 flex-shrink-0" />
+                <Check className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} text-green-500 flex-shrink-0`} />
               ) : (
-                <Copy className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                <Copy className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} flex-shrink-0`} />
               )}
-              <span className="text-xs hidden sm:inline-block truncate">{copied ? 'Copied' : 'Copy'}</span>
+              {!isMobile && <span className="text-xs hidden sm:inline-block truncate">{copied ? 'Copied' : 'Copy'}</span>}
             </Button>
           )}
 
@@ -467,18 +467,18 @@ export const CodeEditor = ({
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 px-2 hover:bg-primary/10"
+              className={`${isMobile ? 'h-6 w-6 p-0' : 'h-7 px-2'} hover:bg-primary/10`}
               onClick={toggleFullscreen}
               title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             >
               {isFullscreen ? (
-                <Minimize2 className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                <Minimize2 className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} flex-shrink-0`} />
               ) : (
-                <Maximize2 className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                <Maximize2 className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} flex-shrink-0`} />
               )}
-              <span className="text-xs hidden sm:inline-block truncate">
+              {!isMobile && <span className="text-xs hidden sm:inline-block truncate">
                 {isFullscreen ? 'Exit' : 'Fullscreen'}
-              </span>
+              </span>}
             </Button>
           )}
         </div>
@@ -535,9 +535,42 @@ export const CodeEditor = ({
           }
 
           /* Responsive adjustments */
-          @media (max-width: 640px) {
+          @media (max-width: 768px) {
             .cm-editor .cm-content {
               font-size: 12px;
+            }
+
+            .cm-editor .cm-gutters {
+              padding-right: 4px;
+            }
+
+            .cm-editor .cm-gutterElement {
+              padding-left: 4px;
+              padding-right: 4px;
+            }
+
+            /* Increase touch targets */
+            .cm-editor .cm-line {
+              padding-top: 2px;
+              padding-bottom: 2px;
+            }
+
+            /* Adjust scrollbar for touch */
+            .cm-editor-wrapper::-webkit-scrollbar {
+              width: 8px;
+              height: 8px;
+            }
+
+            .cm-editor-wrapper::-webkit-scrollbar-thumb {
+              background-color: rgba(128, 128, 128, 0.5);
+              border-radius: 4px;
+            }
+          }
+
+          /* Small mobile screens */
+          @media (max-width: 480px) {
+            .cm-editor .cm-content {
+              font-size: 11px;
             }
           }
         `

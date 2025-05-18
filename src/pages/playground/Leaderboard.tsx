@@ -29,6 +29,7 @@ import {
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import { useAuth } from '@/contexts/AuthContext';
 import { LeaderboardEntry } from '../../types/playground';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Mock leaderboard data
 const mockLeaderboardData: LeaderboardEntry[] = [
@@ -131,6 +132,7 @@ type SortDirection = 'asc' | 'desc';
 
 const Leaderboard = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('global');
   const [sortField, setSortField] = useState<SortField>('rank');
@@ -200,20 +202,20 @@ const Leaderboard = () => {
       {/* Enhanced background with gradient and animated elements */}
       <EnhancedBackground optimizeForLowPerformance={false} />
 
-      <div className="container py-8 pt-24 relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div className="container py-6 pt-20 md:py-8 md:pt-24 relative z-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold mb-2 flex items-center">
-              <Trophy className="h-8 w-8 mr-2 text-yellow-500" />
+            <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-2 flex items-center`}>
+              <Trophy className={`${isMobile ? 'h-6 w-6' : 'h-8 w-8'} mr-2 text-yellow-500`} />
               Leaderboard
             </h1>
-            <p className="text-muted-foreground">
-              See how you rank against other testers in the community
+            <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>
+              See how you rank against other testers
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className={`flex ${isMobile ? 'flex-col w-full' : 'items-center'} gap-2`}>
+            <div className="relative w-full md:w-auto">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -226,13 +228,13 @@ const Leaderboard = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className={isMobile ? 'w-full' : ''}>
                   <Filter className="mr-2 h-4 w-4" />
                   Filter
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuContent align={isMobile ? "center" : "end"} className={isMobile ? "w-[90vw]" : "w-[200px]"}>
                 <DropdownMenuLabel>Filter by Badge</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>All Users</DropdownMenuItem>
@@ -249,53 +251,53 @@ const Leaderboard = () => {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList>
-            <TabsTrigger value="global">Global</TabsTrigger>
-            <TabsTrigger value="monthly">Monthly</TabsTrigger>
-            <TabsTrigger value="weekly">Weekly</TabsTrigger>
-            <TabsTrigger value="friends">Friends</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4 md:mb-6">
+          <TabsList className={`${isMobile ? 'w-full' : ''}`}>
+            <TabsTrigger value="global" className={`${isMobile ? 'flex-1 text-xs' : ''}`}>Global</TabsTrigger>
+            <TabsTrigger value="monthly" className={`${isMobile ? 'flex-1 text-xs' : ''}`}>Monthly</TabsTrigger>
+            <TabsTrigger value="weekly" className={`${isMobile ? 'flex-1 text-xs' : ''}`}>Weekly</TabsTrigger>
+            <TabsTrigger value="friends" className={`${isMobile ? 'flex-1 text-xs' : ''}`}>Friends</TabsTrigger>
           </TabsList>
         </Tabs>
 
         {user && currentUserRank > 0 && (
-          <div className="mb-6">
-            <div className="rounded-lg border bg-card p-4 shadow-sm">
-              <h2 className="text-lg font-medium mb-4">Your Ranking</h2>
-              <div className="flex items-center justify-between">
+          <div className="mb-4 md:mb-6">
+            <div className="rounded-lg border bg-card p-3 md:p-4 shadow-sm">
+              <h2 className={`${isMobile ? 'text-base' : 'text-lg'} font-medium mb-3 md:mb-4`}>Your Ranking</h2>
+              <div className={`${isMobile ? 'flex flex-col gap-4' : 'flex items-center justify-between'}`}>
                 <div className="flex items-center">
-                  <div className="flex-shrink-0 mr-4">
+                  <div className="flex-shrink-0 mr-3 md:mr-4">
                     <div className="relative">
-                      <Avatar className="h-12 w-12 border-2 border-primary">
+                      <Avatar className={`${isMobile ? 'h-10 w-10' : 'h-12 w-12'} border-2 border-primary`}>
                         <AvatarImage src={user.avatar} alt={user.displayName} />
                         <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                      <div className={`absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full ${isMobile ? 'w-5 h-5 text-[10px]' : 'w-6 h-6 text-xs'} flex items-center justify-center font-bold`}>
                         {currentUserRank}
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <div className="font-medium">{user.displayName}</div>
-                    <div className="text-sm text-muted-foreground">@{user.username}</div>
+                    <div className={`font-medium ${isMobile ? 'text-sm' : ''}`}>{user.displayName}</div>
+                    <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>@{user.username}</div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6">
+                <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'gap-6'}`}>
                   <div className="text-center">
-                    <div className="text-2xl font-bold">{user.level}</div>
-                    <div className="text-xs text-muted-foreground">Level</div>
+                    <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>{user.level}</div>
+                    <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>Level</div>
                   </div>
 
                   <div className="text-center">
-                    <div className="text-2xl font-bold">{user.points}</div>
-                    <div className="text-xs text-muted-foreground">Points</div>
+                    <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>{user.points}</div>
+                    <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>Points</div>
                   </div>
 
                   <div className="text-center">
-                    <div className="text-2xl font-bold">{leaderboardData.find(e => e.userId === user.id)?.challengesCompleted || 0}</div>
-                    <div className="text-xs text-muted-foreground">Challenges</div>
+                    <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>{leaderboardData.find(e => e.userId === user.id)?.challengesCompleted || 0}</div>
+                    <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>Challenges</div>
                   </div>
                 </div>
               </div>
@@ -308,44 +310,48 @@ const Leaderboard = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-muted/50">
-                  <th className="text-left p-4 font-medium text-sm">
+                  <th className={`text-left ${isMobile ? 'p-2' : 'p-4'} font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>
                     <button
                       className="flex items-center"
                       onClick={() => handleSort('rank')}
                     >
-                      Rank
+                      {isMobile ? '#' : 'Rank'}
                       {getSortIcon('rank')}
                     </button>
                   </th>
-                  <th className="text-left p-4 font-medium text-sm">User</th>
-                  <th className="text-left p-4 font-medium text-sm">
+                  <th className={`text-left ${isMobile ? 'p-2' : 'p-4'} font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>User</th>
+                  <th className={`text-left ${isMobile ? 'p-2' : 'p-4'} font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>
                     <button
                       className="flex items-center"
                       onClick={() => handleSort('level')}
                     >
-                      Level
+                      {isMobile ? 'Lvl' : 'Level'}
                       {getSortIcon('level')}
                     </button>
                   </th>
-                  <th className="text-left p-4 font-medium text-sm">
+                  <th className={`text-left ${isMobile ? 'p-2' : 'p-4'} font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>
                     <button
                       className="flex items-center"
                       onClick={() => handleSort('points')}
                     >
-                      Points
+                      {isMobile ? 'Pts' : 'Points'}
                       {getSortIcon('points')}
                     </button>
                   </th>
-                  <th className="text-left p-4 font-medium text-sm">
-                    <button
-                      className="flex items-center"
-                      onClick={() => handleSort('challengesCompleted')}
-                    >
-                      Challenges
-                      {getSortIcon('challengesCompleted')}
-                    </button>
-                  </th>
-                  <th className="text-left p-4 font-medium text-sm">Badges</th>
+                  {!isMobile && (
+                    <th className="text-left p-4 font-medium text-sm">
+                      <button
+                        className="flex items-center"
+                        onClick={() => handleSort('challengesCompleted')}
+                      >
+                        Challenges
+                        {getSortIcon('challengesCompleted')}
+                      </button>
+                    </th>
+                  )}
+                  {!isMobile && (
+                    <th className="text-left p-4 font-medium text-sm">Badges</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -360,11 +366,11 @@ const Leaderboard = () => {
                       transition={{ duration: 0.3, delay: index * 0.05 }}
                       className={`border-b last:border-0 ${isCurrentUser ? 'bg-primary/5' : 'hover:bg-muted/50'}`}
                     >
-                      <td className="p-4">
+                      <td className={isMobile ? 'p-2' : 'p-4'}>
                         <div className="flex items-center">
                           {entry.rank <= 3 ? (
                             <div className={`
-                              w-8 h-8 rounded-full flex items-center justify-center text-white font-bold
+                              ${isMobile ? 'w-6 h-6 text-xs' : 'w-8 h-8'} rounded-full flex items-center justify-center text-white font-bold
                               ${entry.rank === 1 ? 'bg-yellow-500' :
                                 entry.rank === 2 ? 'bg-gray-400' :
                                 'bg-amber-700'}
@@ -372,64 +378,70 @@ const Leaderboard = () => {
                               {entry.rank}
                             </div>
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-medium">
+                            <div className={`${isMobile ? 'w-6 h-6 text-xs' : 'w-8 h-8'} rounded-full bg-muted flex items-center justify-center font-medium`}>
                               {entry.rank}
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className={isMobile ? 'p-2' : 'p-4'}>
                         <div className="flex items-center">
-                          <Avatar className="h-10 w-10 mr-3">
+                          <Avatar className={`${isMobile ? 'h-8 w-8 mr-2' : 'h-10 w-10 mr-3'}`}>
                             <AvatarImage src={entry.avatar} alt={entry.displayName} />
                             <AvatarFallback>{entry.displayName.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium">{entry.displayName}</div>
-                            <div className="text-sm text-muted-foreground">@{entry.username}</div>
+                            <div className={`font-medium ${isMobile ? 'text-sm' : ''}`}>{entry.displayName}</div>
+                            <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
+                              {isMobile ? entry.username.substring(0, 8) + (entry.username.length > 8 ? '...' : '') : '@' + entry.username}
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className={isMobile ? 'p-2' : 'p-4'}>
                         <div className="flex items-center">
-                          <div className="bg-primary/10 text-primary rounded-full w-8 h-8 flex items-center justify-center font-bold mr-2">
+                          <div className={`bg-primary/10 text-primary rounded-full ${isMobile ? 'w-6 h-6 text-xs' : 'w-8 h-8'} flex items-center justify-center font-bold ${isMobile ? 'mr-1' : 'mr-2'}`}>
                             {entry.level}
                           </div>
                         </div>
                       </td>
-                      <td className="p-4 font-medium">{entry.points.toLocaleString()}</td>
-                      <td className="p-4">
-                        <div className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                          {entry.challengesCompleted}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex flex-wrap gap-1">
-                          {entry.badges.slice(0, 3).map(badge => {
-                            const BadgeIcon = badgeInfo[badge]?.icon || Trophy;
-                            return (
-                              <Badge
-                                key={badge}
-                                className={badgeInfo[badge]?.color || "bg-gray-100 text-gray-800"}
-                              >
-                                <BadgeIcon className="h-3 w-3 mr-1" />
-                                {badgeInfo[badge]?.label || badge}
-                              </Badge>
-                            );
-                          })}
-                          {entry.badges.length > 3 && (
-                            <Badge variant="outline">+{entry.badges.length - 3}</Badge>
-                          )}
-                        </div>
-                      </td>
+                      <td className={`${isMobile ? 'p-2 text-sm' : 'p-4'} font-medium`}>{isMobile ? entry.points : entry.points.toLocaleString()}</td>
+                      {!isMobile && (
+                        <td className="p-4">
+                          <div className="flex items-center">
+                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                            {entry.challengesCompleted}
+                          </div>
+                        </td>
+                      )}
+                      {!isMobile && (
+                        <td className="p-4">
+                          <div className="flex flex-wrap gap-1">
+                            {entry.badges.slice(0, 3).map(badge => {
+                              const BadgeIcon = badgeInfo[badge]?.icon || Trophy;
+                              return (
+                                <Badge
+                                  key={badge}
+                                  className={badgeInfo[badge]?.color || "bg-gray-100 text-gray-800"}
+                                >
+                                  <BadgeIcon className="h-3 w-3 mr-1" />
+                                  {badgeInfo[badge]?.label || badge}
+                                </Badge>
+                              );
+                            })}
+                            {entry.badges.length > 3 && (
+                              <Badge variant="outline">+{entry.badges.length - 3}</Badge>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </motion.tr>
                   );
                 })}
 
                 {sortedData.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={isMobile ? 4 : 6} className={`${isMobile ? 'p-4' : 'p-8'} text-center text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>
                       No users found matching your search criteria
                     </td>
                   </tr>

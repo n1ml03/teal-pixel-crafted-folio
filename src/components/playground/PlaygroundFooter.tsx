@@ -90,12 +90,6 @@ const PlaygroundFooter = () => {
             <h3 className="font-medium text-gray-800 mb-3">Resources</h3>
             <ul className="space-y-2.5">
               <li>
-                <Link to="/playground/tutorials" className="text-gray-700 hover:text-primary transition-colors flex items-center">
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Tutorials
-                </Link>
-              </li>
-              <li>
                 <Link to="/playground/help" className="text-gray-700 hover:text-primary transition-colors flex items-center">
                   <HelpCircle className="w-4 h-4 mr-2" />
                   Help Center

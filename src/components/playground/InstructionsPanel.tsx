@@ -84,12 +84,6 @@ export const InstructionsPanel = ({
       <div className="p-4 border-b">
         <div className="flex justify-between items-start mb-2">
           <h2 className="text-xl font-bold line-clamp-2 pr-2 flex-1">{title}</h2>
-          <Badge className={cn(
-            'px-2 py-1 rounded-full text-xs font-medium flex-shrink-0',
-            difficultyColors[difficulty]
-          )}>
-            {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
-          </Badge>
         </div>
 
         <div className="flex items-center text-sm text-muted-foreground mb-2">

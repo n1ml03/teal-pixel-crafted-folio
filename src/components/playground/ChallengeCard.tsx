@@ -1,24 +1,25 @@
 import { motion } from 'framer-motion';
-import { 
-  Clock, 
-  BookmarkPlus, 
-  BookmarkCheck, 
+import {
+  Clock,
+  BookmarkPlus,
+  BookmarkCheck,
   ArrowRight,
   Star
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { MotionButton } from "@/components/ui/motion-button";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export interface Challenge {
   id: string;
@@ -49,24 +50,28 @@ const difficultyColors = {
   advanced: 'bg-red-100 text-red-800'
 };
 
-const DifficultyBadge = ({ level }: { level: 'beginner' | 'intermediate' | 'advanced' }) => (
-  <span className={cn(
-    'absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium',
-    difficultyColors[level]
-  )}>
-    {level.charAt(0).toUpperCase() + level.slice(1)}
-  </span>
-);
+const DifficultyBadge = ({ level }: { level: 'beginner' | 'intermediate' | 'advanced' }) => {
+  const isMobile = useIsMobile();
+  return (
+    <span className={cn(
+      `absolute top-2 right-2 ${isMobile ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs'} rounded-full font-medium`,
+      difficultyColors[level]
+    )}>
+      {isMobile ? level.charAt(0).toUpperCase() : level.charAt(0).toUpperCase() + level.slice(1)}
+    </span>
+  );
+};
 
-export const ChallengeCard = ({ 
-  challenge, 
-  onSave, 
-  onDetails, 
+export const ChallengeCard = ({
+  challenge,
+  onSave,
+  onDetails,
   onStart,
   isSaved = false,
   className,
   index = 0
 }: ChallengeCardProps) => {
+  const isMobile = useIsMobile();
   const {
     id,
     title,
@@ -91,85 +96,85 @@ export const ChallengeCard = ({
         featured && "ring-2 ring-primary/50"
       )}>
         <div className="relative overflow-hidden aspect-video">
-          <img 
-            src={thumbnail} 
-            alt={title} 
+          <img
+            src={thumbnail}
+            alt={title}
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
           <DifficultyBadge level={difficulty} />
           {featured && (
-            <div className="absolute top-2 left-2 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-medium flex items-center">
-              <Star className="w-3 h-3 mr-1" />
-              Featured
+            <div className={`absolute top-2 left-2 bg-primary text-primary-foreground ${isMobile ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs'} rounded-full font-medium flex items-center`}>
+              <Star className={`${isMobile ? 'w-2.5 h-2.5 mr-0.5' : 'w-3 h-3 mr-1'}`} />
+              {isMobile ? 'New' : 'Featured'}
             </div>
           )}
         </div>
-        
-        <CardHeader className="pb-2">
-          <CardTitle className="line-clamp-2 text-lg">{title}</CardTitle>
+
+        <CardHeader className={isMobile ? "p-3 pb-1" : "pb-2"}>
+          <CardTitle className={`line-clamp-2 ${isMobile ? 'text-base' : 'text-lg'}`}>{title}</CardTitle>
           <CardDescription className="flex items-center text-xs">
-            <Clock className="w-3 h-3 mr-1 inline" />
+            <Clock className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'} mr-1 inline`} />
             {duration}
           </CardDescription>
         </CardHeader>
-        
-        <CardContent className="pb-2">
-          <p className="line-clamp-3 text-sm text-muted-foreground mb-3">{description}</p>
-          
+
+        <CardContent className={isMobile ? "p-3 pt-1 pb-1" : "pb-2"}>
+          <p className={`line-clamp-2 ${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground mb-2`}>{description}</p>
+
           {progress !== undefined && progress > 0 && (
-            <div className="mb-3">
+            <div className="mb-2">
               <div className="flex justify-between text-xs mb-1">
-                <span>Progress</span>
-                <span>{progress}%</span>
+                <span className={isMobile ? 'text-[10px]' : ''}>Progress</span>
+                <span className={isMobile ? 'text-[10px]' : ''}>{progress}%</span>
               </div>
               <Progress value={progress} className="h-1.5" />
             </div>
           )}
-          
+
           <div className="flex flex-wrap gap-1 mt-2">
-            {tags.slice(0, 3).map(tag => (
-              <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+            {tags.slice(0, isMobile ? 2 : 3).map(tag => (
+              <Badge key={tag} variant="secondary" className={`${isMobile ? 'text-[10px] px-1.5 py-0' : 'text-xs'}`}>{tag}</Badge>
             ))}
-            {tags.length > 3 && (
-              <Badge variant="outline" className="text-xs">+{tags.length - 3}</Badge>
+            {tags.length > (isMobile ? 2 : 3) && (
+              <Badge variant="outline" className={`${isMobile ? 'text-[10px] px-1.5 py-0' : 'text-xs'}`}>+{tags.length - (isMobile ? 2 : 3)}</Badge>
             )}
           </div>
         </CardContent>
-        
-        <CardFooter className="justify-between pt-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+
+        <CardFooter className={`justify-between ${isMobile ? 'p-3 pt-1' : 'pt-2'}`}>
+          <Button
+            variant="ghost"
+            size={isMobile ? "sm" : "sm"}
             onClick={() => onDetails?.(id)}
-            className="text-xs"
+            className={`${isMobile ? 'text-[10px] h-7 px-2' : 'text-xs'}`}
           >
             Details
           </Button>
-          
-          <div className="flex gap-2">
+
+          <div className="flex gap-1">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className={isMobile ? "h-7 w-7" : "h-8 w-8"}
               onClick={() => onSave?.(id)}
               aria-label={isSaved ? "Remove from saved" : "Save for later"}
             >
               {isSaved ? (
-                <BookmarkCheck className="h-4 w-4 text-primary" />
+                <BookmarkCheck className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'} text-primary`} />
               ) : (
-                <BookmarkPlus className="h-4 w-4" />
+                <BookmarkPlus className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
               )}
             </Button>
-            
+
             <MotionButton
               variant="default"
-              size="sm"
+              size={isMobile ? "sm" : "sm"}
               onClick={() => onStart?.(id)}
-              className="text-xs"
+              className={`${isMobile ? 'text-[10px] h-7 px-2' : 'text-xs'}`}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              Start <ArrowRight className="ml-1 h-3 w-3" />
+              {isMobile ? 'Start' : 'Start'} <ArrowRight className={`ml-1 ${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3'}`} />
             </MotionButton>
           </div>
         </CardFooter>

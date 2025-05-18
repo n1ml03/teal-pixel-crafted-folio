@@ -27,6 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { UserProgressService } from '@/services/UserProgressService';
 import { User, UserActivity, UserAchievement, Achievement, ChallengeProgress } from '@/types/playground';
 import { formatDistanceToNow } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UserDashboardProps {
   className?: string;
@@ -35,6 +36,7 @@ interface UserDashboardProps {
 export const UserDashboard = ({ className }: UserDashboardProps) => {
   const { user } = useAuth();
   const prefersReducedMotion = useReducedMotion();
+  const isMobile = useIsMobile();
   const [activities, setActivities] = useState<UserActivity[]>([]);
   const [achievements, setAchievements] = useState<{
     unlocked: (UserAchievement & { achievement: Achievement })[];
@@ -223,11 +225,31 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
   return (
     <div className={className}>
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="achievements">Achievements</TabsTrigger>
-          <TabsTrigger value="progress">Challenge Progress</TabsTrigger>
-          <TabsTrigger value="activity">Recent Activity</TabsTrigger>
+        <TabsList className="mb-5 w-full flex flex-wrap justify-center gap-1 sm:gap-2 max-w-full overflow-visible">
+          <TabsTrigger
+            value="overview"
+            className={`flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 ${isMobile ? 'py-1.5' : 'py-2'}`}
+          >
+            Overview
+          </TabsTrigger>
+          <TabsTrigger
+            value="achievements"
+            className={`flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 ${isMobile ? 'py-1.5' : 'py-2'}`}
+          >
+            Achievements
+          </TabsTrigger>
+          <TabsTrigger
+            value="progress"
+            className={`flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 ${isMobile ? 'py-1.5' : 'py-2'}`}
+          >
+            {isMobile ? 'Progress' : 'Challenge Progress'}
+          </TabsTrigger>
+          <TabsTrigger
+            value="activity"
+            className={`flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 ${isMobile ? 'py-1.5' : 'py-2'}`}
+          >
+            {isMobile ? 'Activity' : 'Recent Activity'}
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -235,7 +257,7 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
           {/* User Stats */}
           <AnimatePresence mode="wait">
             <motion.div
-              className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+              className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
@@ -248,20 +270,20 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
               >
                 <Card className="h-full transition-shadow duration-300 hover:shadow-md">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Level</CardTitle>
+                    <CardTitle className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium`}>Level</CardTitle>
                     <Trophy className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className={isMobile ? 'p-3' : ''}>
                     <div className="text-2xl font-bold">{user.level}</div>
                     <div className="mt-2">
                       <div className="flex justify-between text-xs mb-1">
-                        <span>Progress to Level {user.level + 1}</span>
-                        <span>{Math.round(progressToNextLevel)}%</span>
+                        <span className={isMobile ? 'text-[10px]' : ''}>Level {user.level + 1}</span>
+                        <span className={isMobile ? 'text-[10px]' : ''}>{Math.round(progressToNextLevel)}%</span>
                       </div>
                       <Progress value={progressToNextLevel} className="h-2" />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {pointsNeeded - (user.points - currentLevelPoints)} more points needed
+                    <p className={`text-xs text-muted-foreground mt-2 ${isMobile ? 'text-[10px]' : ''}`}>
+                      {pointsNeeded - (user.points - currentLevelPoints)} pts needed
                     </p>
                   </CardContent>
                 </Card>
@@ -274,13 +296,13 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
               >
                 <Card className="h-full transition-shadow duration-300 hover:shadow-md">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Points</CardTitle>
+                    <CardTitle className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium`}>Total Points</CardTitle>
                     <Star className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className={isMobile ? 'p-3' : ''}>
                     <div className="text-2xl font-bold">{user.points}</div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Earned from challenges and achievements
+                    <p className={`text-xs text-muted-foreground mt-2 ${isMobile ? 'text-[10px]' : ''}`}>
+                      {isMobile ? 'From challenges & achievements' : 'Earned from challenges and achievements'}
                     </p>
                   </CardContent>
                 </Card>
@@ -293,14 +315,14 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
               >
                 <Card className="h-full transition-shadow duration-300 hover:shadow-md">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Challenges</CardTitle>
+                    <CardTitle className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium`}>Challenges</CardTitle>
                     <Target className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className={isMobile ? 'p-3' : ''}>
                     <div className="text-2xl font-bold">
                       {challenges.filter(c => c.completedAt).length}/{challenges.length}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className={`text-xs text-muted-foreground mt-2 ${isMobile ? 'text-[10px]' : ''}`}>
                       {challenges.filter(c => c.progress > 0 && !c.completedAt).length} in progress
                     </p>
                   </CardContent>
@@ -314,14 +336,14 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
               >
                 <Card className="h-full transition-shadow duration-300 hover:shadow-md">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Achievements</CardTitle>
+                    <CardTitle className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium`}>Achievements</CardTitle>
                     <Award className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className={isMobile ? 'p-3' : ''}>
                     <div className="text-2xl font-bold">
                       {achievements.unlocked.length}/{achievements.unlocked.length + achievements.locked.length}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className={`text-xs text-muted-foreground mt-2 ${isMobile ? 'text-[10px]' : ''}`}>
                       {achievements.locked.length} more to unlock
                     </p>
                   </CardContent>
@@ -332,7 +354,7 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
 
           {/* Recent Activity and Achievements */}
           <motion.div
-            className="grid gap-4 md:grid-cols-2"
+            className="grid gap-4 grid-cols-1 md:grid-cols-2"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -344,12 +366,12 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
               className="col-span-1 will-change-transform"
             >
               <Card className="h-full transition-shadow duration-300 hover:shadow-md">
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Your latest actions and progress</CardDescription>
+                <CardHeader className={isMobile ? 'pb-2 pt-4 px-4' : ''}>
+                  <CardTitle className={isMobile ? 'text-lg' : ''}>Recent Activity</CardTitle>
+                  <CardDescription className={isMobile ? 'text-xs' : ''}>Your latest actions and progress</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[200px]">
+                <CardContent className={isMobile ? 'p-4 pt-0' : ''}>
+                  <ScrollArea className={isMobile ? 'h-[150px]' : 'h-[200px]'}>
                     <div className="space-y-4">
                       {activities.slice(0, 5).map((activity, index) => (
                         <motion.div
@@ -365,11 +387,11 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                           <div className="mr-2 mt-0.5 rounded-full bg-primary/10 p-1">
                             {getActivityIcon(activity.type)}
                           </div>
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium leading-none">
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <p className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium leading-tight line-clamp-2`}>
                               {formatActivityMessage(activity)}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>
                               {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                             </p>
                           </div>
@@ -378,13 +400,13 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                     </div>
                   </ScrollArea>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className={isMobile ? 'p-2 pt-0' : ''}>
                   <motion.div
                     whileHover={{ x: 5 }}
                     whileTap={{ scale: 0.98 }}
                     className="w-full"
                   >
-                    <Button variant="ghost" size="sm" className="w-full">
+                    <Button variant="ghost" size={isMobile ? 'sm' : 'sm'} className="w-full text-xs">
                       View All Activity
                       <ChevronRight className="ml-1 h-4 w-4" />
                     </Button>
@@ -399,12 +421,12 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
               className="col-span-1 will-change-transform"
             >
               <Card className="h-full transition-shadow duration-300 hover:shadow-md">
-                <CardHeader>
-                  <CardTitle>Recent Achievements</CardTitle>
-                  <CardDescription>Badges and rewards you've earned</CardDescription>
+                <CardHeader className={isMobile ? 'pb-2 pt-4 px-4' : ''}>
+                  <CardTitle className={isMobile ? 'text-lg' : ''}>Recent Achievements</CardTitle>
+                  <CardDescription className={isMobile ? 'text-xs' : ''}>Badges and rewards you've earned</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[200px]">
+                <CardContent className={isMobile ? 'p-4 pt-0' : ''}>
+                  <ScrollArea className={isMobile ? 'h-[150px]' : 'h-[200px]'}>
                     <div className="space-y-4">
                       {achievements.unlocked.slice(0, 5).map((achievement, index) => (
                         <motion.div
@@ -421,20 +443,20 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                           }}
                         >
                           <motion.div
-                            className="mr-2 rounded-full bg-primary/10 p-2 text-primary"
+                            className={`mr-2 rounded-full bg-primary/10 ${isMobile ? 'p-1.5' : 'p-2'} text-primary`}
                             whileHover={{ rotate: [0, -5, 5, -5, 0], scale: 1.1 }}
                             transition={{ duration: 0.5 }}
                           >
                             {getAchievementIcon(achievement.achievement.icon)}
                           </motion.div>
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium leading-none">
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <p className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium leading-tight line-clamp-1`}>
                               {achievement.achievement.title}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground line-clamp-2`}>
                               {achievement.achievement.description}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>
                               Unlocked {formatDistanceToNow(new Date(achievement.unlockedAt), { addSuffix: true })}
                             </p>
                           </div>
@@ -449,19 +471,19 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                           transition={{ delay: 0.2 }}
                         >
                           <Award className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                          <p>No achievements unlocked yet</p>
+                          <p className={isMobile ? 'text-sm' : ''}>No achievements unlocked yet</p>
                         </motion.div>
                       )}
                     </div>
                   </ScrollArea>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className={isMobile ? 'p-2 pt-0' : ''}>
                   <motion.div
                     whileHover={{ x: 5 }}
                     whileTap={{ scale: 0.98 }}
                     className="w-full"
                   >
-                    <Button variant="ghost" size="sm" className="w-full">
+                    <Button variant="ghost" size={isMobile ? 'sm' : 'sm'} className="w-full text-xs">
                       View All Achievements
                       <ChevronRight className="ml-1 h-4 w-4" />
                     </Button>
@@ -488,7 +510,7 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
               </CardHeader>
               <CardContent>
                 <motion.div
-                  className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+                  className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                   variants={containerVariants}
                   initial="hidden"
                   animate="visible"
@@ -504,24 +526,24 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                       className="border rounded-lg p-4 bg-card will-change-transform transition-shadow duration-300 hover:shadow-md"
                       custom={index}
                     >
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-3">
                         <motion.div
-                          className="rounded-full bg-primary/10 p-3 text-primary"
+                          className={`rounded-full bg-primary/10 ${isMobile ? 'p-2' : 'p-3'} text-primary flex-shrink-0`}
                           whileHover={!prefersReducedMotion ? { rotate: [0, -5, 5, 0], scale: 1.1 } : {}}
                           transition={{ duration: 0.5 }}
                         >
                           {getAchievementIcon(achievement.achievement.icon)}
                         </motion.div>
-                        <div>
-                          <h3 className="font-medium">{achievement.achievement.title}</h3>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <h3 className={`font-medium ${isMobile ? 'text-sm' : ''} line-clamp-1`}>{achievement.achievement.title}</h3>
+                          <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground line-clamp-2`}>
                             {achievement.achievement.description}
                           </p>
-                          <div className="mt-2 flex items-center">
-                            <Badge variant="secondary" className="mr-2">
+                          <div className={`${isMobile ? 'mt-1 flex flex-col space-y-1' : 'mt-2 flex items-center'}`}>
+                            <Badge variant="secondary" className={isMobile ? 'text-xs self-start' : 'mr-2'}>
                               +{achievement.achievement.points} points
                             </Badge>
-                            <span className="text-xs text-muted-foreground">
+                            <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>
                               Unlocked {formatDistanceToNow(new Date(achievement.unlockedAt), { addSuffix: true })}
                             </span>
                           </div>
@@ -563,7 +585,7 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                   >
                     <h3 className="font-medium mt-8 mb-4">Locked Achievements</h3>
                     <motion.div
-                      className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+                      className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                       variants={containerVariants}
                       initial="hidden"
                       animate="visible"
@@ -576,17 +598,17 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                           className="border rounded-lg p-4 bg-muted/30 will-change-transform"
                           custom={index}
                         >
-                          <div className="flex items-center space-x-4">
-                            <div className="rounded-full bg-muted p-3 text-muted-foreground">
+                          <div className="flex items-center space-x-3">
+                            <div className={`rounded-full bg-muted ${isMobile ? 'p-2' : 'p-3'} text-muted-foreground flex-shrink-0`}>
                               {getAchievementIcon(achievement.icon)}
                             </div>
-                            <div>
-                              <h3 className="font-medium">{achievement.title}</h3>
-                              <p className="text-sm text-muted-foreground">
+                            <div className="min-w-0 flex-1">
+                              <h3 className={`font-medium ${isMobile ? 'text-sm' : ''} line-clamp-1`}>{achievement.title}</h3>
+                              <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground line-clamp-2`}>
                                 {achievement.description}
                               </p>
                               <div className="mt-2">
-                                <Badge variant="outline" className="text-muted-foreground">
+                                <Badge variant="outline" className={`text-muted-foreground ${isMobile ? 'text-xs' : ''}`}>
                                   +{achievement.points} points
                                 </Badge>
                               </div>
@@ -632,16 +654,16 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                         whileHover={!prefersReducedMotion ? { y: -3, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" } : {}}
                         transition={{ delay: prefersReducedMotion ? 0 : 0.05 * index }}
                       >
-                        <div className="flex justify-between items-start mb-2">
+                        <div className={`flex ${isMobile ? 'flex-col' : 'justify-between items-start'} mb-2`}>
                           <div>
-                            <h3 className="font-medium">Challenge #{challenge.challengeId}</h3>
-                            <p className="text-sm text-muted-foreground">
+                            <h3 className={`font-medium ${isMobile ? 'text-sm' : ''}`}>Challenge #{challenge.challengeId}</h3>
+                            <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
                               Started {formatDistanceToNow(new Date(challenge.startedAt), { addSuffix: true })}
                             </p>
                           </div>
                           <Badge
                             variant={challenge.completedAt ? "default" : "secondary"}
-                            className={challenge.completedAt ? "bg-green-500 hover:bg-green-600" : ""}
+                            className={`${challenge.completedAt ? "bg-green-500 hover:bg-green-600" : ""} ${isMobile ? 'self-start mt-2' : ''}`}
                           >
                             {challenge.completedAt ? "Completed" : "In Progress"}
                           </Badge>
@@ -649,8 +671,8 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
 
                         <div className="mt-2">
                           <div className="flex justify-between text-xs mb-1">
-                            <span>Progress</span>
-                            <span>{challenge.progress}%</span>
+                            <span className={isMobile ? 'text-[10px]' : ''}>Progress</span>
+                            <span className={isMobile ? 'text-[10px]' : ''}>{challenge.progress}%</span>
                           </div>
                           <motion.div
                             initial={{ scaleX: 0, originX: 0 }}
@@ -665,15 +687,15 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                           </motion.div>
                         </div>
 
-                        <div className="mt-4 flex flex-wrap gap-2">
+                        <div className={`mt-4 flex ${isMobile ? 'flex-col space-y-2' : 'flex-wrap gap-2'}`}>
                           <motion.div
                             className="flex items-center text-xs"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: prefersReducedMotion ? 0 : 0.3 + (0.05 * index) }}
                           >
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span>
+                            <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+                            <span className={isMobile ? 'text-[10px]' : ''}>
                               {Math.floor(challenge.timeSpent / 60)} minutes spent
                             </span>
                           </motion.div>
@@ -684,8 +706,8 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                             animate={{ opacity: 1 }}
                             transition={{ delay: prefersReducedMotion ? 0 : 0.35 + (0.05 * index) }}
                           >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            <span>
+                            <CheckCircle className="h-3 w-3 mr-1 flex-shrink-0" />
+                            <span className={isMobile ? 'text-[10px]' : ''}>
                               {challenge.completedObjectives.length} objectives completed
                             </span>
                           </motion.div>
@@ -696,8 +718,8 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                             animate={{ opacity: 1 }}
                             transition={{ delay: prefersReducedMotion ? 0 : 0.4 + (0.05 * index) }}
                           >
-                            <BarChart className="h-3 w-3 mr-1" />
-                            <span>
+                            <BarChart className="h-3 w-3 mr-1 flex-shrink-0" />
+                            <span className={isMobile ? 'text-[10px]' : ''}>
                               {Object.values(challenge.testResults).filter(Boolean).length} tests passed
                             </span>
                           </motion.div>
@@ -713,7 +735,7 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.97 }}
                           >
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" className={isMobile ? 'text-xs' : ''}>
                               {challenge.completedAt ? "Review Challenge" : "Continue Challenge"}
                             </Button>
                           </motion.div>
@@ -793,25 +815,25 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                         whileHover={{ x: 3, transition: { duration: 0.2 } }}
                       >
                         <motion.div
-                          className="mr-4 mt-0.5 rounded-full bg-primary/10 p-2"
+                          className={`${isMobile ? 'mr-3 p-1.5' : 'mr-4 p-2'} mt-0.5 rounded-full bg-primary/10 flex-shrink-0`}
                           whileHover={{ rotate: 15, scale: 1.1 }}
                           transition={{ duration: 0.2 }}
                         >
                           {getActivityIcon(activity.type)}
                         </motion.div>
-                        <div className="space-y-1 flex-1">
-                          <div className="flex justify-between">
-                            <p className="text-sm font-medium">
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className={`${isMobile ? 'flex flex-col' : 'flex justify-between'}`}>
+                            <p className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium line-clamp-2`}>
                               {formatActivityMessage(activity)}
                             </p>
-                            <span className="text-xs text-muted-foreground">
+                            <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>
                               {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                             </span>
                           </div>
 
                           {activity.details.challengeId && (
                             <motion.p
-                              className="text-xs text-muted-foreground"
+                              className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
                               transition={{ delay: prefersReducedMotion ? 0 : 0.2 + (index * 0.05) }}
@@ -822,7 +844,7 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
 
                           {activity.details.achievementId && (
                             <motion.p
-                              className="text-xs text-muted-foreground"
+                              className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
                               transition={{ delay: prefersReducedMotion ? 0 : 0.2 + (index * 0.05) }}

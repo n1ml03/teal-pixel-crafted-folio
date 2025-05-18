@@ -26,13 +26,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     chunkSizeWarningLimit: 1000, // Increase the warning limit to 1000 kB
-    minify: 'esbuild', // Use terser for better minification
-    terserOptions: {
-      compress: {
-        drop_console: mode === 'production', // Remove console logs in production
-        drop_debugger: mode === 'production', // Remove debugger statements in production
-      }
-    },
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         // Ensure CSS is extracted to separate files

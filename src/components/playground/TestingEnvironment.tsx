@@ -412,21 +412,15 @@ export const TestingEnvironment = ({
     if (passedCount === challengeTests.length) {
       setShowTestSuccess(true);
 
-      // Play a success sound
+      // Show notification if available
       try {
-        const audio = new Audio('/sounds/test-success.mp3');
-        audio.volume = 0.3;
-        audio.play().catch((error) => {
-          console.warn('Audio playback failed:', error);
-          // Fallback to browser notification if available
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Tests Completed!', {
-              body: 'All tests passed successfully!'
-            });
-          }
-        });
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('Tests Completed!', {
+            body: 'All tests passed successfully!'
+          });
+        }
       } catch (error) {
-        console.warn('Audio creation failed:', error);
+        console.warn('Notification failed:', error);
       }
     }
 
@@ -447,50 +441,70 @@ export const TestingEnvironment = ({
 
   return (
     <div className="flex flex-col h-full bg-background">
-      <div className="p-2 border-b flex flex-wrap items-center gap-2">
+      <div className={`${isNarrowViewport ? 'p-1.5' : 'p-2'} border-b flex flex-wrap items-center gap-1 md:gap-2`}>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
             onClick={handleBack}
             disabled={historyPositionRef.current <= 0}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className={`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
             onClick={handleForward}
             disabled={historyPositionRef.current >= historyRef.current.length - 1}
           >
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className={`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRefresh}>
-            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
+            onClick={handleRefresh}
+          >
+            <RefreshCw className={cn(`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`, isLoading && "animate-spin")} />
           </Button>
         </div>
 
-        <form onSubmit={handleUrlSubmit} className="flex-1 flex min-w-[150px]">
+        <form onSubmit={handleUrlSubmit} className="flex-1 flex min-w-[100px]">
           <Input
             value={inputUrl}
             onChange={(e) => setInputUrl(e.target.value)}
-            className="h-8 text-sm"
-            placeholder="Enter URL to test"
+            className={`${isNarrowViewport ? 'h-7 text-xs' : 'h-8 text-sm'}`}
+            placeholder={isNarrowViewport ? "Enter URL" : "Enter URL to test"}
             disabled={isLoading}
           />
         </form>
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeviceChange('mobile')}>
-            <Smartphone className={cn("h-4 w-4", device === 'mobile' && "text-primary")} />
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
+            onClick={() => handleDeviceChange('mobile')}
+          >
+            <Smartphone className={cn(`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`, device === 'mobile' && "text-primary")} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeviceChange('tablet')}>
-            <Tablet className={cn("h-4 w-4", device === 'tablet' && "text-primary")} />
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
+            onClick={() => handleDeviceChange('tablet')}
+          >
+            <Tablet className={cn(`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`, device === 'tablet' && "text-primary")} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeviceChange('desktop')}>
-            <Monitor className={cn("h-4 w-4", device === 'desktop' && "text-primary")} />
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
+            onClick={() => handleDeviceChange('desktop')}
+          >
+            <Monitor className={cn(`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`, device === 'desktop' && "text-primary")} />
           </Button>
         </div>
       </div>
@@ -498,17 +512,50 @@ export const TestingEnvironment = ({
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <TabsList className={cn(
           "justify-start",
-          isNarrowViewport ? "mx-2 mt-2 flex-wrap gap-1" : "mx-4 mt-2"
+          isNarrowViewport ? "mx-2 mt-2 flex-wrap gap-1 w-full" : "mx-4 mt-2"
         )}>
-          <TabsTrigger value="application" className="px-3">Application</TabsTrigger>
-          <TabsTrigger value="console" className="px-3">Console</TabsTrigger>
-          <TabsTrigger value="network" className="px-3">Network</TabsTrigger>
-          <TabsTrigger value="elements" className="px-3">Elements</TabsTrigger>
+          <TabsTrigger
+            value="application"
+            className={cn(
+              isNarrowViewport ? "px-2 py-1 text-xs flex-1" : "px-3"
+            )}
+          >
+            {isNarrowViewport ? "App" : "Application"}
+          </TabsTrigger>
+          <TabsTrigger
+            value="console"
+            className={cn(
+              isNarrowViewport ? "px-2 py-1 text-xs flex-1" : "px-3"
+            )}
+          >
+            Console
+          </TabsTrigger>
+          <TabsTrigger
+            value="network"
+            className={cn(
+              isNarrowViewport ? "px-2 py-1 text-xs flex-1" : "px-3"
+            )}
+          >
+            {isNarrowViewport ? "Net" : "Network"}
+          </TabsTrigger>
+          <TabsTrigger
+            value="elements"
+            className={cn(
+              isNarrowViewport ? "px-2 py-1 text-xs flex-1" : "px-3"
+            )}
+          >
+            {isNarrowViewport ? "DOM" : "Elements"}
+          </TabsTrigger>
           {challengeTests.length > 0 && (
-            <TabsTrigger value="tests" className="px-3">
+            <TabsTrigger
+              value="tests"
+              className={cn(
+                isNarrowViewport ? "px-2 py-1 text-xs flex-1" : "px-3"
+              )}
+            >
               <span className="truncate">Tests</span>
               {Object.values(testResults).some(result => result.passed) && (
-                <Badge className="ml-2 bg-green-100 text-green-800 flex-shrink-0">
+                <Badge className={`${isNarrowViewport ? 'ml-1 text-[10px] px-1 py-0' : 'ml-2'} bg-green-100 text-green-800 flex-shrink-0`}>
                   {Object.values(testResults).filter(result => result.passed).length}/{challengeTests.length}
                 </Badge>
               )}
@@ -532,8 +579,8 @@ export const TestingEnvironment = ({
           >
             {isLoading ? (
               <div className="text-center">
-                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Loading...</p>
+                <RefreshCw className={`${isNarrowViewport ? 'h-6 w-6' : 'h-8 w-8'} animate-spin mx-auto mb-2 text-muted-foreground`} />
+                <p className={`${isNarrowViewport ? 'text-xs' : 'text-sm'} text-muted-foreground`}>Loading...</p>
               </div>
             ) : (
               <iframe
@@ -551,9 +598,9 @@ export const TestingEnvironment = ({
             )}
 
             {isRecording && (
-              <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs flex items-center">
+              <div className={`absolute top-2 right-2 bg-red-500 text-white ${isNarrowViewport ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs'} rounded-full flex items-center`}>
                 <span className="animate-pulse mr-1">●</span>
-                Recording: {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                {isNarrowViewport ? `${Math.floor(recordingTime / 60)}:${(recordingTime % 60).toString().padStart(2, '0')}` : `Recording: ${Math.floor(recordingTime / 60)}:${(recordingTime % 60).toString().padStart(2, '0')}`}
               </div>
             )}
           </div>

@@ -25,6 +25,7 @@ import { MotionButton } from "@/components/ui/motion-button";
 import { useAuth } from '@/contexts/AuthContext';
 import { UserProgressService } from '@/services/UserProgressService';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Import challenges from data file
 import challenges from '@/data/challenges';
@@ -41,6 +42,7 @@ const calculateLevelProgress = (user: { level: number; points: number }) => {
 const Challenges = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [savedChallenges, setSavedChallenges] = useState<string[]>([]);
   const [filter, setFilter] = useState('all');
@@ -140,23 +142,23 @@ const Challenges = () => {
   return (
     <div className="min-h-screen relative">
       {/* Enhanced background with gradient and animated elements */}
-      <EnhancedBackground optimizeForLowPerformance={false} />
+      <EnhancedBackground optimizeForLowPerformance={true} />
 
       <main className="container py-6 pt-24 relative z-10">
         {/* Hero Section */}
-        <section className="mb-12">
-          <div className="rounded-lg border bg-card p-6 shadow-sm">
+        <section className="mb-8">
+          <div className="rounded-lg border bg-card p-4 md:p-6 shadow-sm">
             <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <h1 className="text-3xl font-bold mb-2">
+                <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-2`}>
                   {user ? `Welcome back, ${user.displayName}!` : 'Welcome to Testing Playground!'}
                 </h1>
 
                 {user && (
                   <div className="mb-4">
                     <div className="flex justify-between text-sm mb-1">
-                      <span>Progress to Level {user.level + 1}</span>
-                      <span>{calculateLevelProgress(user)}%</span>
+                      <span className={isMobile ? 'text-xs' : ''}>Level {user.level + 1}</span>
+                      <span className={isMobile ? 'text-xs' : ''}>{calculateLevelProgress(user)}%</span>
                     </div>
                     <Progress
                       value={calculateLevelProgress(user)}
@@ -165,19 +167,21 @@ const Challenges = () => {
                   </div>
                 )}
 
-                <p className="text-muted-foreground mb-4">
+                <p className={`text-muted-foreground mb-4 ${isMobile ? 'text-sm' : ''}`}>
                   {user
-                    ? 'Continue your learning journey with recommended challenges based on your progress.'
-                    : 'Start your testing journey with our curated challenges designed to build your skills.'}
+                    ? 'Continue your learning journey with recommended challenges.'
+                    : 'Start your testing journey with our curated challenges.'}
                 </p>
               </div>
 
               {featuredChallenge && (
-                <div className="flex flex-col justify-center">
+                <div className={`flex flex-col ${isMobile ? 'mt-2' : 'justify-center'}`}>
                   <div className="mb-2">
-                    <Badge variant="outline" className="mb-2">Recommended for you</Badge>
-                    <h3 className="text-xl font-bold">{featuredChallenge.title}</h3>
-                    <p className="text-muted-foreground text-sm mb-4">{featuredChallenge.description}</p>
+                    <Badge variant="outline" className="mb-2">Recommended</Badge>
+                    <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold`}>{featuredChallenge.title}</h3>
+                    <p className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'} mb-4 line-clamp-2`}>
+                      {featuredChallenge.description}
+                    </p>
                   </div>
 
                   <MotionButton
@@ -185,9 +189,10 @@ const Challenges = () => {
                     className="w-full sm:w-auto"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
+                    size={isMobile ? "sm" : "default"}
                   >
-                    {featuredChallenge.progress ? 'Continue Challenge' : 'Start Challenge'}
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    {featuredChallenge.progress ? 'Continue' : 'Start Challenge'}
+                    <ArrowRight className={`ml-2 ${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
                   </MotionButton>
                 </div>
               )}
@@ -196,12 +201,12 @@ const Challenges = () => {
         </section>
 
         {/* Challenge Library */}
-        <section className="mb-12">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Challenge Library</h2>
+        <section className="mb-8">
+          <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex justify-between items-center'} mb-4`}>
+            <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>Challenge Library</h2>
 
-            <div className="flex items-center space-x-2">
-              <div className="relative">
+            <div className={`flex ${isMobile ? 'flex-col w-full gap-2' : 'items-center space-x-2'}`}>
+              <div className="relative w-full md:w-auto">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
@@ -219,18 +224,20 @@ const Challenges = () => {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center">
-                    <Filter className="h-4 w-4 mr-2" />
-                    {filter === 'all' ? 'Filter' :
-                     filter === 'saved' ? 'Saved' :
-                     filter === 'in-progress' ? 'In Progress' :
-                     filter === 'completed' ? 'Completed' :
-                     filter === 'beginner' || filter === 'intermediate' || filter === 'advanced' ?
-                       `Difficulty: ${filter.charAt(0).toUpperCase() + filter.slice(1)}` : 'Filter'}
-                    <ChevronDown className="h-4 w-4 ml-2" />
+                  <Button variant="outline" className={`flex items-center ${isMobile ? 'w-full justify-between' : ''}`}>
+                    <div className="flex items-center">
+                      <Filter className={`${isMobile ? 'h-3.5 w-3.5 mr-1.5' : 'h-4 w-4 mr-2'}`} />
+                      {filter === 'all' ? 'Filter' :
+                       filter === 'saved' ? 'Saved' :
+                       filter === 'in-progress' ? 'In Progress' :
+                       filter === 'completed' ? 'Completed' :
+                       filter === 'beginner' || filter === 'intermediate' || filter === 'advanced' ?
+                         `${isMobile ? '' : 'Difficulty: '}${filter.charAt(0).toUpperCase() + filter.slice(1)}` : 'Filter'}
+                    </div>
+                    <ChevronDown className={`${isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4 ml-2'}`} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[200px]">
+                <DropdownMenuContent align={isMobile ? "center" : "end"} className={isMobile ? "w-[90vw]" : "w-[200px]"}>
                   <DropdownMenuLabel>Filter Challenges</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup value={filter} onValueChange={setFilter}>
@@ -264,22 +271,38 @@ const Challenges = () => {
           </div>
 
           {isLoadingProgress ? (
-            <div className="flex justify-center items-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className={`${isMobile ? 'h-6 w-6' : 'h-8 w-8'} animate-spin text-primary`} />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredChallenges.map((challenge, index) => (
-                <ChallengeCard
-                  key={challenge.id}
-                  challenge={challenge}
-                  onSave={handleSaveChallenge}
-                  onStart={handleStartChallenge}
-                  onDetails={handleDetailsClick}
-                  isSaved={savedChallenges.includes(challenge.id)}
-                  index={index}
-                />
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {filteredChallenges.length > 0 ? (
+                filteredChallenges.map((challenge, index) => (
+                  <ChallengeCard
+                    key={challenge.id}
+                    challenge={challenge}
+                    onSave={handleSaveChallenge}
+                    onStart={handleStartChallenge}
+                    onDetails={handleDetailsClick}
+                    isSaved={savedChallenges.includes(challenge.id)}
+                    index={index}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full py-8 text-center">
+                  <p className="text-muted-foreground">No challenges match your search criteria.</p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setFilter('all');
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </section>
