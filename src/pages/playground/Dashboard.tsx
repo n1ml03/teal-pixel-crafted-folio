@@ -50,8 +50,7 @@ const Dashboard = () => {
     <div className="min-h-screen relative">
       {/* Enhanced background with gradient and animated elements */}
       <EnhancedBackground
-        optimizeForLowPerformance={false}
-        reducedAnimations={prefersReducedMotion || false}
+        optimizeForLowPerformance={true} reducedAnimations={true}
       />
 
       <AnimatePresence mode="wait">
