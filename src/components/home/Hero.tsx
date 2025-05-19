@@ -78,7 +78,6 @@ const Hero = () => {
 
   // Tech icons for floating animation
   const techIcons = [
-    { icon: <Cpu size={20} />, color: "from-teal-400/20 to-teal-300/10" },
     { icon: <Braces size={20} />, color: "from-blue-400/20 to-blue-300/10" }
   ];
 
