@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, lazy, Suspense, useRef } from 'react';
+import React, { useState, useCallback, useMemo, lazy, Suspense, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
@@ -19,11 +19,19 @@ import { Badge } from "@/components/ui/badge.tsx";
 import { ScrollReveal } from "@/components/ui/scroll-reveal.tsx";
 import { MotionButton } from "@/components/ui/motion-button.tsx";
 
-// Lazy load components that aren't needed immediately
-const URLAnalytics = lazy(() => import('@/components/shorten/URLAnalytics.tsx'));
-const GeoMap = lazy(() => import('@/components/shorten/GeoMap.tsx').then(module => ({ default: module.GeoMap })));
-const TimeHeatmap = lazy(() => import('@/components/shorten/TimeHeatmap.tsx').then(module => ({ default: module.TimeHeatmap })));
-const CampaignTemplates = lazy(() => import('@/components/shorten/CampaignTemplates.tsx').then(module => ({ default: module.CampaignTemplates })));
+// Lazy load components that aren't needed immediately with prefetch
+const URLAnalytics = lazy(() => {
+  // Prefetch the component when idle
+  const prefetch = () => import('@/components/shorten/URLAnalytics.tsx');
+  window.requestIdleCallback ? window.requestIdleCallback(prefetch) : setTimeout(prefetch, 1000);
+  return prefetch();
+});
+
+const CampaignTemplates = lazy(() => {
+  const prefetch = () => import('@/components/shorten/CampaignTemplates.tsx').then(module => ({ default: module.CampaignTemplates }));
+  window.requestIdleCallback ? window.requestIdleCallback(prefetch) : setTimeout(prefetch, 1500);
+  return prefetch();
+});
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -34,6 +42,36 @@ const LoadingFallback = () => (
 );
 
 const URLShortenerPage: React.FC = () => {
+  // Initialize the URL Shortener Service and prefetch components
+  useEffect(() => {
+    // Initialize the service when the component mounts
+    URLShortenerService.initialize();
+
+    // Add performance monitoring
+    const startTime = performance.now();
+
+    // Log performance metrics
+    window.addEventListener('load', () => {
+      const loadTime = performance.now() - startTime;
+      console.log(`URL Shortener page loaded in ${loadTime.toFixed(2)}ms`);
+
+      // Report to analytics if needed
+      if (loadTime > 1000) {
+        console.warn('URL Shortener page load time exceeded 1000ms');
+      }
+    });
+
+    // Clean up expired URLs on component mount
+    const cleanupInterval = setInterval(() => {
+      // This will run the cleanup logic in the service
+      URLShortenerService.initialize();
+    }, 60 * 60 * 1000); // Run every hour
+
+    return () => {
+      clearInterval(cleanupInterval);
+    };
+  }, []);
+
   // We're using responsive design with breakpoints instead of the isMobile hook
   const [activeTab, setActiveTab] = useState<string>('shorten');
   const [currentURL, setCurrentURL] = useState<ShortenedURL | null>(null);
@@ -42,9 +80,6 @@ const URLShortenerPage: React.FC = () => {
 
   // Reference to the tabs section for smooth scrolling
   const tabsSectionRef = useRef<HTMLDivElement>(null);
-
-  // Cache analytics data to prevent redundant calculations
-  const [analyticsCache, setAnalyticsCache] = useState<Record<string, any>>({});
 
   // Memoize URL history for specific tabs to prevent unnecessary re-renders
   const recentURLHistory = useMemo(() =>
@@ -62,12 +97,7 @@ const URLShortenerPage: React.FC = () => {
       setSelectedTemplate(null);
     }
 
-    // Clear analytics cache for this URL
-    setAnalyticsCache(prev => {
-      const newCache = {...prev};
-      delete newCache[shortenedURL.id];
-      return newCache;
-    });
+    // The service now handles clearing the analytics cache internally
   }, [addToHistory, selectedTemplate]);
 
   const handleDeleteURL = useCallback((id: string) => {
@@ -76,26 +106,10 @@ const URLShortenerPage: React.FC = () => {
       setCurrentURL(null);
     }
 
-    // Clear analytics cache for this URL
-    setAnalyticsCache(prev => {
-      const newCache = {...prev};
-      delete newCache[id];
-      return newCache;
-    });
+    // The service now handles clearing the analytics cache internally
   }, [currentURL, removeFromHistory]);
 
-  // Get analytics data with caching
-  const getAnalyticsData = useCallback((urlId: string) => {
-    if (!analyticsCache[urlId]) {
-      const data = URLShortenerService.getURLAnalytics(urlId);
-      setAnalyticsCache(prev => ({
-        ...prev,
-        [urlId]: data
-      }));
-      return data;
-    }
-    return analyticsCache[urlId];
-  }, [analyticsCache]);
+  // No longer need the getAnalyticsData function since we removed GeoMap and TimeHeatmap
 
   // Additional callbacks for select handlers
   const handleHistorySelect = useCallback((url: ShortenedURL) => {
@@ -105,7 +119,8 @@ const URLShortenerPage: React.FC = () => {
 
   const handleAnalyticsSelect = useCallback((url: ShortenedURL) => {
     setCurrentURL(url);
-  }, [setCurrentURL]);
+    setActiveTab('analytics');
+  }, [setCurrentURL, setActiveTab]);
 
   const handleTemplateSelect = useCallback((template: UTMParams) => {
     setSelectedTemplate(template);
@@ -424,6 +439,7 @@ const URLShortenerPage: React.FC = () => {
                               urlHistory={urlHistory}
                               onDelete={handleDeleteURL}
                               onSelect={handleHistorySelect}
+                              onAnalyticsSelect={handleAnalyticsSelect}
                             />
                           </div>
                         </ScrollArea>
@@ -476,22 +492,6 @@ const URLShortenerPage: React.FC = () => {
                           <Suspense fallback={<LoadingFallback />}>
                             <URLAnalytics url={currentURL} />
                           </Suspense>
-
-                          <Suspense fallback={<LoadingFallback />}>
-                            <GeoMap
-                              geoData={
-                                getAnalyticsData(currentURL.id).geoData || []
-                              }
-                            />
-                          </Suspense>
-
-                          <Suspense fallback={<LoadingFallback />}>
-                            <TimeHeatmap
-                              data={
-                                getAnalyticsData(currentURL.id).timeHeatmap || []
-                              }
-                            />
-                          </Suspense>
                         </div>
                       ) : (
                         <Card className="border border-amber-100 shadow-md hover:shadow-lg transition-all duration-300 bg-white/90 backdrop-blur-md rounded-xl overflow-hidden">
@@ -531,6 +531,7 @@ const URLShortenerPage: React.FC = () => {
                                     urlHistory={recentURLHistory}
                                     onDelete={handleDeleteURL}
                                     onSelect={handleAnalyticsSelect}
+                                    onAnalyticsSelect={handleAnalyticsSelect}
                                   />
                                 </div>
                               </ScrollArea>

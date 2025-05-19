@@ -21,9 +21,10 @@ interface URLHistoryListProps {
   urlHistory: ShortenedURL[];
   onDelete: (id: string) => void;
   onSelect: (url: ShortenedURL) => void;
+  onAnalyticsSelect?: (url: ShortenedURL) => void;
 }
 
-const URLHistoryList: React.FC<URLHistoryListProps> = ({ urlHistory, onDelete, onSelect }) => {
+const URLHistoryList: React.FC<URLHistoryListProps> = ({ urlHistory, onDelete, onSelect, onAnalyticsSelect }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -168,7 +169,7 @@ const URLHistoryList: React.FC<URLHistoryListProps> = ({ urlHistory, onDelete, o
                     variant="outline"
                     size="sm"
                     className="h-6 sm:h-7 text-[10px] sm:text-xs px-1.5 sm:px-2"
-                    onClick={() => onSelect(url)}
+                    onClick={() => onAnalyticsSelect ? onAnalyticsSelect(url) : onSelect(url)}
                   >
                     <BarChart3 className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
                     Analytics

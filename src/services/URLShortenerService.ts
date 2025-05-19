@@ -3,13 +3,14 @@ import { ShortenedURL, URLClickData, URLOptions, URLAnalytics } from '@/types/sh
 // Constants
 const URL_STORAGE_KEY = 'shortened_urls';
 const CLICK_STORAGE_KEY = 'url_clicks';
+const ANALYTICS_CACHE_KEY = 'url_analytics_cache';
 const DEFAULT_CODE_LENGTH = 6;
 const BASE_URL = window.location.origin;
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-// Helper to generate a unique ID
+// Helper to generate a unique ID (using a more efficient method)
 const generateId = (): string => {
-  return Math.random().toString(36).substring(2, 15) +
-         Math.random().toString(36).substring(2, 15);
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
 };
 
 // Helper to generate a random short code
@@ -44,8 +45,57 @@ const hashPassword = (password: string): string => {
 
 // URLShortenerService class
 export class URLShortenerService {
+  // Static initialization flag
+  private static isInitialized = false;
+
+  // List of potentially malicious TLDs and patterns
+  private static suspiciousTLDs = [
+    'xyz', 'top', 'club', 'gq', 'ml', 'cf', 'tk', 'ga'
+  ];
+
+  private static suspiciousDomainPatterns = [
+    'login', 'signin', 'account', 'secure', 'banking', 'verify', 'wallet',
+    'auth', 'confirm', 'update', 'payment', 'pay', 'billing', 'security'
+  ];
+
+  // Known phishing domains (this would be more extensive in a real application)
+  private static knownMaliciousDomains = [
+    'evil-site.com', 'phishing-example.com', 'malware-site.net'
+  ];
+
+  // Initialize the service
+  static initialize(): void {
+    if (this.isInitialized) return;
+
+    // Load caches from localStorage
+    this.getURLs(); // This will initialize URL cache
+    this.loadAnalyticsCache();
+
+    // Set initialization flag
+    this.isInitialized = true;
+
+    // Clean up expired URLs
+    this.cleanupExpiredURLs();
+  }
+
+  // Clean up expired URLs to free up storage
+  private static cleanupExpiredURLs(): void {
+    const now = new Date();
+    const urls = this.getURLs();
+
+    const validURLs = urls.filter(url => {
+      // Keep URLs without expiration or with future expiration
+      return !url.expiresAt || new Date(url.expiresAt) > now;
+    });
+
+    // Only update if we removed some URLs
+    if (validURLs.length < urls.length) {
+      this.saveURLs(validURLs);
+    }
+  }
+
   // Validate URL
-  static isValidURL(url: string): { valid: boolean; reason?: string } {
+  static isValidURL(url: string): { valid: boolean; reason?: string; suspicious?: boolean } {
     try {
       // Try to parse the URL
       const parsedUrl = new URL(url);
@@ -84,7 +134,65 @@ export class URLShortenerService {
         };
       }
 
-      return { valid: true };
+      // Check for extremely long hostnames (potential IDN homograph attack)
+      if (parsedUrl.hostname.length > 100) {
+        return {
+          valid: false,
+          reason: 'Domain name is too long (maximum 100 characters)'
+        };
+      }
+
+      // Check for too many subdomains (potential for confusion)
+      const subdomainCount = parsedUrl.hostname.split('.').length - 1;
+      if (subdomainCount > 5) {
+        return {
+          valid: false,
+          reason: 'URL contains too many subdomains'
+        };
+      }
+
+      // Check for known malicious domains
+      if (this.knownMaliciousDomains.some(domain =>
+          parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(`.${domain}`))) {
+        return {
+          valid: false,
+          reason: 'This URL has been identified as potentially malicious'
+        };
+      }
+
+      // Check for suspicious TLDs
+      const tld = parsedUrl.hostname.split('.').pop()?.toLowerCase();
+      const hasSuspiciousTLD = tld ? this.suspiciousTLDs.includes(tld) : false;
+
+      // Check for suspicious domain patterns
+      const hasSuspiciousDomainPattern = this.suspiciousDomainPatterns.some(pattern =>
+        parsedUrl.hostname.toLowerCase().includes(pattern));
+
+      // Check for IP address in hostname (often suspicious)
+      const isIPAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(parsedUrl.hostname);
+
+      // Check for encoded characters in hostname (potential IDN homograph attack)
+      const hasEncodedChars = parsedUrl.hostname.includes('%');
+
+      // Check for excessive number of query parameters (potential for abuse)
+      const queryParamCount = parsedUrl.searchParams.size;
+      const hasExcessiveParams = queryParamCount > 15;
+
+      // Check for suspicious URL patterns
+      const hasSuspiciousURLPattern = /\.(exe|dll|bat|sh|cmd|msi|vbs|ps1)$/i.test(parsedUrl.pathname);
+
+      // Flag as suspicious if any of the above checks are true
+      const isSuspicious = hasSuspiciousTLD ||
+                          hasSuspiciousDomainPattern ||
+                          isIPAddress ||
+                          hasEncodedChars ||
+                          hasExcessiveParams ||
+                          hasSuspiciousURLPattern;
+
+      return {
+        valid: true,
+        suspicious: isSuspicious
+      };
     } catch (e) {
       return {
         valid: false,
@@ -93,32 +201,84 @@ export class URLShortenerService {
     }
   }
 
-  // Get all shortened URLs
+  // Cache for URLs to avoid repeated localStorage access
+  private static urlCache: ShortenedURL[] | null = null;
+  private static urlCacheTimestamp: number = 0;
+  private static urlCacheByIdMap: Map<string, ShortenedURL> = new Map();
+  private static urlCacheByShortCodeMap: Map<string, ShortenedURL> = new Map();
+
+  // Get all shortened URLs with caching
   static getURLs(): ShortenedURL[] {
+    const now = Date.now();
+
+    // If cache is valid and not expired, use it
+    if (this.urlCache !== null && (now - this.urlCacheTimestamp) < CACHE_EXPIRY) {
+      return [...this.urlCache]; // Return a copy to prevent mutation
+    }
+
     try {
       const urlsJson = localStorage.getItem(URL_STORAGE_KEY);
-      return urlsJson ? JSON.parse(urlsJson) : [];
+      const urls = urlsJson ? JSON.parse(urlsJson) : [];
+
+      // Update cache
+      this.urlCache = urls;
+      this.urlCacheTimestamp = now;
+
+      // Update lookup maps for faster access
+      this.updateUrlLookupMaps(urls);
+
+      return [...urls]; // Return a copy to prevent mutation
     } catch (error) {
       console.error('Error getting URLs from localStorage:', error);
       return [];
     }
   }
 
-  // Save URLs to localStorage
+  // Update lookup maps for faster URL retrieval
+  private static updateUrlLookupMaps(urls: ShortenedURL[]): void {
+    this.urlCacheByIdMap.clear();
+    this.urlCacheByShortCodeMap.clear();
+
+    for (const url of urls) {
+      this.urlCacheByIdMap.set(url.id, url);
+      this.urlCacheByShortCodeMap.set(url.shortCode, url);
+    }
+  }
+
+  // Save URLs to localStorage and update cache
   private static saveURLs(urls: ShortenedURL[]): void {
     localStorage.setItem(URL_STORAGE_KEY, JSON.stringify(urls));
+
+    // Update cache
+    this.urlCache = [...urls];
+    this.urlCacheTimestamp = Date.now();
+
+    // Update lookup maps
+    this.updateUrlLookupMaps(urls);
   }
 
-  // Get URL by ID
+  // Get URL by ID (optimized with Map lookup)
   static getURLById(id: string): ShortenedURL | null {
+    // Try to get from cache first
+    if (this.urlCacheByIdMap.has(id)) {
+      return this.urlCacheByIdMap.get(id) || null;
+    }
+
+    // If not in cache or cache expired, refresh cache and try again
     const urls = this.getURLs();
-    return urls.find(url => url.id === id) || null;
+    return this.urlCacheByIdMap.get(id) || null;
   }
 
-  // Get URL by short code
+  // Get URL by short code (optimized with Map lookup)
   static getURLByShortCode(shortCode: string): ShortenedURL | null {
+    // Try to get from cache first
+    if (this.urlCacheByShortCodeMap.has(shortCode)) {
+      return this.urlCacheByShortCodeMap.get(shortCode) || null;
+    }
+
+    // If not in cache or cache expired, refresh cache and try again
     const urls = this.getURLs();
-    return urls.find(url => url.shortCode === shortCode) || null;
+    return this.urlCacheByShortCodeMap.get(shortCode) || null;
   }
 
   // Check if a custom alias is available
@@ -285,65 +445,88 @@ export class URLShortenerService {
 
   // Create a shortened URL
   static shortenURL(originalURL: string, options?: URLOptions): ShortenedURL {
-    // Validate URL
-    const validation = this.isValidURL(originalURL);
-    if (!validation.valid) {
-      throw new Error(validation.reason || 'Invalid URL. Please enter a valid URL.');
-    }
+    try {
+      // Sanitize the URL
+      const sanitizedURL = originalURL.trim();
 
-    // Generate a unique ID
-    const id = generateId();
-
-    // Handle custom alias if provided
-    let shortCode = generateShortCode();
-    if (options?.customAlias) {
-      const aliasValidation = this.validateAlias(options.customAlias);
-      if (!aliasValidation.valid) {
-        throw new Error(`Invalid custom alias: ${aliasValidation.reason}`);
+      // Validate URL
+      const validation = this.isValidURL(sanitizedURL);
+      if (!validation.valid) {
+        throw new Error(validation.reason || 'Invalid URL. Please enter a valid URL.');
       }
-      shortCode = options.customAlias;
-    }
 
-    // Create the short URL
-    const shortURL = `${BASE_URL}/s/${shortCode}`;
-
-    // Hash password if provided
-    let hashedPassword: string | undefined;
-    if (options?.password) {
-      const passwordValidation = this.validatePassword(options.password);
-      if (!passwordValidation.valid) {
-        throw new Error(`Invalid password: ${passwordValidation.reason}`);
+      // Check if URL is suspicious
+      if (validation.suspicious) {
+        // We'll still allow it but log a warning
+        console.warn('Potentially suspicious URL detected:', sanitizedURL);
       }
-      hashedPassword = hashPassword(options.password);
-    }
 
-    // Validate UTM parameters if provided
-    if (options?.utmParameters && Object.keys(options.utmParameters).length > 0) {
-      const utmValidation = this.validateUtmParameters(options.utmParameters);
-      if (!utmValidation.valid) {
-        throw new Error(`Invalid UTM parameters: ${utmValidation.reason}`);
+      // Generate a unique ID
+      const id = generateId();
+
+      // Handle custom alias if provided
+      let shortCode = generateShortCode();
+      if (options?.customAlias) {
+        // Sanitize the custom alias
+        const sanitizedAlias = options.customAlias.trim();
+
+        const aliasValidation = this.validateAlias(sanitizedAlias);
+        if (!aliasValidation.valid) {
+          throw new Error(`Invalid custom alias: ${aliasValidation.reason}`);
+        }
+        shortCode = sanitizedAlias;
+      }
+
+      // Create the short URL
+      const shortURL = `${BASE_URL}/s/${shortCode}`;
+
+      // Hash password if provided
+      let hashedPassword: string | undefined;
+      if (options?.password) {
+        const passwordValidation = this.validatePassword(options.password);
+        if (!passwordValidation.valid) {
+          throw new Error(`Invalid password: ${passwordValidation.reason}`);
+        }
+        hashedPassword = hashPassword(options.password);
+      }
+
+      // Validate UTM parameters if provided
+      if (options?.utmParameters && Object.keys(options.utmParameters).length > 0) {
+        const utmValidation = this.validateUtmParameters(options.utmParameters);
+        if (!utmValidation.valid) {
+          throw new Error(`Invalid UTM parameters: ${utmValidation.reason}`);
+        }
+      }
+
+      // Create the shortened URL object
+      const shortenedURL: ShortenedURL = {
+        id,
+        originalURL: sanitizedURL,
+        shortCode,
+        shortURL,
+        createdAt: new Date().toISOString(),
+        expiresAt: options?.expiresAt,
+        password: hashedPassword,
+        customAlias: options?.customAlias,
+        utmParameters: options?.utmParameters,
+        clicks: 0,
+        isSuspicious: validation.suspicious || false
+      };
+
+      // Save to localStorage
+      const urls = this.getURLs();
+      this.saveURLs([...urls, shortenedURL]);
+
+      return shortenedURL;
+    } catch (error) {
+      // Generic error handling to avoid exposing sensitive information
+      if (error instanceof Error) {
+        throw error; // Re-throw the original error with its message
+      } else {
+        // For unknown errors, provide a generic message
+        throw new Error('An error occurred while shortening the URL. Please try again.');
       }
     }
-
-    // Create the shortened URL object
-    const shortenedURL: ShortenedURL = {
-      id,
-      originalURL,
-      shortCode,
-      shortURL,
-      createdAt: new Date().toISOString(),
-      expiresAt: options?.expiresAt,
-      password: hashedPassword,
-      customAlias: options?.customAlias,
-      utmParameters: options?.utmParameters,
-      clicks: 0
-    };
-
-    // Save to localStorage
-    const urls = this.getURLs();
-    this.saveURLs([...urls, shortenedURL]);
-
-    return shortenedURL;
   }
 
   // Update a shortened URL
@@ -367,6 +550,9 @@ export class URLShortenerService {
     // Save to localStorage
     this.saveURLs(urls);
 
+    // Clear analytics cache for this URL
+    this.clearAnalyticsCache(id);
+
     return updatedURL;
   }
 
@@ -381,6 +567,29 @@ export class URLShortenerService {
 
     // Save to localStorage
     this.saveURLs(filteredURLs);
+
+    // Clear analytics cache for this URL
+    this.clearAnalyticsCache(id);
+
+    // Also remove click data for this URL to free up storage
+    try {
+      const clicksJson = localStorage.getItem(CLICK_STORAGE_KEY);
+      if (clicksJson) {
+        const clicks: URLClickData[] = JSON.parse(clicksJson);
+        const filteredClicks = clicks.filter(click => click.urlId !== id);
+
+        // Only update if we actually removed something
+        if (filteredClicks.length < clicks.length) {
+          localStorage.setItem(CLICK_STORAGE_KEY, JSON.stringify(filteredClicks));
+
+          // Update clicks cache
+          this.clicksCache = filteredClicks;
+          this.clicksCacheTimestamp = Date.now();
+        }
+      }
+    } catch (error) {
+      console.error('Error removing click data from localStorage:', error);
+    }
 
     return true;
   }
@@ -407,19 +616,68 @@ export class URLShortenerService {
 
     // Save click data
     try {
+      // Batch update to reduce localStorage operations
       const clicksJson = localStorage.getItem(CLICK_STORAGE_KEY);
       const clicks: URLClickData[] = clicksJson ? JSON.parse(clicksJson) : [];
-      localStorage.setItem(CLICK_STORAGE_KEY, JSON.stringify([...clicks, click]));
+
+      // Add new click
+      clicks.push(click);
+
+      // Save back to localStorage
+      localStorage.setItem(CLICK_STORAGE_KEY, JSON.stringify(clicks));
+
+      // Update clicks cache
+      this.clicksCache = clicks;
+      this.clicksCacheTimestamp = Date.now();
+
+      // Clear analytics cache for this URL to ensure fresh data
+      this.clearAnalyticsCache(url.id);
     } catch (error) {
       console.error('Error saving click data to localStorage:', error);
     }
   }
 
-  // Get analytics for a URL
+  // Cache for analytics data
+  private static analyticsCache: Map<string, { data: URLAnalytics, timestamp: number }> = new Map();
+  private static clicksCache: URLClickData[] | null = null;
+  private static clicksCacheTimestamp: number = 0;
+
+  // Get all clicks with caching
+  private static getAllClicks(): URLClickData[] {
+    const now = Date.now();
+
+    // If cache is valid and not expired, use it
+    if (this.clicksCache !== null && (now - this.clicksCacheTimestamp) < CACHE_EXPIRY) {
+      return [...this.clicksCache]; // Return a copy to prevent mutation
+    }
+
+    try {
+      const clicksJson = localStorage.getItem(CLICK_STORAGE_KEY);
+      const clicks = clicksJson ? JSON.parse(clicksJson) : [];
+
+      // Update cache
+      this.clicksCache = clicks;
+      this.clicksCacheTimestamp = now;
+
+      return [...clicks]; // Return a copy to prevent mutation
+    } catch (error) {
+      console.error('Error getting clicks from localStorage:', error);
+      return [];
+    }
+  }
+
+  // Get analytics for a URL with caching
   static getURLAnalytics(urlId: string): URLAnalytics {
+    const now = Date.now();
+
+    // Check if we have a valid cached version
+    const cachedAnalytics = this.analyticsCache.get(urlId);
+    if (cachedAnalytics && (now - cachedAnalytics.timestamp) < CACHE_EXPIRY) {
+      return { ...cachedAnalytics.data }; // Return a copy to prevent mutation
+    }
+
     // Get all clicks for this URL
-    const clicksJson = localStorage.getItem(CLICK_STORAGE_KEY);
-    const allClicks: URLClickData[] = clicksJson ? JSON.parse(clicksJson) : [];
+    const allClicks = this.getAllClicks();
     const urlClicks = allClicks.filter(click => click.urlId === urlId);
 
     // Initialize analytics object
@@ -449,32 +707,24 @@ export class URLShortenerService {
       conversionsByUtmSource: {},
       conversionsByUtmMedium: {},
       conversionsByUtmCampaign: {},
-      conversionValue: 0,
-      geoData: [],
-      timeHeatmap: []
+      conversionValue: 0
     };
 
-    // Process clicks
-    urlClicks.forEach(click => {
+    // Process clicks more efficiently
+    for (const click of urlClicks) {
       // Process by date
       const date = click.timestamp.split('T')[0];
       analytics.clicksByDate[date] = (analytics.clicksByDate[date] || 0) + 1;
 
-      // Process by hour
+      // Process by hour and day of week more efficiently
       const clickDate = new Date(click.timestamp);
       const hour = clickDate.getHours();
-      analytics.clicksByHour![hour.toString()] = (analytics.clicksByHour![hour.toString()] || 0) + 1;
+      const hourStr = hour.toString();
+      analytics.clicksByHour![hourStr] = (analytics.clicksByHour![hourStr] || 0) + 1;
 
-      // Process by day of week (0 = Sunday, 6 = Saturday)
       const dayOfWeek = clickDate.getDay();
-      analytics.clicksByDayOfWeek![dayOfWeek.toString()] = (analytics.clicksByDayOfWeek![dayOfWeek.toString()] || 0) + 1;
-
-      // Add to time heatmap
-      analytics.timeHeatmap!.push({
-        day: dayOfWeek,
-        hour: hour,
-        count: 1
-      });
+      const dayStr = dayOfWeek.toString();
+      analytics.clicksByDayOfWeek![dayStr] = (analytics.clicksByDayOfWeek![dayStr] || 0) + 1;
 
       // Process by referrer
       if (click.referrer) {
@@ -491,75 +741,57 @@ export class URLShortenerService {
         analytics.clicksByBrowser[click.browser] = (analytics.clicksByBrowser[click.browser] || 0) + 1;
       }
 
-      // Process by location
-      if (click.location) {
-        // Process by country
-        if (click.location.country) {
-          analytics.clicksByCountry[click.location.country] = (analytics.clicksByCountry[click.location.country] || 0) + 1;
-
-          // Add to geo data for map visualization
-          const existingCountry = analytics.geoData!.find(item => item.country === click.location!.country);
-          if (existingCountry) {
-            existingCountry.count++;
-          } else {
-            analytics.geoData!.push({
-              country: click.location.country,
-              code: this.getCountryCode(click.location.country),
-              count: 1,
-              latitude: click.location.latitude,
-              longitude: click.location.longitude
-            });
-          }
-        }
+      // Process by location more efficiently
+      if (click.location?.country) {
+        const country = click.location.country;
+        analytics.clicksByCountry[country] = (analytics.clicksByCountry[country] || 0) + 1;
 
         // Process by region
         if (click.location.region) {
-          analytics.clicksByRegion![click.location.region] = (analytics.clicksByRegion![click.location.region] || 0) + 1;
+          const region = click.location.region;
+          analytics.clicksByRegion![region] = (analytics.clicksByRegion![region] || 0) + 1;
         }
 
         // Process by city
         if (click.location.city) {
-          analytics.clicksByCity![click.location.city] = (analytics.clicksByCity![click.location.city] || 0) + 1;
+          const city = click.location.city;
+          analytics.clicksByCity![city] = (analytics.clicksByCity![city] || 0) + 1;
         }
       }
 
-      // Process UTM parameters
+      // Process UTM parameters more efficiently
       if (click.utmParameters) {
+        const utm = click.utmParameters;
+
         // Process standard UTM parameters
-        if (click.utmParameters.source && typeof click.utmParameters.source === 'string') {
-          analytics.clicksByUtmSource![click.utmParameters.source] =
-            (analytics.clicksByUtmSource![click.utmParameters.source] || 0) + 1;
+        if (utm.source && typeof utm.source === 'string') {
+          analytics.clicksByUtmSource![utm.source] = (analytics.clicksByUtmSource![utm.source] || 0) + 1;
         }
 
-        if (click.utmParameters.medium && typeof click.utmParameters.medium === 'string') {
-          analytics.clicksByUtmMedium![click.utmParameters.medium] =
-            (analytics.clicksByUtmMedium![click.utmParameters.medium] || 0) + 1;
+        if (utm.medium && typeof utm.medium === 'string') {
+          analytics.clicksByUtmMedium![utm.medium] = (analytics.clicksByUtmMedium![utm.medium] || 0) + 1;
         }
 
-        if (click.utmParameters.campaign && typeof click.utmParameters.campaign === 'string') {
-          analytics.clicksByUtmCampaign![click.utmParameters.campaign] =
-            (analytics.clicksByUtmCampaign![click.utmParameters.campaign] || 0) + 1;
+        if (utm.campaign && typeof utm.campaign === 'string') {
+          analytics.clicksByUtmCampaign![utm.campaign] = (analytics.clicksByUtmCampaign![utm.campaign] || 0) + 1;
         }
 
-        if (click.utmParameters.term && typeof click.utmParameters.term === 'string') {
-          analytics.clicksByUtmTerm![click.utmParameters.term] =
-            (analytics.clicksByUtmTerm![click.utmParameters.term] || 0) + 1;
+        if (utm.term && typeof utm.term === 'string') {
+          analytics.clicksByUtmTerm![utm.term] = (analytics.clicksByUtmTerm![utm.term] || 0) + 1;
         }
 
-        if (click.utmParameters.content && typeof click.utmParameters.content === 'string') {
-          analytics.clicksByUtmContent![click.utmParameters.content] =
-            (analytics.clicksByUtmContent![click.utmParameters.content] || 0) + 1;
+        if (utm.content && typeof utm.content === 'string') {
+          analytics.clicksByUtmContent![utm.content] = (analytics.clicksByUtmContent![utm.content] || 0) + 1;
         }
 
         // Process custom UTM parameters
-        if (click.utmParameters.custom && typeof click.utmParameters.custom === 'object') {
-          Object.entries(click.utmParameters.custom).forEach(([key, value]) => {
+        if (utm.custom && typeof utm.custom === 'object') {
+          for (const [key, value] of Object.entries(utm.custom)) {
             if (!analytics.clicksByCustomUtm![key]) {
               analytics.clicksByCustomUtm![key] = {};
             }
-
             analytics.clicksByCustomUtm![key][value] = (analytics.clicksByCustomUtm![key][value] || 0) + 1;
-          });
+          }
         }
       }
 
@@ -583,23 +815,27 @@ export class URLShortenerService {
 
         // Process by UTM parameters
         if (click.utmParameters) {
-          if (click.utmParameters.source && typeof click.utmParameters.source === 'string') {
-            analytics.conversionsByUtmSource![click.utmParameters.source] =
-              (analytics.conversionsByUtmSource![click.utmParameters.source] || 0) + 1;
+          const utm = click.utmParameters;
+
+          if (utm.source && typeof utm.source === 'string') {
+            analytics.conversionsByUtmSource![utm.source] =
+              (analytics.conversionsByUtmSource![utm.source] || 0) + 1;
           }
 
-          if (click.utmParameters.medium && typeof click.utmParameters.medium === 'string') {
-            analytics.conversionsByUtmMedium![click.utmParameters.medium] =
-              (analytics.conversionsByUtmMedium![click.utmParameters.medium] || 0) + 1;
+          if (utm.medium && typeof utm.medium === 'string') {
+            analytics.conversionsByUtmMedium![utm.medium] =
+              (analytics.conversionsByUtmMedium![utm.medium] || 0) + 1;
           }
 
-          if (click.utmParameters.campaign && typeof click.utmParameters.campaign === 'string') {
-            analytics.conversionsByUtmCampaign![click.utmParameters.campaign] =
-              (analytics.conversionsByUtmCampaign![click.utmParameters.campaign] || 0) + 1;
+          if (utm.campaign && typeof utm.campaign === 'string') {
+            analytics.conversionsByUtmCampaign![utm.campaign] =
+              (analytics.conversionsByUtmCampaign![utm.campaign] || 0) + 1;
           }
         }
       }
-    });
+    }
+
+    // No time heatmap or geo data processing needed
 
     // Calculate conversion rate
     analytics.conversionRate = urlClicks.length > 0
@@ -613,29 +849,48 @@ export class URLShortenerService {
       clicks: analytics.clicksByDate[date]
     }));
 
+    // Cache the result
+    this.analyticsCache.set(urlId, { data: analytics, timestamp: now });
+
+    // Also save to localStorage for persistence across sessions
+    try {
+      const analyticsCache = JSON.parse(localStorage.getItem(ANALYTICS_CACHE_KEY) || '{}');
+      analyticsCache[urlId] = { data: analytics, timestamp: now };
+      localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(analyticsCache));
+    } catch (error) {
+      console.error('Error saving analytics cache to localStorage:', error);
+    }
+
     return analytics;
   }
 
-  // Helper to get country code from country name (simplified version)
-  private static getCountryCode(countryName: string): string {
-    const countryCodes: Record<string, string> = {
-      'United States': 'US',
-      'United Kingdom': 'GB',
-      'Canada': 'CA',
-      'Australia': 'AU',
-      'Germany': 'DE',
-      'France': 'FR',
-      'Japan': 'JP',
-      'China': 'CN',
-      'India': 'IN',
-      'Brazil': 'BR',
-      'Mexico': 'MX',
-      'Spain': 'ES',
-      'Italy': 'IT',
-      'Russia': 'RU',
-      'Unknown': 'XX'
-    };
+  // Clear analytics cache for a specific URL
+  static clearAnalyticsCache(urlId: string): void {
+    this.analyticsCache.delete(urlId);
 
-    return countryCodes[countryName] || 'XX';
+    try {
+      const analyticsCache = JSON.parse(localStorage.getItem(ANALYTICS_CACHE_KEY) || '{}');
+      delete analyticsCache[urlId];
+      localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(analyticsCache));
+    } catch (error) {
+      console.error('Error updating analytics cache in localStorage:', error);
+    }
   }
+
+  // Load analytics cache from localStorage
+  static loadAnalyticsCache(): void {
+    try {
+      const analyticsCache = JSON.parse(localStorage.getItem(ANALYTICS_CACHE_KEY) || '{}');
+
+      for (const [urlId, cacheEntry] of Object.entries(analyticsCache)) {
+        // Type assertion to help TypeScript understand the structure
+        const entry = cacheEntry as { data: URLAnalytics, timestamp: number };
+        this.analyticsCache.set(urlId, entry);
+      }
+    } catch (error) {
+      console.error('Error loading analytics cache from localStorage:', error);
+    }
+  }
+
+  // No longer need the getCountryCode method
 }

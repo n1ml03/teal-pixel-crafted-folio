@@ -551,7 +551,7 @@ const BlogPost = () => {
                             className="bg-teal-500 hover:bg-teal-600 text-white rounded-full px-5 py-2 text-sm shadow-sm hover:shadow-md"
                             whileHover={{ y: -2 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => window.location.href = '/#contact'}
+                            onClick={() => window.location.href = '/contact-form'}
                           >
                             Contact Me
                           </MotionButton>

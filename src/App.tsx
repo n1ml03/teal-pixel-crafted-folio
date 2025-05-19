@@ -10,12 +10,12 @@ import {
 } from "react-router-dom";
 import { ParallaxProvider } from "@/components/utils/ParallaxProvider.tsx";
 import RouterWrapper from "@/components/utils/RouterWrapper.tsx";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ResourcePreloader from "@/components/utils/ResourcePreloader.tsx";
 import { SkipLink } from "@/components/ui/skip-link";
 import AccessibilityProvider from "@/components/utils/AccessibilityProvider.tsx";
-import { logCLS } from "@/lib/cls-monitoring";
+
 import ErrorBoundary from "@/components/utils/ErrorBoundary";
 
 // Lazy load pages for code splitting
@@ -121,14 +121,6 @@ const router = createBrowserRouter(
 );
 
 const App = () => {
-  // Monitor CLS in development mode
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      const stopMonitoring = logCLS();
-      return () => stopMonitoring();
-    }
-  }, []);
-
   return (
     <ErrorBoundary>
       <AccessibilityProvider>

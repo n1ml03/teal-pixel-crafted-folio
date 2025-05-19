@@ -403,7 +403,7 @@ const Help = () => {
         const regex = new RegExp(`(\\b${word}|${word})`, 'gi');
         highlightedContent = highlightedContent.replace(
           regex,
-          '<mark class="bg-yellow-100 text-gray-900 px-1 rounded">$1</mark>'
+          '<mark class="bg-yellow-200 text-gray-900 px-1.5 py-0.5 rounded font-medium shadow-sm">$1</mark>'
         );
       }
     });
@@ -779,19 +779,19 @@ const Help = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <ScrollArea className="h-[calc(70vh-200px)] min-h-[500px]">
-                        <div className="p-6">
+                      <ScrollArea className="h-[calc(80vh-180px)] min-h-[650px]">
+                        <div className="p-8">
                           {filteredContent
                             .filter(item => item.category === 'getting-started')
                             .map((item, index) => (
-                              <div key={index} className="mb-8 p-4 bg-blue-50/50 rounded-lg border border-blue-100/50 hover:border-blue-200 transition-all duration-300">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <div className="bg-blue-100 p-1.5 rounded-full">
-                                    <Lightbulb className="h-4 w-4 text-blue-600" />
+                              <div key={index} className="mb-8 p-6 bg-blue-50/50 rounded-lg border border-blue-100/50 hover:border-blue-200 transition-all duration-300 shadow-sm hover:shadow">
+                                <div className="flex items-center gap-3 mb-4">
+                                  <div className="bg-blue-100 p-2 rounded-full">
+                                    <Lightbulb className="h-5 w-5 text-blue-600" />
                                   </div>
-                                  <h3 className="text-lg font-semibold text-blue-900">{item.title}</h3>
+                                  <h3 className="text-xl font-semibold text-blue-900">{item.title}</h3>
                                 </div>
-                                <div className="text-sm text-gray-700 pl-9" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
+                                <div className="text-base leading-relaxed text-gray-800 pl-10 prose prose-blue max-w-none prose-headings:text-blue-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-blue-900 prose-code:text-blue-800 prose-code:bg-blue-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
                               </div>
                             ))}
                         </div>
@@ -832,19 +832,19 @@ const Help = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <ScrollArea className="h-[calc(70vh-200px)] min-h-[500px]">
-                        <div className="p-6">
+                      <ScrollArea className="h-[calc(80vh-180px)] min-h-[650px]">
+                        <div className="p-8">
                           {filteredContent
                             .filter(item => item.category === 'testing-environment')
                             .map((item, index) => (
-                              <div key={index} className="mb-8 p-4 bg-teal-50/50 rounded-lg border border-teal-100/50 hover:border-teal-200 transition-all duration-300">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <div className="bg-teal-100 p-1.5 rounded-full">
-                                    <Code className="h-4 w-4 text-teal-600" />
+                              <div key={index} className="mb-8 p-6 bg-teal-50/50 rounded-lg border border-teal-100/50 hover:border-teal-200 transition-all duration-300 shadow-sm hover:shadow">
+                                <div className="flex items-center gap-3 mb-4">
+                                  <div className="bg-teal-100 p-2 rounded-full">
+                                    <Code className="h-5 w-5 text-teal-600" />
                                   </div>
-                                  <h3 className="text-lg font-semibold text-teal-900">{item.title}</h3>
+                                  <h3 className="text-xl font-semibold text-teal-900">{item.title}</h3>
                                 </div>
-                                <div className="text-sm text-gray-700 pl-9" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
+                                <div className="text-base leading-relaxed text-gray-800 pl-10 prose prose-teal max-w-none prose-headings:text-teal-900 prose-a:text-teal-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-teal-900 prose-code:text-teal-800 prose-code:bg-teal-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-teal-50 prose-pre:border prose-pre:border-teal-200/50 prose-pre:rounded-lg" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
                               </div>
                             ))}
                         </div>
@@ -876,19 +876,19 @@ const Help = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <ScrollArea className="h-[calc(70vh-200px)] min-h-[500px]">
-                        <div className="p-6">
+                      <ScrollArea className="h-[calc(80vh-180px)] min-h-[650px]">
+                        <div className="p-8">
                           {filteredContent
                             .filter(item => item.category === 'bug-reporting')
                             .map((item, index) => (
-                              <div key={index} className="mb-8 p-4 bg-purple-50/50 rounded-lg border border-purple-100/50 hover:border-purple-200 transition-all duration-300">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <div className="bg-purple-100 p-1.5 rounded-full">
-                                    <Bug className="h-4 w-4 text-purple-600" />
+                              <div key={index} className="mb-8 p-6 bg-purple-50/50 rounded-lg border border-purple-100/50 hover:border-purple-200 transition-all duration-300 shadow-sm hover:shadow">
+                                <div className="flex items-center gap-3 mb-4">
+                                  <div className="bg-purple-100 p-2 rounded-full">
+                                    <Bug className="h-5 w-5 text-purple-600" />
                                   </div>
-                                  <h3 className="text-lg font-semibold text-purple-900">{item.title}</h3>
+                                  <h3 className="text-xl font-semibold text-purple-900">{item.title}</h3>
                                 </div>
-                                <div className="text-sm text-gray-700 pl-9" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
+                                <div className="text-base leading-relaxed text-gray-800 pl-10 prose prose-purple max-w-none prose-headings:text-purple-900 prose-a:text-purple-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-purple-900 prose-code:text-purple-800 prose-code:bg-purple-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-ol:pl-1 prose-ul:pl-1 prose-li:mb-2" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
                               </div>
                             ))}
                         </div>
@@ -964,8 +964,8 @@ const Help = () => {
                           </Button>
                         </div>
                       </div>
-                      <ScrollArea className="h-[calc(70vh-250px)] min-h-[450px]">
-                        <div className="p-6">
+                      <ScrollArea className="h-[calc(80vh-220px)] min-h-[600px]">
+                        <div className="p-8">
                           <Accordion type="single" collapsible className="w-full">
                             {filteredFaqs.map((faq, index) => (
                               <AccordionItem
@@ -973,19 +973,19 @@ const Help = () => {
                                 value={`faq-${index}`}
                                 className="border-b border-amber-100 last:border-0"
                               >
-                                <AccordionTrigger className="text-left hover:bg-amber-50/50 px-4 py-4 rounded-lg text-amber-900">
+                                <AccordionTrigger className="text-left hover:bg-amber-50/50 px-4 py-4 rounded-lg text-amber-900 font-medium">
                                   <div className="flex items-center gap-3">
-                                    <div className="bg-amber-100 p-1.5 rounded-full">
-                                      {faq.category === 'general' && <Info className="h-4 w-4 text-amber-600" />}
-                                      {faq.category === 'account' && <HelpCircle className="h-4 w-4 text-amber-600" />}
-                                      {faq.category === 'challenges' && <Trophy className="h-4 w-4 text-amber-600" />}
-                                      {faq.category === 'technical' && <Zap className="h-4 w-4 text-amber-600" />}
+                                    <div className="bg-amber-100 p-2 rounded-full">
+                                      {faq.category === 'general' && <Info className="h-5 w-5 text-amber-600" />}
+                                      {faq.category === 'account' && <HelpCircle className="h-5 w-5 text-amber-600" />}
+                                      {faq.category === 'challenges' && <Trophy className="h-5 w-5 text-amber-600" />}
+                                      {faq.category === 'technical' && <Zap className="h-5 w-5 text-amber-600" />}
                                     </div>
-                                    <span dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(faq.question, searchQuery) : { __html: faq.question }} />
+                                    <span className="text-lg" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(faq.question, searchQuery) : { __html: faq.question }} />
                                   </div>
                                 </AccordionTrigger>
-                                <AccordionContent className="px-4 pb-4 pt-2">
-                                  <div className="text-sm text-gray-700 pl-10 bg-amber-50/30 p-4 rounded-lg" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(faq.answer, searchQuery) : { __html: faq.answer }} />
+                                <AccordionContent className="px-4 pb-6 pt-3">
+                                  <div className="text-base leading-relaxed text-gray-800 pl-10 bg-amber-50/30 p-6 rounded-lg prose prose-amber max-w-none prose-headings:text-amber-900 prose-a:text-amber-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-amber-900 prose-code:text-amber-800 prose-code:bg-amber-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-ol:pl-1 prose-ul:pl-1 prose-li:mb-2" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(faq.answer, searchQuery) : { __html: faq.answer }} />
                                 </AccordionContent>
                               </AccordionItem>
                             ))}

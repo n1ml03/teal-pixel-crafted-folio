@@ -155,8 +155,8 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
     return hourlyData;
   };
 
-  // Colors for charts
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A569BD', '#8884d8', '#82ca9d'];
+  // Colors for charts - amber-themed
+  const COLORS = ['#f59e0b', '#fbbf24', '#d97706', '#b45309', '#92400e', '#78350f', '#fdba74'];
 
   // Custom tooltip for charts
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -177,13 +177,28 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
 
   if (!analytics) {
     return (
-      <Card className="border border-gray-200 shadow-sm bg-white/90 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle>Analytics</CardTitle>
+      <Card className="border border-amber-100 shadow-md hover:shadow-lg transition-all duration-300 bg-white/90 backdrop-blur-md rounded-xl overflow-hidden">
+        <div className="h-1.5 w-full bg-gradient-to-r from-amber-400 to-amber-600"></div>
+        <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6 pt-4 sm:pt-6 bg-gradient-to-r from-amber-500/10 to-amber-600/5 border-b border-amber-100">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="bg-amber-100 p-1.5 sm:p-2 rounded-full flex-shrink-0 shadow-sm">
+              <BarChartIcon className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+            </div>
+            <div>
+              <CardTitle className="text-base sm:text-xl font-bold text-amber-900">Link Analytics</CardTitle>
+              <div className="text-xs sm:text-sm text-amber-700">
+                Track performance and engagement metrics
+              </div>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <p className="text-gray-500">No analytics data available yet.</p>
+        <CardContent className="px-4 sm:px-6 py-5 sm:py-7">
+          <div className="flex flex-col items-center justify-center h-[300px] bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-amber-50 rounded-full mb-3 sm:mb-4">
+              <BarChartIcon className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500" />
+            </div>
+            <p className="text-gray-600 text-sm sm:text-base mb-2">No analytics data available yet.</p>
+            <p className="text-gray-500 text-xs sm:text-sm">Data will appear once your link receives clicks.</p>
           </div>
         </CardContent>
       </Card>
@@ -191,43 +206,68 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
   }
 
   return (
-    <Card className="border border-gray-200 shadow-sm bg-white/90 backdrop-blur-sm">
-      <CardHeader className="pb-2">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-          <CardTitle>Link Analytics</CardTitle>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select time range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7days">Last 7 days</SelectItem>
-              <SelectItem value="30days">Last 30 days</SelectItem>
-              <SelectItem value="90days">Last 90 days</SelectItem>
-              <SelectItem value="all">All time</SelectItem>
-            </SelectContent>
-          </Select>
+    <Card className="border border-amber-100 shadow-md hover:shadow-lg transition-all duration-300 bg-white/90 backdrop-blur-md rounded-xl overflow-hidden">
+      <div className="h-1.5 w-full bg-gradient-to-r from-amber-400 to-amber-600"></div>
+      <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6 pt-4 sm:pt-6 bg-gradient-to-r from-amber-500/10 to-amber-600/5 border-b border-amber-100">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="bg-amber-100 p-1.5 sm:p-2 rounded-full flex-shrink-0 shadow-sm">
+            <BarChartIcon className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <CardTitle className="text-base sm:text-xl font-bold text-amber-900">Link Analytics</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mt-1 sm:mt-0">
+              <div className="text-xs sm:text-sm text-gray-700">
+                Track performance and engagement metrics
+              </div>
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder="Select time range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7days">Last 7 days</SelectItem>
+                  <SelectItem value="30days">Last 30 days</SelectItem>
+                  <SelectItem value="90days">Last 90 days</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 sm:px-6 py-5 sm:py-7">
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChartIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="traffic" className="flex items-center gap-2">
-              <LineChartIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Traffic</span>
-            </TabsTrigger>
-            <TabsTrigger value="sources" className="flex items-center gap-2">
-              <PieChartIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Sources</span>
-            </TabsTrigger>
-            <TabsTrigger value="utm" className="flex items-center gap-2">
-              <Tag className="h-4 w-4" />
-              <span className="hidden sm:inline">UTM</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200 shadow-sm p-1 mb-6 sm:mb-8">
+            <TabsList className="grid w-full grid-cols-4 gap-1.5 bg-transparent">
+              <TabsTrigger
+                value="overview"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-amber-600 data-[state=active]:text-white rounded-lg transition-all duration-300"
+              >
+                <BarChartIcon className="h-4 w-4 flex-shrink-0 mr-0 sm:mr-1" />
+                <span className="hidden xs:inline text-xs sm:text-sm">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="traffic"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-amber-600 data-[state=active]:text-white rounded-lg transition-all duration-300"
+              >
+                <LineChartIcon className="h-4 w-4 flex-shrink-0 mr-0 sm:mr-1" />
+                <span className="hidden xs:inline text-xs sm:text-sm">Traffic</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="sources"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-amber-600 data-[state=active]:text-white rounded-lg transition-all duration-300"
+              >
+                <PieChartIcon className="h-4 w-4 flex-shrink-0 mr-0 sm:mr-1" />
+                <span className="hidden xs:inline text-xs sm:text-sm">Sources</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="utm"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-amber-600 data-[state=active]:text-white rounded-lg transition-all duration-300"
+              >
+                <Tag className="h-4 w-4 flex-shrink-0 mr-0 sm:mr-1" />
+                <span className="hidden xs:inline text-xs sm:text-sm">UTM</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -235,20 +275,20 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-blue-50 rounded-lg p-4 flex flex-col"
+                className="bg-white rounded-lg p-4 flex flex-col border border-gray-200 shadow-sm"
               >
-                <span className="text-sm text-blue-600 font-medium">Total Clicks</span>
-                <span className="text-3xl font-bold text-blue-700 mt-2">{analytics.totalClicks}</span>
+                <span className="text-sm text-gray-700 font-medium">Total Clicks</span>
+                <span className="text-3xl font-bold text-gray-900 mt-2">{analytics.totalClicks}</span>
               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
-                className="bg-green-50 rounded-lg p-4 flex flex-col"
+                className="bg-white rounded-lg p-4 flex flex-col border border-gray-200 shadow-sm"
               >
-                <span className="text-sm text-green-600 font-medium">Unique Visitors</span>
-                <span className="text-3xl font-bold text-green-700 mt-2">
+                <span className="text-sm text-gray-700 font-medium">Unique Visitors</span>
+                <span className="text-3xl font-bold text-gray-900 mt-2">
                   {Object.keys(analytics.clicksByReferrer).length}
                 </span>
               </motion.div>
@@ -257,10 +297,10 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.2 }}
-                className="bg-purple-50 rounded-lg p-4 flex flex-col"
+                className="bg-white rounded-lg p-4 flex flex-col border border-gray-200 shadow-sm"
               >
-                <span className="text-sm text-purple-600 font-medium">Avg. Daily Clicks</span>
-                <span className="text-3xl font-bold text-purple-700 mt-2">
+                <span className="text-sm text-gray-700 font-medium">Avg. Daily Clicks</span>
+                <span className="text-3xl font-bold text-gray-900 mt-2">
                   {analytics.clicksTimeline.length > 0
                     ? Math.round(analytics.totalClicks / analytics.clicksTimeline.length)
                     : 0}
@@ -283,7 +323,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                     />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="clicks" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="clicks" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -309,7 +349,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                       <Line
                         type="monotone"
                         dataKey="clicks"
-                        stroke="#8884d8"
+                        stroke="#f59e0b"
                         strokeWidth={2}
                         dot={{ r: 4 }}
                         activeDot={{ r: 6 }}
@@ -379,9 +419,9 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
 
           <TabsContent value="utm" className="mt-0">
             <div className="mb-6">
-              <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                <h3 className="text-sm font-medium text-blue-700 mb-2">What are UTM Parameters?</h3>
-                <p className="text-xs text-blue-600">
+              <div className="bg-white p-4 rounded-lg mb-6 border border-gray-200 shadow-sm">
+                <h3 className="text-sm font-medium text-amber-700 mb-2">What are UTM Parameters?</h3>
+                <p className="text-xs text-gray-700">
                   UTM parameters are tags added to URLs to track the effectiveness of marketing campaigns across different channels.
                   They help identify which sources, mediums, and campaigns are driving traffic to your links.
                 </p>
@@ -392,10 +432,10 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-blue-50 rounded-lg p-4 flex flex-col"
+                  className="bg-white rounded-lg p-4 flex flex-col border border-gray-200 shadow-sm"
                 >
-                  <span className="text-sm text-blue-600 font-medium">UTM Sources</span>
-                  <span className="text-3xl font-bold text-blue-700 mt-2">
+                  <span className="text-sm text-gray-700 font-medium">UTM Sources</span>
+                  <span className="text-3xl font-bold text-gray-900 mt-2">
                     {analytics.clicksByUtmSource ? Object.keys(analytics.clicksByUtmSource).length : 0}
                   </span>
                 </motion.div>
@@ -404,10 +444,10 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.1 }}
-                  className="bg-green-50 rounded-lg p-4 flex flex-col"
+                  className="bg-white rounded-lg p-4 flex flex-col border border-gray-200 shadow-sm"
                 >
-                  <span className="text-sm text-green-600 font-medium">UTM Mediums</span>
-                  <span className="text-3xl font-bold text-green-700 mt-2">
+                  <span className="text-sm text-gray-700 font-medium">UTM Mediums</span>
+                  <span className="text-3xl font-bold text-gray-900 mt-2">
                     {analytics.clicksByUtmMedium ? Object.keys(analytics.clicksByUtmMedium).length : 0}
                   </span>
                 </motion.div>
@@ -416,10 +456,10 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.2 }}
-                  className="bg-purple-50 rounded-lg p-4 flex flex-col"
+                  className="bg-white rounded-lg p-4 flex flex-col border border-gray-200 shadow-sm"
                 >
-                  <span className="text-sm text-purple-600 font-medium">UTM Campaigns</span>
-                  <span className="text-3xl font-bold text-purple-700 mt-2">
+                  <span className="text-sm text-gray-700 font-medium">UTM Campaigns</span>
+                  <span className="text-3xl font-bold text-gray-900 mt-2">
                     {analytics.clicksByUtmCampaign ? Object.keys(analytics.clicksByUtmCampaign).length : 0}
                   </span>
                 </motion.div>
@@ -441,7 +481,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                         width={80}
                       />
                       <Tooltip content={<CustomTooltip />} />
-                      <Bar dataKey="value" name="Clicks" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="value" name="Clicks" fill="#f59e0b" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -461,7 +501,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                         width={80}
                       />
                       <Tooltip content={<CustomTooltip />} />
-                      <Bar dataKey="value" name="Clicks" fill="#10b981" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="value" name="Clicks" fill="#fbbf24" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -482,7 +522,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                       width={80}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="value" name="Clicks" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="value" name="Clicks" fill="#d97706" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -501,7 +541,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                     />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="clicks" name="Clicks" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="clicks" name="Clicks" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

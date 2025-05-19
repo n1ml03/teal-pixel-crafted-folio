@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
-import { softSpringTransition, quickSpringTransition, cardHoverAnimation } from '@/lib/motion';
+import { softSpringTransition, quickSpringTransition } from '@/lib/motion';
 import {
   CheckCircle,
   Award,
@@ -14,9 +14,7 @@ import {
   ArrowUpRight,
   ChevronRight,
   Bug,
-  Server,
-  Sparkles
-} from 'lucide-react';
+  Server} from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from '@/contexts/AuthContext';
 import { UserProgressService } from '@/services/UserProgressService';
-import { User, UserActivity, UserAchievement, Achievement, ChallengeProgress } from '@/types/playground';
+import { UserActivity, UserAchievement, Achievement, ChallengeProgress } from '@/types/playground';
 import { formatDistanceToNow } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -228,25 +226,25 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
         <TabsList className="mb-5 w-full flex flex-wrap justify-center gap-1 sm:gap-2 max-w-full overflow-visible">
           <TabsTrigger
             value="overview"
-            className={`flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 ${isMobile ? 'py-1.5' : 'py-2'}`}
+            className={"flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 py-1.5"}
           >
             Overview
           </TabsTrigger>
           <TabsTrigger
             value="achievements"
-            className={`flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 ${isMobile ? 'py-1.5' : 'py-2'}`}
+            className={"flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 py-1.5"}
           >
             Achievements
           </TabsTrigger>
           <TabsTrigger
             value="progress"
-            className={`flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 ${isMobile ? 'py-1.5' : 'py-2'}`}
+            className={"flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 py-1.5"}
           >
             {isMobile ? 'Progress' : 'Challenge Progress'}
           </TabsTrigger>
           <TabsTrigger
             value="activity"
-            className={`flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 ${isMobile ? 'py-1.5' : 'py-2'}`}
+            className={"flex-grow flex-shrink-0 min-w-0 text-sm px-2 sm:px-3 py-1.5"}
           >
             {isMobile ? 'Activity' : 'Recent Activity'}
           </TabsTrigger>

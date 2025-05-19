@@ -9,6 +9,7 @@ export interface ShortenedURL {
   customAlias?: string;    // Optional custom alias
   utmParameters?: UTMParams; // Optional UTM parameters
   clicks: number;          // Number of clicks
+  isSuspicious?: boolean;  // Flag for potentially suspicious URLs
 }
 
 export interface URLClickData {
@@ -93,20 +94,6 @@ export interface URLAnalytics {
   conversionsByUtmMedium?: Record<string, number>;
   conversionsByUtmCampaign?: Record<string, number>;
   conversionValue?: number;
-  // Geographic data for map visualization
-  geoData?: {
-    country: string;
-    code: string;
-    count: number;
-    latitude?: number;
-    longitude?: number;
-  }[];
-  // Time heatmap data
-  timeHeatmap?: {
-    day: number; // 0-6 (Sunday-Saturday)
-    hour: number; // 0-23
-    count: number;
-  }[];
 }
 
 export interface ConversionGoal {

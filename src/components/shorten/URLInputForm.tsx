@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -11,11 +11,15 @@ import { Calendar } from '@/components/ui/calendar.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select.tsx';
 import { format } from 'date-fns';
-import { CalendarIcon, Sparkles, BarChart3, Eye, EyeOff } from 'lucide-react';
+import { CalendarIcon, Sparkles, BarChart3, Eye, EyeOff, AlertTriangle, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
 import { ShortenedURL, URLOptions, UTMParams } from '@/types/shorten.ts';
 import { URLShortenerService } from '@/services/URLShortenerService.ts';
+import { URLSanitizerService } from '@/services/URLSanitizerService.ts';
+import { RateLimiterService } from '@/services/RateLimiterService.ts';
+import { CSRFProtectionService } from '@/services/CSRFProtectionService.ts';
 import { toast } from '@/components/ui/sonner.tsx';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
 
 // Form schema
 const formSchema = z.object({
@@ -72,6 +76,17 @@ interface URLInputFormProps {
 const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmParams }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(initialUtmParams ? true : false);
+  const [csrfToken, setCsrfToken] = useState('');
+  const [showSuspiciousWarning, setShowSuspiciousWarning] = useState(false);
+  const [suspiciousURL, setSuspiciousURL] = useState('');
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [rateLimitRemaining, setRateLimitRemaining] = useState(5);
+
+  // Generate CSRF token on component mount
+  useEffect(() => {
+    const token = CSRFProtectionService.generateToken('url-shortener-form');
+    setCsrfToken(token);
+  }, []);
 
   // Initialize form
   const form = useForm<FormValues>({
@@ -93,77 +108,171 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
     },
   });
 
+  // Function to handle suspicious URL confirmation
+  const handleConfirmSuspiciousURL = async () => {
+    try {
+      setIsLoading(true);
+      setShowSuspiciousWarning(false);
+
+      // Get form values
+      const values = form.getValues();
+
+      // Prepare options
+      const options: URLOptions = prepareURLOptions(values);
+
+      // Create shortened URL with warning flag
+      const shortenedURL = URLShortenerService.shortenURL(suspiciousURL, options);
+
+      // Notify parent component
+      onURLShortened(shortenedURL);
+
+      // Show success message with warning
+      toast.success('URL shortened successfully, but marked as potentially suspicious.');
+
+      // Reset form
+      resetFormAfterSubmission(values);
+
+      // Reset suspicious URL state
+      setSuspiciousURL('');
+    } catch (error) {
+      console.error('Error shortening suspicious URL:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to shorten URL');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Function to prepare URL options
+  const prepareURLOptions = (values: FormValues): URLOptions => {
+    const options: URLOptions = {};
+
+    // Add custom alias if enabled
+    if (values.useCustomAlias && values.customAlias) {
+      // Sanitize the custom alias
+      const sanitizedAlias = URLSanitizerService.sanitizeAlias(values.customAlias);
+
+      // Check if alias is available
+      const aliasValidation = URLShortenerService.validateAlias(sanitizedAlias);
+      if (!aliasValidation.valid) {
+        throw new Error(aliasValidation.reason || 'Invalid custom alias');
+      }
+      options.customAlias = sanitizedAlias;
+    }
+
+    // Add expiration date if enabled
+    if (values.useExpiration && values.expirationDate) {
+      // Ensure expiration date is in the future
+      if (values.expirationDate <= new Date()) {
+        throw new Error('Expiration date must be in the future');
+      }
+      options.expiresAt = values.expirationDate.toISOString();
+    }
+
+    // Add password protection if enabled
+    if (values.usePassword && values.password) {
+      if (values.password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+      options.password = values.password;
+    }
+
+    // Add UTM parameters if enabled
+    if (values.useUtm) {
+      const utmParams: Record<string, string> = {};
+
+      // Sanitize UTM parameters
+      if (values.utmSource) utmParams.source = URLSanitizerService.sanitizeString(values.utmSource);
+      if (values.utmMedium) utmParams.medium = URLSanitizerService.sanitizeString(values.utmMedium);
+      if (values.utmCampaign) utmParams.campaign = URLSanitizerService.sanitizeString(values.utmCampaign);
+      if (values.utmTerm) utmParams.term = URLSanitizerService.sanitizeString(values.utmTerm);
+      if (values.utmContent) utmParams.content = URLSanitizerService.sanitizeString(values.utmContent);
+
+      // Only add UTM parameters if at least one is provided
+      if (Object.keys(utmParams).length > 0) {
+        // Validate UTM parameters
+        if (!values.utmSource) {
+          throw new Error('UTM Source is required when using UTM parameters');
+        }
+
+        // Check for invalid characters
+        const invalidCharsRegex = /[^\w\s\-_.]/;
+        for (const [key, value] of Object.entries(utmParams)) {
+          if (value && invalidCharsRegex.test(value)) {
+            throw new Error(`UTM ${key} contains invalid characters. Use only letters, numbers, underscores, hyphens, and periods.`);
+          }
+        }
+
+        options.utmParameters = utmParams;
+      }
+    }
+
+    return options;
+  };
+
+  // Function to reset form after submission
+  const resetFormAfterSubmission = (values: FormValues) => {
+    if (!values.useCustomAlias && !values.useExpiration && !values.usePassword && !values.useUtm) {
+      form.reset();
+    } else {
+      // Just reset the URL field
+      form.setValue('url', '');
+    }
+
+    // Generate a new CSRF token
+    const token = CSRFProtectionService.generateToken('url-shortener-form');
+    setCsrfToken(token);
+  };
+
   const handleSubmit = async (values: FormValues) => {
     try {
       setIsLoading(true);
 
-      // Validate URL first
-      const urlValidation = URLShortenerService.isValidURL(values.url);
+      // Check rate limiting
+      const rateLimit = RateLimiterService.checkLimit('url-shortener', {
+        maxAttempts: 10,
+        windowMs: 60 * 1000, // 1 minute
+        showToast: false
+      });
+
+      // Update rate limit state
+      setRateLimitRemaining(rateLimit.remaining);
+
+      // If rate limited, prevent submission
+      if (!rateLimit.allowed) {
+        setIsRateLimited(true);
+        throw new Error(`Rate limit exceeded. Please try again later.`);
+      }
+
+      // Validate CSRF token
+      if (!CSRFProtectionService.validateToken('url-shortener-form', csrfToken)) {
+        throw new Error('Security validation failed. Please refresh the page and try again.');
+      }
+
+      // Sanitize URL
+      const sanitizedURL = URLSanitizerService.sanitizeURL(values.url.trim());
+      if (!sanitizedURL) {
+        throw new Error('Invalid URL format. Please enter a valid URL including http:// or https://');
+      }
+
+      // Validate URL
+      const urlValidation = URLShortenerService.isValidURL(sanitizedURL);
       if (!urlValidation.valid) {
         throw new Error(urlValidation.reason || 'Invalid URL');
       }
 
+      // Check if URL is suspicious
+      if (urlValidation.suspicious) {
+        // Show warning and require confirmation
+        setShowSuspiciousWarning(true);
+        setSuspiciousURL(sanitizedURL);
+        return;
+      }
+
       // Prepare options
-      const options: URLOptions = {};
-
-      // Add custom alias if enabled
-      if (values.useCustomAlias && values.customAlias) {
-        // Check if alias is available
-        const aliasValidation = URLShortenerService.validateAlias(values.customAlias);
-        if (!aliasValidation.valid) {
-          throw new Error(aliasValidation.reason || 'Invalid custom alias');
-        }
-        options.customAlias = values.customAlias;
-      }
-
-      // Add expiration date if enabled
-      if (values.useExpiration && values.expirationDate) {
-        // Ensure expiration date is in the future
-        if (values.expirationDate <= new Date()) {
-          throw new Error('Expiration date must be in the future');
-        }
-        options.expiresAt = values.expirationDate.toISOString();
-      }
-
-      // Add password protection if enabled
-      if (values.usePassword && values.password) {
-        if (values.password.length < 6) {
-          throw new Error('Password must be at least 6 characters long');
-        }
-        options.password = values.password;
-      }
-
-      // Add UTM parameters if enabled
-      if (values.useUtm) {
-        const utmParams: Record<string, string> = {};
-
-        if (values.utmSource) utmParams.source = values.utmSource;
-        if (values.utmMedium) utmParams.medium = values.utmMedium;
-        if (values.utmCampaign) utmParams.campaign = values.utmCampaign;
-        if (values.utmTerm) utmParams.term = values.utmTerm;
-        if (values.utmContent) utmParams.content = values.utmContent;
-
-        // Only add UTM parameters if at least one is provided
-        if (Object.keys(utmParams).length > 0) {
-          // Validate UTM parameters
-          if (!values.utmSource) {
-            throw new Error('UTM Source is required when using UTM parameters');
-          }
-
-          // Check for invalid characters
-          const invalidCharsRegex = /[^\w\s\-_.]/;
-          for (const [key, value] of Object.entries(utmParams)) {
-            if (value && invalidCharsRegex.test(value)) {
-              throw new Error(`UTM ${key} contains invalid characters. Use only letters, numbers, underscores, hyphens, and periods.`);
-            }
-          }
-
-          options.utmParameters = utmParams;
-        }
-      }
+      const options = prepareURLOptions(values);
 
       // Create shortened URL
-      const shortenedURL = URLShortenerService.shortenURL(values.url, options);
+      const shortenedURL = URLShortenerService.shortenURL(sanitizedURL, options);
 
       // Notify parent component
       onURLShortened(shortenedURL);
@@ -172,12 +281,7 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
       toast.success('URL shortened successfully!');
 
       // Reset form
-      if (!values.useCustomAlias && !values.useExpiration && !values.usePassword && !values.useUtm) {
-        form.reset();
-      } else {
-        // Just reset the URL field
-        form.setValue('url', '');
-      }
+      resetFormAfterSubmission(values);
     } catch (error) {
       console.error('Error shortening URL:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to shorten URL');
@@ -189,6 +293,68 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        {/* Hidden CSRF token input */}
+        <input type="hidden" name="csrf_token" value={csrfToken} />
+
+        {/* Suspicious URL warning */}
+        {showSuspiciousWarning && (
+          <Alert variant="destructive" className="mb-4 bg-amber-50 border-amber-300 text-amber-800">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800 font-medium">Potentially Suspicious URL Detected</AlertTitle>
+            <AlertDescription className="text-amber-700 text-xs sm:text-sm">
+              <p className="mb-2">
+                The URL you're trying to shorten has been flagged as potentially suspicious.
+                This could be due to unusual patterns or characteristics that might indicate phishing or malicious intent.
+              </p>
+              <p className="mb-3">
+                URL: <span className="font-mono text-xs break-all">{suspiciousURL}</span>
+              </p>
+              <div className="flex flex-wrap gap-2 justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSuspiciousWarning(false)}
+                  className="bg-white"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleConfirmSuspiciousURL}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Processing...' : 'Proceed Anyway'}
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Rate limit warning */}
+        {isRateLimited && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Rate Limit Exceeded</AlertTitle>
+            <AlertDescription>
+              You've made too many requests. Please try again later.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Rate limit indicator */}
+        {!isRateLimited && rateLimitRemaining < 3 && (
+          <Alert className="mb-4 bg-blue-50 border-blue-200">
+            <Shield className="h-4 w-4 text-blue-600" />
+            <AlertTitle className="text-blue-800">Rate Limit Warning</AlertTitle>
+            <AlertDescription className="text-blue-700">
+              You have {rateLimitRemaining} requests remaining. Please slow down to avoid being temporarily blocked.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <FormField
           control={form.control}
           name="url"
@@ -205,7 +371,7 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
                   <Button
                     type="submit"
                     className="sm:rounded-l-none min-h-10"
-                    disabled={isLoading}
+                    disabled={isLoading || isRateLimited}
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2 w-full">
