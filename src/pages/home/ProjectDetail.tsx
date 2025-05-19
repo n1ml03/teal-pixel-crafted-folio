@@ -24,12 +24,6 @@ import {
   LightbulbIcon,
   Trophy,
   Code,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  X,
-  Download,
-  Eye,
   ArrowRight
 } from 'lucide-react';
 import { toast } from "@/components/ui/sonner.tsx";
@@ -190,7 +184,7 @@ const ProjectDetail = () => {
   if (!project) {
     return (
       <div className="min-h-screen relative">
-        <EnhancedBackground />
+        <EnhancedBackground optimizeForLowPerformance={true} reducedAnimations={true} />
         <Header />
         <main className="pt-24 pb-16 relative z-0">
           <div className="container mx-auto px-4 text-center py-16">

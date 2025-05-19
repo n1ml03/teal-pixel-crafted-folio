@@ -148,7 +148,9 @@ const URLShortenerPage: React.FC = () => {
   return (
     <>
       <Header />
+      
       <EnhancedBackground optimizeForLowPerformance={true} />
+
       <main id="main-content" className="pt-20 md:pt-30">
         {/* Hero section styled to match Resources page */}
         <section className="relative pt-12 pb-24 md:pt-32 md:pb-40 overflow-hidden">
