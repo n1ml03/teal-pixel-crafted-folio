@@ -64,7 +64,7 @@ const Blog = () => {
 
   return (
     <div className="min-h-screen relative">
-      <EnhancedBackground />
+      <EnhancedBackground optimizeForLowPerformance={true} reducedAnimations={true} />
 
       <Header />
       <main id="main-content" className="pt-24 pb-16">

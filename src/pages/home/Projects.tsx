@@ -83,7 +83,7 @@ const Projects = () => {
   return (
     <div className="min-h-screen relative">
       {/* Global background with parallax effect */}
-      <EnhancedBackground />
+      <EnhancedBackground optimizeForLowPerformance={true} reducedAnimations={true} />
 
       <Header />
 

@@ -216,7 +216,7 @@ const ProjectDetail = () => {
 
   return (
     <div className="min-h-screen relative">
-      <EnhancedBackground />
+      <EnhancedBackground optimizeForLowPerformance={true} reducedAnimations={true} />
       <Header />
 
       <main id="main-content" className="relative z-0 pt-16 pb-16">
