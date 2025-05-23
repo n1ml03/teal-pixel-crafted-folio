@@ -14,9 +14,7 @@ import { lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ResourcePreloader from "@/components/utils/ResourcePreloader.tsx";
 import { SkipLink } from "@/components/ui/skip-link";
-import AccessibilityProvider from "@/components/utils/AccessibilityProvider.tsx";
-
-import ErrorBoundary from "@/components/utils/ErrorBoundary";
+import EnhancedErrorBoundary from "@/components/ui/enhanced-error-boundary.tsx";
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import("./pages/home/Home.tsx"));
@@ -122,29 +120,31 @@ const router = createBrowserRouter(
 
 const App = () => {
   return (
-    <ErrorBoundary>
-      <AccessibilityProvider>
-        <QueryClientProvider client={queryClient}>
-          <ParallaxProvider>
-            <TooltipProvider>
-              <SkipLink targetId="main-content" />
-              <ResourcePreloader resources={criticalResources as Array<{
+    <EnhancedErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ParallaxProvider>
+          <TooltipProvider>
+            <SkipLink targetId="main-content" />
+            <ResourcePreloader 
+              resources={criticalResources as Array<{
                 href: string;
                 as: "image" | "style" | "script" | "font";
                 type?: string;
                 crossOrigin?: "anonymous" | "use-credentials";
-              }>} />
-              <Toaster />
-              <div id="app-container" style={{ minHeight: '100vh', contain: 'content' }}>
-                <Suspense fallback={<PageLoader />}>
-                  <RouterProvider router={router} />
-                </Suspense>
-              </div>
-            </TooltipProvider>
-          </ParallaxProvider>
-        </QueryClientProvider>
-      </AccessibilityProvider>
-    </ErrorBoundary>
+                fetchPriority?: "high" | "low" | "auto";
+              }>} 
+              enableLogging={process.env.NODE_ENV === 'development'}
+            />
+            <Toaster />
+            <div id="app-container" style={{ minHeight: '100vh', contain: 'content' }}>
+              <Suspense fallback={<PageLoader />}>
+                <RouterProvider router={router} />
+              </Suspense>
+            </div>
+          </TooltipProvider>
+        </ParallaxProvider>
+      </QueryClientProvider>
+    </EnhancedErrorBoundary>
   );
 };
 

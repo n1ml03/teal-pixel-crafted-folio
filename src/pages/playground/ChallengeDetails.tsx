@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { MotionButton } from "@/components/ui/motion-button";
 import { toast } from "@/components/ui/sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import challengesMeta from '@/data/challengesMeta';
@@ -150,6 +151,7 @@ const ChallengeDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Load challenge data based on ID
   useEffect(() => {
@@ -256,7 +258,6 @@ const ChallengeDetails = () => {
         )}
 
         {!isLoading && !error && challenge && (
-
         <div className="grid gap-8 md:grid-cols-3">
           {/* Main Content */}
           <div className="md:col-span-2 space-y-8">
@@ -304,122 +305,122 @@ const ChallengeDetails = () => {
                 <p className="text-muted-foreground mb-6">{challenge.description}</p>
 
                 <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: challenge.longDescription }} />
-              </div>
-            </div>
 
-            <div className="rounded-lg border bg-card p-6 shadow-sm">
-              <h2 className="text-xl font-bold mb-4">Prerequisites</h2>
-              <div className="space-y-3 mb-6">
-                {challenge.prerequisites.map(prereq => (
-                  <div key={prereq.id} className="flex items-center">
-                    {prereq.completed ? (
-                      <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                    ) : (
-                      <div className="h-5 w-5 rounded-full border-2 border-muted-foreground mr-2" />
-                    )}
-                    <span className={prereq.completed ? "" : "text-muted-foreground"}>
-                      {prereq.title}
-                    </span>
+                <div className="mt-8">
+                  <h2 className="text-xl font-bold mb-4">Prerequisites</h2>
+                  <div className="space-y-3 mb-6">
+                    {challenge.prerequisites.map(prereq => (
+                      <div key={prereq.id} className="flex items-center">
+                        {prereq.completed ? (
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-muted-foreground mr-2" />
+                        )}
+                        <span className={prereq.completed ? "" : "text-muted-foreground"}>
+                          {prereq.title}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
 
-              <h2 className="text-xl font-bold mb-4">Helpful Resources</h2>
-              <div className="space-y-3 mb-6">
-                {challenge.resources.map(resource => (
-                  <a
-                    key={resource.id}
-                    href={resource.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center text-primary hover:underline"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    {resource.title}
-                  </a>
-                ))}
-              </div>
+                  <h2 className="text-xl font-bold mb-4">Helpful Resources</h2>
+                  <div className="space-y-3 mb-6">
+                    {challenge.resources.map(resource => (
+                      <a
+                        key={resource.id}
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center text-primary hover:underline"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        {resource.title}
+                      </a>
+                    ))}
+                  </div>
 
-              <h2 className="text-xl font-bold mb-4">Related Challenges</h2>
-              <div className="space-y-3">
-                {challenge.relatedChallenges.map(related => (
-                  <a
-                    key={related.id}
-                    href={`/playground/challenge-details/${related.id}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigate(`/playground/challenge-details/${related.id}`);
-                    }}
-                    className="flex items-center justify-between p-3 rounded-md border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center">
-                      <span>{related.title}</span>
-                      <Badge className={`ml-2 ${difficultyColors[related.difficulty]}`}>
-                        {related.difficulty.charAt(0).toUpperCase() + related.difficulty.slice(1)}
-                      </Badge>
-                    </div>
-                    <ArrowRight className="h-4 w-4" />
-                  </a>
-                ))}
-              </div>
-            </div>
+                  <h2 className="text-xl font-bold mb-4">Related Challenges</h2>
+                  <div className="space-y-3">
+                    {challenge.relatedChallenges.map(related => (
+                      <a
+                        key={related.id}
+                        href={`/playground/challenge-details/${related.id}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate(`/playground/challenge-details/${related.id}`);
+                        }}
+                        className="flex items-center justify-between p-3 rounded-md border hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center">
+                          <span>{related.title}</span>
+                          <Badge className={`ml-2 ${difficultyColors[related.difficulty]}`}>
+                            {related.difficulty.charAt(0).toUpperCase() + related.difficulty.slice(1)}
+                          </Badge>
+                        </div>
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="rounded-lg border bg-card p-6 shadow-sm">
-              <h2 className="text-xl font-bold mb-4">Community Reviews</h2>
+                <div className="mt-8">
+                  <h2 className="text-xl font-bold mb-4">Community Reviews</h2>
 
-              <div className="space-y-6">
-                {challenge.reviews.map(review => (
-                  <div key={review.id} className="border-b pb-4 last:border-0">
-                    <div className="flex justify-between mb-2">
-                      <div className="flex items-center">
-                        <Avatar className="h-8 w-8 mr-2">
-                          <AvatarImage src={review.user.avatar} alt={review.user.name} />
-                          <AvatarFallback>{review.user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{review.user.name}</div>
-                          <div className="text-xs text-muted-foreground">{review.date}</div>
+                  <div className="space-y-6">
+                    {challenge.reviews.map(review => (
+                      <div key={review.id} className="border-b pb-4 last:border-0">
+                        <div className="flex justify-between mb-2">
+                          <div className="flex items-center">
+                            <Avatar className="h-8 w-8 mr-2">
+                              <AvatarImage src={review.user.avatar} alt={review.user.name} />
+                              <AvatarFallback>{review.user.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{review.user.name}</div>
+                              <div className="text-xs text-muted-foreground">{review.date}</div>
+                            </div>
+                          </div>
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted'}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <p className="text-sm mb-2">{review.comment}</p>
+
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-muted-foreground">
+                            {review.helpfulCount} people found this helpful
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => handleReviewHelpful(review.id, true)}
+                            >
+                              <ThumbsUp className="h-3 w-3 mr-1" />
+                              Helpful
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => handleReviewHelpful(review.id, false)}
+                            >
+                              <ThumbsDown className="h-3 w-3 mr-1" />
+                              Not Helpful
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted'}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <p className="text-sm mb-2">{review.comment}</p>
-
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs text-muted-foreground">
-                        {review.helpfulCount} people found this helpful
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => handleReviewHelpful(review.id, true)}
-                        >
-                          <ThumbsUp className="h-3 w-3 mr-1" />
-                          Helpful
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => handleReviewHelpful(review.id, false)}
-                        >
-                          <ThumbsDown className="h-3 w-3 mr-1" />
-                          Not Helpful
-                        </Button>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           </div>

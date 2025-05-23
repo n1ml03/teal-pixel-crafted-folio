@@ -14,8 +14,6 @@ import {
   Lightbulb,
   Info,
   Zap,
-  Copy,
-  ArrowUp,
   X,
   Filter,
   AlertCircle,
@@ -34,11 +32,11 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import Navigation from '@/components/playground/Navigation';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { helpContent, faqs } from '../../data/help-content';
 import { debounce } from 'lodash';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Memoized components for better performance
 // Sidebar component
@@ -156,13 +154,14 @@ const Sidebar = React.memo(({ navigate }: { navigate: (path: string) => void }) 
 ));
 
 // Hero section component
-const HeroSection = React.memo(({ title, description, badges }: {
+const HeroSection = React.memo(({ title, description, badges, isMobile }: {
   title: string;
   description: string;
   badges: React.ReactNode;
+  isMobile: boolean;
 }) => (
   <motion.div
-    className="mb-8 p-8 bg-gradient-to-r from-blue-500/10 via-teal-500/10 to-purple-500/10 backdrop-blur-md rounded-xl border border-white/20 shadow-lg"
+    className={`mb-6 ${isMobile ? 'p-4' : 'p-8'} bg-gradient-to-r from-blue-500/10 via-teal-500/10 to-purple-500/10 backdrop-blur-md rounded-xl border border-white/20 shadow-lg`}
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6, delay: 0.1 }}
@@ -170,7 +169,7 @@ const HeroSection = React.memo(({ title, description, badges }: {
     <div className="flex flex-col md:flex-row items-center gap-6">
       <div className="flex-1">
         <motion.h1
-          className="text-4xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-teal-600"
+          className={`${isMobile ? 'text-2xl' : 'text-4xl'} font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-teal-600`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -178,7 +177,7 @@ const HeroSection = React.memo(({ title, description, badges }: {
           {title}
         </motion.h1>
         <motion.p
-          className="text-lg text-gray-700 mb-4"
+          className={`${isMobile ? 'text-base' : 'text-lg'} text-gray-700 mb-4`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.3 }}
@@ -194,20 +193,23 @@ const HeroSection = React.memo(({ title, description, badges }: {
           {badges}
         </motion.div>
       </div>
-      <motion.div
-        className="flex justify-center"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 0.3, type: "spring" }}
-      >
-        <HelpCircle className="h-24 w-24 text-blue-500/80" />
-      </motion.div>
+      {!isMobile && (
+        <motion.div
+          className="flex justify-center"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.3, type: "spring" }}
+        >
+          <HelpCircle className="h-24 w-24 text-blue-500/80" />
+        </motion.div>
+      )}
     </div>
   </motion.div>
 ));
 
 const Help = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('getting-started');
@@ -215,6 +217,79 @@ const Help = () => {
   const [searchCategory, setSearchCategory] = useState<string | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showRecentSearches, setShowRecentSearches] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const isMobile = useIsMobile();
+
+  // Initialize search query from URL parameters
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
+      // Clear the URL parameter after reading it
+      navigate('/playground/help', { replace: true });
+    }
+  }, [searchParams, navigate]);
+
+  // Load recent searches from localStorage on component mount
+  useEffect(() => {
+    const savedSearches = localStorage.getItem('helpRecentSearches');
+    if (savedSearches) {
+      try {
+        setRecentSearches(JSON.parse(savedSearches));
+      } catch (e) {
+        console.error('Failed to parse recent searches from localStorage');
+      }
+    }
+  }, []);
+
+  // Save recent searches to localStorage when they change
+  useEffect(() => {
+    if (recentSearches.length > 0) {
+      localStorage.setItem('helpRecentSearches', JSON.stringify(recentSearches));
+    }
+  }, [recentSearches]);
+
+  // Optimized scroll handler with throttling
+  useEffect(() => {
+    // Throttle scroll event to improve performance
+    const handleScroll = debounce(() => {
+      setShowScrollTop(window.scrollY > 300);
+    }, 100);
+
+    // Initial check
+    handleScroll();
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      // Ensure the debounced function is properly cleaned up
+      if (typeof handleScroll.cancel === 'function') {
+        handleScroll.cancel();
+      }
+    };
+  }, []);
+
+  // Debounced search query handler to reduce processing on each keystroke
+  const debouncedSetSearchQuery = useMemo(
+    () => debounce((value: string) => {
+      setSearchQuery(value);
+      if (value.trim() === '') {
+        setSearchCategory(null);
+      }
+    }, 300),
+    [setSearchCategory]
+  );
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    // Ensure the debounced function is properly initialized
+    if (typeof debouncedSetSearchQuery.cancel === 'function') {
+      return () => {
+        debouncedSetSearchQuery.cancel();
+      };
+    }
+    return undefined;
+  }, [debouncedSetSearchQuery]);
 
   // Function to improve search algorithm with partial word matching - memoized
   const matchesSearch = useCallback((text: string, query: string): boolean => {
@@ -332,28 +407,6 @@ const Help = () => {
     }
   }, [searchQuery, filteredContent.length, filteredFaqs.length, matchCounts, saveSearchToHistory, setActiveTab, setShowRecentSearches]);
 
-  // Debounced search query handler to reduce processing on each keystroke
-  const debouncedSetSearchQuery = useMemo(
-    () => debounce((value: string) => {
-      setSearchQuery(value);
-      if (value.trim() === '') {
-        setSearchCategory(null);
-      }
-    }, 300),
-    [setSearchCategory]
-  );
-
-  // Cleanup debounce on unmount
-  useEffect(() => {
-    // Ensure the debounced function is properly initialized
-    if (typeof debouncedSetSearchQuery.cancel === 'function') {
-      return () => {
-        debouncedSetSearchQuery.cancel();
-      };
-    }
-    return undefined;
-  }, [debouncedSetSearchQuery]);
-
   // Function to copy code to clipboard - memoized with useCallback
   const copyToClipboard = useCallback((text: string) => {
     navigator.clipboard.writeText(text);
@@ -363,29 +416,6 @@ const Help = () => {
   // Scroll to top function - memoized with useCallback
   const scrollToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  // Track scroll position for scroll-to-top button
-  const [showScrollTop, setShowScrollTop] = useState(false);
-
-  // Optimized scroll handler with throttling
-  useEffect(() => {
-    // Throttle scroll event to improve performance
-    const handleScroll = debounce(() => {
-      setShowScrollTop(window.scrollY > 300);
-    }, 100);
-
-    // Initial check
-    handleScroll();
-
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      // Ensure the debounced function is properly cleaned up
-      if (typeof handleScroll.cancel === 'function') {
-        handleScroll.cancel();
-      }
-    };
   }, []);
 
   // Highlight search terms in content with improved algorithm - memoized with useCallback
@@ -437,51 +467,28 @@ const Help = () => {
     }
   }, [handleSearchSubmit, recentSearches.length, setSearchQuery, showRecentSearches, setShowRecentSearches]);
 
-  // Load recent searches from localStorage on component mount
-  useEffect(() => {
-    const savedSearches = localStorage.getItem('helpRecentSearches');
-    if (savedSearches) {
-      try {
-        setRecentSearches(JSON.parse(savedSearches));
-      } catch (e) {
-        console.error('Failed to parse recent searches from localStorage');
-      }
-    }
-  }, []);
-
-  // Save recent searches to localStorage when they change
-  useEffect(() => {
-    if (recentSearches.length > 0) {
-      localStorage.setItem('helpRecentSearches', JSON.stringify(recentSearches));
-    }
-  }, [recentSearches]);
-
   return (
     <div className="min-h-screen relative">
-      {/* Enhanced background with gradient and animated elements - memoized to prevent re-renders */}
-      {useMemo(() => <EnhancedBackground optimizeForLowPerformance={true} />, [])}
+      {/* Enhanced background with gradient and animated elements */}
+      <EnhancedBackground optimizeForLowPerformance={true} />
 
-      {/* Navigation - memoized to prevent re-renders */}
-      {useMemo(() => <Navigation />, [])}
-
-      <div className="container flex-1 py-6 pt-24 relative z-10">
+      <div className={`container flex-1 ${isMobile ? 'py-4 pt-20 px-4' : 'py-6 pt-24'} relative z-10`}>
         {/* Hero Section - using memoized component */}
-        {useMemo(() => (
-          <HeroSection
-            title="Help & Support Center"
-            description="Find answers, learn testing techniques, and get the most out of the Testing Playground platform."
-            badges={
-              <>
-                <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors px-3 py-1 text-sm">Getting Started</Badge>
-                <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-200 transition-colors px-3 py-1 text-sm">Testing Environment</Badge>
-                <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors px-3 py-1 text-sm">Bug Reporting</Badge>
-                <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors px-3 py-1 text-sm">FAQs</Badge>
-              </>
-            }
-          />
-        ), [])}
+        <HeroSection
+          title="Help & Support Center"
+          description="Find answers, learn testing techniques, and get the most out of the Testing Playground platform."
+          badges={
+            <>
+              <Badge className={`bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-1 text-sm'}`}>Getting Started</Badge>
+              <Badge className={`bg-teal-100 text-teal-800 hover:bg-teal-200 transition-colors ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-1 text-sm'}`}>Testing Environment</Badge>
+              <Badge className={`bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-1 text-sm'}`}>Bug Reporting</Badge>
+              <Badge className={`bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-1 text-sm'}`}>FAQs</Badge>
+            </>
+          }
+          isMobile={isMobile}
+        />
 
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className={`flex ${isMobile ? 'flex-col' : 'flex-col lg:flex-row'} gap-6`}>
           {/* Main Content */}
           <div
             className="flex-1"
@@ -489,11 +496,11 @@ const Help = () => {
             {/* Enhanced Search Bar */}
             <div className="relative mb-6">
               <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-500 transition-all duration-300 group-hover:text-blue-600" />
+                <Search className={`absolute left-4 top-1/2 -translate-y-1/2 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-blue-500 transition-all duration-300 group-hover:text-blue-600`} />
                 <Input
                   ref={searchInputRef}
-                  placeholder="Search for help topics..."
-                  className="pl-12 py-6 bg-white/90 backdrop-blur-sm border border-blue-100 rounded-full shadow-sm transition-all duration-300 focus:shadow-md focus:border-blue-300 text-gray-700"
+                  placeholder={isMobile ? "Search help..." : "Search for help topics..."}
+                  className={`${isMobile ? 'pl-10 py-4' : 'pl-12 py-6'} bg-white/90 backdrop-blur-sm border border-blue-100 rounded-full shadow-sm transition-all duration-300 focus:shadow-md focus:border-blue-300 text-gray-700`}
                   value={searchQuery}
                   onChange={(e) => {
                     // Use debounced search to improve performance
@@ -514,7 +521,7 @@ const Help = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-gray-400 hover:text-gray-600"
+                      className={`${isMobile ? 'h-6 w-6' : 'h-8 w-8'} text-gray-400 hover:text-gray-600`}
                       onClick={() => {
                         // Clear search and reset state
                         setSearchQuery('');
@@ -525,17 +532,17 @@ const Help = () => {
                       }}
                       title="Clear search"
                     >
-                      <X className="h-4 w-4" />
+                      <X className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
                     </Button>
                   )}
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-blue-500 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-100/50"
+                    className={`${isMobile ? 'h-6 w-6' : 'h-8 w-8'} text-blue-500 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-100/50`}
                     onClick={handleSearchSubmit}
                     title="Search"
                   >
-                    <Search className="h-4 w-4" />
+                    <Search className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
                   </Button>
                 </div>
               </div>
@@ -726,33 +733,33 @@ const Help = () => {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-6 bg-white/80 backdrop-blur-sm rounded-xl p-1 shadow-sm top-16 sm:top-20">
+              <TabsList className={`${isMobile ? 'grid grid-cols-2 gap-1 h-auto p-1' : 'grid grid-cols-2 md:grid-cols-4'} mb-6 bg-white/80 backdrop-blur-sm rounded-xl p-1 shadow-sm`}>
                 <TabsTrigger
                   value="getting-started"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-300"
+                  className={`data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-300 ${isMobile ? 'text-xs px-2 py-3 flex-col h-auto' : ''}`}
                 >
-                  <Book className="h-4 w-4 mr-2" />
-                  Getting Started
+                  <Book className={`${isMobile ? 'h-3 w-3 mb-1' : 'h-4 w-4 mr-2'}`} />
+                  {isMobile ? 'Getting Started' : 'Getting Started'}
                 </TabsTrigger>
                 <TabsTrigger
                   value="testing-environment"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-teal-600 data-[state=active]:text-white rounded-lg transition-all duration-300"
+                  className={`data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-teal-600 data-[state=active]:text-white rounded-lg transition-all duration-300 ${isMobile ? 'text-xs px-2 py-3 flex-col h-auto' : ''}`}
                 >
-                  <Code className="h-4 w-4 mr-2" />
-                  Testing Environment
+                  <Code className={`${isMobile ? 'h-3 w-3 mb-1' : 'h-4 w-4 mr-2'}`} />
+                  {isMobile ? 'Testing' : 'Testing Environment'}
                 </TabsTrigger>
                 <TabsTrigger
                   value="bug-reporting"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-lg transition-all duration-300"
+                  className={`data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-lg transition-all duration-300 ${isMobile ? 'text-xs px-2 py-3 flex-col h-auto' : ''}`}
                 >
-                  <Bug className="h-4 w-4 mr-2" />
-                  Bug Reporting
+                  <Bug className={`${isMobile ? 'h-3 w-3 mb-1' : 'h-4 w-4 mr-2'}`} />
+                  {isMobile ? 'Bug Report' : 'Bug Reporting'}
                 </TabsTrigger>
                 <TabsTrigger
                   value="faq"
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-amber-600 data-[state=active]:text-white rounded-lg transition-all duration-300"
+                  className={`data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-amber-600 data-[state=active]:text-white rounded-lg transition-all duration-300 ${isMobile ? 'text-xs px-2 py-3 flex-col h-auto' : ''}`}
                 >
-                  <FileQuestion className="h-4 w-4 mr-2" />
+                  <FileQuestion className={`${isMobile ? 'h-3 w-3 mb-1' : 'h-4 w-4 mr-2'}`} />
                   FAQ
                 </TabsTrigger>
               </TabsList>
@@ -779,19 +786,19 @@ const Help = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <ScrollArea className="h-[calc(80vh-180px)] min-h-[650px]">
-                        <div className="p-8">
+                      <ScrollArea className={`${isMobile ? 'h-[calc(100vh-280px)] min-h-[400px]' : 'h-[calc(80vh-180px)] min-h-[650px]'}`}>
+                        <div className={`${isMobile ? 'p-4' : 'p-8'}`}>
                           {filteredContent
                             .filter(item => item.category === 'getting-started')
                             .map((item, index) => (
-                              <div key={index} className="mb-8 p-6 bg-blue-50/50 rounded-lg border border-blue-100/50 hover:border-blue-200 transition-all duration-300 shadow-sm hover:shadow">
+                              <div key={index} className={`${isMobile ? 'mb-4 p-4' : 'mb-8 p-6'} bg-blue-50/50 rounded-lg border border-blue-100/50 hover:border-blue-200 transition-all duration-300 shadow-sm hover:shadow`}>
                                 <div className="flex items-center gap-3 mb-4">
                                   <div className="bg-blue-100 p-2 rounded-full">
-                                    <Lightbulb className="h-5 w-5 text-blue-600" />
+                                    <Lightbulb className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-blue-600`} />
                                   </div>
-                                  <h3 className="text-xl font-semibold text-blue-900">{item.title}</h3>
+                                  <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-blue-900`}>{item.title}</h3>
                                 </div>
-                                <div className="text-base leading-relaxed text-gray-800 pl-10 prose prose-blue max-w-none prose-headings:text-blue-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-blue-900 prose-code:text-blue-800 prose-code:bg-blue-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
+                                <div className={`${isMobile ? 'text-sm leading-relaxed text-gray-800 pl-8' : 'text-base leading-relaxed text-gray-800 pl-10'} prose prose-blue max-w-none prose-headings:text-blue-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-blue-900 prose-code:text-blue-800 prose-code:bg-blue-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none`} dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
                               </div>
                             ))}
                         </div>
@@ -832,19 +839,19 @@ const Help = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <ScrollArea className="h-[calc(80vh-180px)] min-h-[650px]">
-                        <div className="p-8">
+                      <ScrollArea className={`${isMobile ? 'h-[calc(100vh-280px)] min-h-[400px]' : 'h-[calc(80vh-180px)] min-h-[650px]'}`}>
+                        <div className={`${isMobile ? 'p-4' : 'p-8'}`}>
                           {filteredContent
                             .filter(item => item.category === 'testing-environment')
                             .map((item, index) => (
-                              <div key={index} className="mb-8 p-6 bg-teal-50/50 rounded-lg border border-teal-100/50 hover:border-teal-200 transition-all duration-300 shadow-sm hover:shadow">
+                              <div key={index} className={`${isMobile ? 'mb-4 p-4' : 'mb-8 p-6'} bg-teal-50/50 rounded-lg border border-teal-100/50 hover:border-teal-200 transition-all duration-300 shadow-sm hover:shadow`}>
                                 <div className="flex items-center gap-3 mb-4">
                                   <div className="bg-teal-100 p-2 rounded-full">
-                                    <Code className="h-5 w-5 text-teal-600" />
+                                    <Code className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-teal-600`} />
                                   </div>
-                                  <h3 className="text-xl font-semibold text-teal-900">{item.title}</h3>
+                                  <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-teal-900`}>{item.title}</h3>
                                 </div>
-                                <div className="text-base leading-relaxed text-gray-800 pl-10 prose prose-teal max-w-none prose-headings:text-teal-900 prose-a:text-teal-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-teal-900 prose-code:text-teal-800 prose-code:bg-teal-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-teal-50 prose-pre:border prose-pre:border-teal-200/50 prose-pre:rounded-lg" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
+                                <div className={`${isMobile ? 'text-sm leading-relaxed text-gray-800 pl-8' : 'text-base leading-relaxed text-gray-800 pl-10'} prose prose-teal max-w-none prose-headings:text-teal-900 prose-a:text-teal-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-teal-900 prose-code:text-teal-800 prose-code:bg-teal-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-teal-50 prose-pre:border prose-pre:border-teal-200/50 prose-pre:rounded-lg`} dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
                               </div>
                             ))}
                         </div>
@@ -876,19 +883,19 @@ const Help = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <ScrollArea className="h-[calc(80vh-180px)] min-h-[650px]">
-                        <div className="p-8">
+                      <ScrollArea className={`${isMobile ? 'h-[calc(100vh-280px)] min-h-[400px]' : 'h-[calc(80vh-180px)] min-h-[650px]'}`}>
+                        <div className={`${isMobile ? 'p-4' : 'p-8'}`}>
                           {filteredContent
                             .filter(item => item.category === 'bug-reporting')
                             .map((item, index) => (
-                              <div key={index} className="mb-8 p-6 bg-purple-50/50 rounded-lg border border-purple-100/50 hover:border-purple-200 transition-all duration-300 shadow-sm hover:shadow">
+                              <div key={index} className={`${isMobile ? 'mb-4 p-4' : 'mb-8 p-6'} bg-purple-50/50 rounded-lg border border-purple-100/50 hover:border-purple-200 transition-all duration-300 shadow-sm hover:shadow`}>
                                 <div className="flex items-center gap-3 mb-4">
                                   <div className="bg-purple-100 p-2 rounded-full">
-                                    <Bug className="h-5 w-5 text-purple-600" />
+                                    <Bug className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-purple-600`} />
                                   </div>
-                                  <h3 className="text-xl font-semibold text-purple-900">{item.title}</h3>
+                                  <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-purple-900`}>{item.title}</h3>
                                 </div>
-                                <div className="text-base leading-relaxed text-gray-800 pl-10 prose prose-purple max-w-none prose-headings:text-purple-900 prose-a:text-purple-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-purple-900 prose-code:text-purple-800 prose-code:bg-purple-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-ol:pl-1 prose-ul:pl-1 prose-li:mb-2" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
+                                <div className={`${isMobile ? 'text-sm leading-relaxed text-gray-800 pl-8' : 'text-base leading-relaxed text-gray-800 pl-10'} prose prose-purple max-w-none prose-headings:text-purple-900 prose-a:text-purple-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-purple-900 prose-code:text-purple-800 prose-code:bg-purple-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-ol:pl-1 prose-ul:pl-1 prose-li:mb-2`} dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
                               </div>
                             ))}
                         </div>
@@ -920,52 +927,52 @@ const Help = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <div className="p-4 border-b border-amber-100 bg-amber-50/50">
+                      <div className={`${isMobile ? 'p-3' : 'p-4'} border-b border-amber-100 bg-amber-50/50`}>
                         <div className="flex flex-wrap gap-2">
                           <Button
                             variant="outline"
-                            size="sm"
-                            className={`rounded-full ${activeFaqCategory === 'all' ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white text-gray-600 border-gray-200'}`}
+                            size={isMobile ? "sm" : "sm"}
+                            className={`rounded-full ${isMobile ? 'text-xs px-2 py-1' : ''} ${activeFaqCategory === 'all' ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white text-gray-600 border-gray-200'}`}
                             onClick={() => setActiveFaqCategory('all')}
                           >
                             All
                           </Button>
                           <Button
                             variant="outline"
-                            size="sm"
-                            className={`rounded-full ${activeFaqCategory === 'general' ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white text-gray-600 border-gray-200'}`}
+                            size={isMobile ? "sm" : "sm"}
+                            className={`rounded-full ${isMobile ? 'text-xs px-2 py-1' : ''} ${activeFaqCategory === 'general' ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white text-gray-600 border-gray-200'}`}
                             onClick={() => setActiveFaqCategory('general')}
                           >
                             General
                           </Button>
                           <Button
                             variant="outline"
-                            size="sm"
-                            className={`rounded-full ${activeFaqCategory === 'account' ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white text-gray-600 border-gray-200'}`}
+                            size={isMobile ? "sm" : "sm"}
+                            className={`rounded-full ${isMobile ? 'text-xs px-2 py-1' : ''} ${activeFaqCategory === 'account' ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white text-gray-600 border-gray-200'}`}
                             onClick={() => setActiveFaqCategory('account')}
                           >
                             Account
                           </Button>
                           <Button
                             variant="outline"
-                            size="sm"
-                            className={`rounded-full ${activeFaqCategory === 'challenges' ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white text-gray-600 border-gray-200'}`}
+                            size={isMobile ? "sm" : "sm"}
+                            className={`rounded-full ${isMobile ? 'text-xs px-2 py-1' : ''} ${activeFaqCategory === 'challenges' ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white text-gray-600 border-gray-200'}`}
                             onClick={() => setActiveFaqCategory('challenges')}
                           >
                             Challenges
                           </Button>
                           <Button
                             variant="outline"
-                            size="sm"
-                            className={`rounded-full ${activeFaqCategory === 'technical' ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white text-gray-600 border-gray-200'}`}
+                            size={isMobile ? "sm" : "sm"}
+                            className={`rounded-full ${isMobile ? 'text-xs px-2 py-1' : ''} ${activeFaqCategory === 'technical' ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white text-gray-600 border-gray-200'}`}
                             onClick={() => setActiveFaqCategory('technical')}
                           >
                             Technical
                           </Button>
                         </div>
                       </div>
-                      <ScrollArea className="h-[calc(80vh-220px)] min-h-[600px]">
-                        <div className="p-8">
+                      <ScrollArea className={`${isMobile ? 'h-[calc(100vh-320px)] min-h-[350px]' : 'h-[calc(80vh-220px)] min-h-[600px]'}`}>
+                        <div className={`${isMobile ? 'p-4' : 'p-8'}`}>
                           <Accordion type="single" collapsible className="w-full">
                             {filteredFaqs.map((faq, index) => (
                               <AccordionItem
@@ -973,19 +980,19 @@ const Help = () => {
                                 value={`faq-${index}`}
                                 className="border-b border-amber-100 last:border-0"
                               >
-                                <AccordionTrigger className="text-left hover:bg-amber-50/50 px-4 py-4 rounded-lg text-amber-900 font-medium">
+                                <AccordionTrigger className={`text-left hover:bg-amber-50/50 ${isMobile ? 'px-2 py-3' : 'px-4 py-4'} rounded-lg text-amber-900 font-medium`}>
                                   <div className="flex items-center gap-3">
                                     <div className="bg-amber-100 p-2 rounded-full">
-                                      {faq.category === 'general' && <Info className="h-5 w-5 text-amber-600" />}
-                                      {faq.category === 'account' && <HelpCircle className="h-5 w-5 text-amber-600" />}
-                                      {faq.category === 'challenges' && <Trophy className="h-5 w-5 text-amber-600" />}
-                                      {faq.category === 'technical' && <Zap className="h-5 w-5 text-amber-600" />}
+                                      {faq.category === 'general' && <Info className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-amber-600`} />}
+                                      {faq.category === 'account' && <HelpCircle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-amber-600`} />}
+                                      {faq.category === 'challenges' && <Trophy className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-amber-600`} />}
+                                      {faq.category === 'technical' && <Zap className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-amber-600`} />}
                                     </div>
-                                    <span className="text-lg" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(faq.question, searchQuery) : { __html: faq.question }} />
+                                    <span className={`${isMobile ? 'text-base' : 'text-lg'}`} dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(faq.question, searchQuery) : { __html: faq.question }} />
                                   </div>
                                 </AccordionTrigger>
-                                <AccordionContent className="px-4 pb-6 pt-3">
-                                  <div className="text-base leading-relaxed text-gray-800 pl-10 bg-amber-50/30 p-6 rounded-lg prose prose-amber max-w-none prose-headings:text-amber-900 prose-a:text-amber-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-amber-900 prose-code:text-amber-800 prose-code:bg-amber-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-ol:pl-1 prose-ul:pl-1 prose-li:mb-2" dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(faq.answer, searchQuery) : { __html: faq.answer }} />
+                                <AccordionContent className={`${isMobile ? 'px-2 pb-4 pt-2' : 'px-4 pb-6 pt-3'}`}>
+                                  <div className={`${isMobile ? 'text-sm leading-relaxed text-gray-800 pl-8 bg-amber-50/30 p-4 rounded-lg' : 'text-base leading-relaxed text-gray-800 pl-10 bg-amber-50/30 p-6 rounded-lg'} prose prose-amber max-w-none prose-headings:text-amber-900 prose-a:text-amber-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-amber-900 prose-code:text-amber-800 prose-code:bg-amber-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-ol:pl-1 prose-ul:pl-1 prose-li:mb-2`} dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(faq.answer, searchQuery) : { __html: faq.answer }} />
                                 </AccordionContent>
                               </AccordionItem>
                             ))}
@@ -999,8 +1006,10 @@ const Help = () => {
             </Tabs>
           </div>
 
-          {/* Sidebar - using memoized component */}
-          {useMemo(() => <Sidebar navigate={navigate} />, [navigate])}
+          {/* Sidebar - Desktop Only */}
+          {!isMobile && (
+            <Sidebar navigate={navigate} />
+          )}
 
         </div>
       </div>

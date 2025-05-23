@@ -1,13 +1,16 @@
-import { lazy, Suspense, useEffect, useState, useCallback } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { lazy, Suspense, useMemo } from 'react';
 import Header from '@/components/home/Header.tsx';
 import Hero from '@/components/home/Hero.tsx';
 import ValueBanner from '@/components/home/ValueBanner.tsx';
 import Footer from '@/components/home/Footer.tsx';
 import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
 import SectionBackground from '@/components/utils/SectionBackground.tsx';
-import { Skeleton } from '@/components/ui/skeleton.tsx';
 import HomeResourcePreloader from '@/components/utils/HomeResourcePreloader.tsx';
+import PerformanceMonitor from '@/components/utils/PerformanceMonitor.tsx';
+import EnhancedErrorBoundary from '@/components/ui/enhanced-error-boundary.tsx';
+import { SectionLoading, MinimalLoading } from '@/components/ui/enhanced-loading.tsx';
+import { useHomePerformance } from '@/hooks/useHomePerformance.ts';
+import { useAccessibility } from '@/hooks/useAccessibility.ts';
 
 // Lazy load non-critical sections for better initial load performance
 const ServicesSection = lazy(() => import('@/components/home/ServicesSection.tsx'));
@@ -16,184 +19,235 @@ const ExperienceSection = lazy(() => import('@/components/home/ExperienceSection
 const CertificationsSection = lazy(() => import('@/components/home/CertificationsSection.tsx'));
 const ContactSection = lazy(() => import('@/components/home/ContactSection.tsx'));
 
-// Simple section loading fallback
-const SectionFallback = () => (
-  <div className="py-16">
-    <Skeleton className="h-8 w-1/3 mx-auto mb-8" />
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto px-4">
-      {[...Array(3)].map((_, i) => (
-        <Skeleton key={i} className="h-64 w-full rounded-xl" />
-      ))}
-    </div>
-  </div>
-);
-
 const Home = () => {
-  // State to track if the page has fully loaded
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Use custom performance hook for optimized state management
+  const {
+    isLoaded,
+    isLowPerformanceDevice,
+    prefersReducedMotion,
+    shouldRenderEnhancedBackground,
+    performanceMetrics,
+    isSectionVisible
+  } = useHomePerformance();
 
-  // Check if user prefers reduced motion
-  const prefersReducedMotion = useReducedMotion();
+  // Use accessibility hook for enhanced user experience
+  const {
+    shouldSkipAnimations,
+    shouldSimplifyInterface,
+    shouldEnhanceFocus,
+    announceToScreenReader
+  } = useAccessibility();
 
-  // Detect low performance devices
-  const [isLowPerformanceDevice, setIsLowPerformanceDevice] = useState(false);
+  // Memoize section configurations to prevent unnecessary re-renders
+  const sectionConfigs = useMemo(() => [
+    {
+      id: 'services',
+      Component: ServicesSection,
+      props: {}
+    },
+    {
+      id: 'projects', 
+      Component: ProjectsSection,
+      props: {}
+    },
+    {
+      id: 'experience',
+      Component: ExperienceSection, 
+      props: {}
+    },
+    {
+      id: 'certifications',
+      Component: CertificationsSection,
+      props: {}
+    },
+    {
+      id: 'contact',
+      Component: ContactSection,
+      props: {}
+    }
+  ], []);
 
-  // Track sections that are visible in viewport for better performance
-  const [visibleSections, setVisibleSections] = useState({
-    services: false,
-    projects: false,
-    experience: false,
-    certifications: false,
-    contact: false
-  });
-
-  // Detect device performance on component mount
-  useEffect(() => {
-    // Simple performance detection based on device memory and processor count
-    const detectLowPerformanceDevice = () => {
-      // Check if navigator.deviceMemory is available (Chrome, Edge, Opera)
-      const lowMemory = 'deviceMemory' in navigator && (navigator as any).deviceMemory < 4;
-
-      // Check processor cores if available
-      const lowCores = navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4;
-
-      // Check if it's a mobile device (simplified check)
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-      // Set as low performance if any of these conditions are true
-      return lowMemory || lowCores || isMobile;
+  // Render optimized section with error boundary and performance considerations
+  const renderSection = useMemo(() => (config: typeof sectionConfigs[0]) => {
+    const { id, Component, props } = config;
+    const shouldRender = isSectionVisible(id);
+    const containmentStyle = {
+      contentVisibility: 'auto' as const,
+      containIntrinsicSize: '0 600px',
+      contain: 'layout style paint' as const
     };
 
-    setIsLowPerformanceDevice(detectLowPerformanceDevice());
-  }, []);
-
-  // Set up intersection observers for each section
-  useEffect(() => {
-    const observerOptions = {
-      rootMargin: '200px 0px', // Start loading 200px before section comes into view
-      threshold: 0.1
-    };
-
-    const sectionObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        const sectionId = entry.target.id;
-        if (entry.isIntersecting) {
-          setVisibleSections(prev => ({
-            ...prev,
-            [sectionId.replace('-section', '')]: true
-          }));
-        }
-      });
-    }, observerOptions);
-
-    // Observe all section containers
-    const sections = document.querySelectorAll('[id$="-section"]');
-    sections.forEach(section => {
-      sectionObserver.observe(section);
-    });
-
-    // Mark hero section as visible immediately to prioritize LCP
-    setVisibleSections(prev => ({
-      ...prev,
-      'hero': true
-    }));
-
-    // Mark page as loaded after critical content is visible, but with a delay
-    // to ensure LCP happens first
-    const markAsLoaded = () => {
-      if (!isLoaded) {
-        setIsLoaded(true);
-      }
-    };
-
-    // Mark page as loaded after a short delay or when load event fires
-    const timeoutId = setTimeout(markAsLoaded, 1000);
-    window.addEventListener('load', markAsLoaded);
-
-    return () => {
-      sections.forEach(section => {
-        sectionObserver.unobserve(section);
-      });
-      clearTimeout(timeoutId);
-      window.removeEventListener('load', markAsLoaded);
-    };
-  }, [isLoaded]);
+    return (
+      <div key={id} style={containmentStyle}>
+        <SectionBackground 
+          sectionId={`${id}-section`} 
+          variant={id as any}
+          optimizeRendering={true}
+        >
+          <EnhancedErrorBoundary
+            onError={(error, errorInfo) => {
+              console.error(`Error in ${id} section:`, error, errorInfo);
+              announceToScreenReader(`Lỗi khi tải phần ${id}. Vui lòng thử lại.`, 'assertive');
+            }}
+            showErrorDetails={process.env.NODE_ENV === 'development'}
+          >
+            <Suspense 
+              fallback={
+                <SectionLoading 
+                  itemCount={id === 'projects' ? 6 : 3}
+                  showShimmer={!isLowPerformanceDevice && !shouldSimplifyInterface}
+                  ariaLabel={`Đang tải phần ${id}...`}
+                />
+              }
+            >
+              {shouldRender && <Component {...props} />}
+            </Suspense>
+          </EnhancedErrorBoundary>
+        </SectionBackground>
+      </div>
+    );
+  }, [isSectionVisible, isLowPerformanceDevice, shouldSimplifyInterface, announceToScreenReader]);
 
   return (
-    <div className="min-h-screen relative">
-      {/* Preload critical resources for the Home page */}
-      <HomeResourcePreloader />
+    <EnhancedErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('Critical Home page error:', error, errorInfo);
+        // Send critical errors to monitoring
+      }}
+      showErrorDetails={process.env.NODE_ENV === 'development'}
+    >
+      <div className="min-h-screen relative">
+        {/* Skip to content link for accessibility */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 
+                     bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium 
+                     hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          onClick={(e) => {
+            e.preventDefault();
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) {
+              mainContent.focus();
+              mainContent.scrollIntoView({ behavior: 'smooth' });
+              announceToScreenReader('Đã chuyển đến nội dung chính');
+            }
+          }}
+        >
+          Chuyển đến nội dung chính
+        </a>
 
-      {/* Global background with optimized loading and performance detection */}
-      <div
-        className="fixed top-0 left-0 right-0 bottom-0 -z-10 bg-gradient-to-br from-gray-50 via-blue-50 to-teal-50"
-        style={{ contain: 'paint layout' }} // Add CSS containment for better performance
-      ></div>
+        {/* Preload critical resources for the Home page */}
+        <HomeResourcePreloader />
 
-      {/* Load enhanced background after initial render to prioritize LCP */}
-      {isLoaded && (
-        <EnhancedBackground
-          optimizeForLowPerformance={true} reducedAnimations={true}
+        {/* Performance monitoring */}
+        {/* <PerformanceMonitor 
+          enableLogging={process.env.NODE_ENV === 'development'}
+          enableReporting={process.env.NODE_ENV === 'production'}
+          onMetricsCollected={(metrics) => {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Home page performance metrics:', metrics);
+            }
+          }}
+        /> */}
+
+        {/* Optimized background with progressive enhancement */}
+        <div
+          className="fixed top-0 left-0 right-0 bottom-0 -z-10 bg-gradient-to-br from-gray-50 via-blue-50 to-teal-50"
+          style={{ 
+            contain: 'paint layout',
+            willChange: shouldRenderEnhancedBackground ? 'auto' : undefined
+          }}
         />
-      )}
 
-      <Header />
+        {/* Enhanced background - only render when performance allows */}
+        {shouldRenderEnhancedBackground && !shouldSkipAnimations && (
+          <Suspense 
+            fallback={
+              <MinimalLoading 
+                customHeight="100vh"
+              />
+            }
+          >
+            <EnhancedErrorBoundary>
+              <EnhancedBackground
+                optimizeForLowPerformance={isLowPerformanceDevice}
+                reducedAnimations={prefersReducedMotion || shouldSkipAnimations}
+              />
+            </EnhancedErrorBoundary>
+          </Suspense>
+        )}
 
-      <main id="main-content" className="relative z-0">
-        {/* Hero section with dedicated background - always load immediately */}
-        <SectionBackground sectionId="hero-section" variant="hero" optimizeRendering={true}>
-          <Hero />
-          <ValueBanner />
-        </SectionBackground>
+        {/* Header with error boundary */}
+        <EnhancedErrorBoundary
+          fallback={
+            <div className="h-16 bg-white/80 backdrop-blur-sm border-b border-gray-200/50" />
+          }
+        >
+          <Header />
+        </EnhancedErrorBoundary>
 
-        {/* Services section - lazy loaded with content-visibility */}
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}>
-          <SectionBackground sectionId="services-section" variant="services" optimizeRendering={true}>
-            <Suspense fallback={<SectionFallback />}>
-              {(isLoaded || visibleSections.services) && <ServicesSection />}
-            </Suspense>
+        <main 
+          id="main-content" 
+          className="relative z-0"
+          role="main"
+          aria-label="Nội dung chính trang chủ"
+        >
+          {/* Hero section - always prioritized for LCP */}
+          <SectionBackground 
+            sectionId="hero-section" 
+            variant="hero" 
+            optimizeRendering={true}
+          >
+            <EnhancedErrorBoundary
+              fallback={
+                <div className="min-h-screen flex items-center justify-center">
+                  <div className="text-center">
+                    <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                      Xin chào! Tôi là Nam
+                    </h1>
+                    <p className="text-xl text-gray-600">
+                      Full-stack Developer & QA Engineer
+                    </p>
+                  </div>
+                </div>
+              }
+            >
+              <Hero />
+              <ValueBanner />
+            </EnhancedErrorBoundary>
           </SectionBackground>
-        </div>
 
-        {/* Projects section - lazy loaded with content-visibility */}
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}>
-          <SectionBackground sectionId="projects-section" variant="projects" optimizeRendering={true}>
-            <Suspense fallback={<SectionFallback />}>
-              {(isLoaded || visibleSections.projects) && <ProjectsSection />}
-            </Suspense>
-          </SectionBackground>
-        </div>
+          {/* Dynamically rendered sections with performance optimization */}
+          {sectionConfigs.map(renderSection)}
+        </main>
 
-        {/* Experience section - lazy loaded with content-visibility */}
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}>
-          <SectionBackground sectionId="experience-section" variant="experience" optimizeRendering={true}>
-            <Suspense fallback={<SectionFallback />}>
-              {(isLoaded || visibleSections.experience) && <ExperienceSection />}
-            </Suspense>
-          </SectionBackground>
-        </div>
+        {/* Footer with error boundary */}
+        <EnhancedErrorBoundary
+          fallback={
+            <footer className="py-8 text-center text-gray-600 bg-gray-50">
+              <p>&copy; 2024 Nam Le. All rights reserved.</p>
+            </footer>
+          }
+        >
+          <Footer />
+        </EnhancedErrorBoundary>
 
-        {/* Certifications section - lazy loaded with content-visibility */}
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}>
-          <SectionBackground sectionId="certifications-section" variant="certifications" optimizeRendering={true}>
-            <Suspense fallback={<SectionFallback />}>
-              {(isLoaded || visibleSections.certifications) && <CertificationsSection />}
-            </Suspense>
-          </SectionBackground>
-        </div>
-
-        {/* Contact section - lazy loaded with content-visibility */}
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '0 500px' }}>
-          <SectionBackground sectionId="contact-section" variant="contact" optimizeRendering={true}>
-            <Suspense fallback={<SectionFallback />}>
-              {(isLoaded || visibleSections.contact) && <ContactSection />}
-            </Suspense>
-          </SectionBackground>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
+        {/* Performance monitoring in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs font-mono z-50">
+            <div>Loaded: {isLoaded ? '✅' : '⏳'}</div>
+            <div>Low Perf: {isLowPerformanceDevice ? '⚠️' : '✅'}</div>
+            <div>Enhanced BG: {shouldRenderEnhancedBackground ? '✅' : '❌'}</div>
+            {performanceMetrics.deviceMemory && (
+              <div>Memory: {performanceMetrics.deviceMemory}GB</div>
+            )}
+            {performanceMetrics.hardwareConcurrency && (
+              <div>Cores: {performanceMetrics.hardwareConcurrency}</div>
+            )}
+          </div>
+        )}
+      </div>
+    </EnhancedErrorBoundary>
   );
 };
 

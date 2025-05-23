@@ -140,12 +140,40 @@ const URLRedirect: React.FC = () => {
 
       // Record the click only if we're actually redirecting
       if (redirectConfirmed || !showWarning) {
+        // Extract UTM parameters from the current URL if they exist
+        const currentUrlParams = new URLSearchParams(window.location.search);
+        const extractedUtmParams: Record<string, string> = {};
+
+        // Check for UTM parameters in the current URL
+        ['source', 'medium', 'campaign', 'term', 'content'].forEach(param => {
+          const value = currentUrlParams.get(`utm_${param}`);
+          if (value) {
+            extractedUtmParams[param] = value;
+          }
+        });
+
+        // Check for custom UTM parameters
+        currentUrlParams.forEach((value, key) => {
+          if (key.startsWith('utm_') && !['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].includes(key)) {
+            const customParam = key.replace('utm_', '');
+            if (!extractedUtmParams.custom) {
+              extractedUtmParams.custom = {};
+            }
+            extractedUtmParams.custom[customParam] = value;
+          }
+        });
+
+        // Use extracted UTM parameters if available, otherwise use the ones from the shortened URL
+        const utmParameters = Object.keys(extractedUtmParams).length > 0
+          ? extractedUtmParams
+          : url.utmParameters;
+
         URLShortenerService.recordClick(shortCode, {
           referrer: document.referrer || undefined,
           device: navigator.userAgent || undefined,
           browser: navigator.userAgent ? navigator.userAgent.split(' ').pop() || undefined : undefined,
           location: { country: 'Unknown' }, // In a real app, this would be determined server-side
-          utmParameters: url.utmParameters
+          utmParameters: utmParameters
         });
       }
 

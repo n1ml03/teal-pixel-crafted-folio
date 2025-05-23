@@ -137,6 +137,53 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
       }));
   };
 
+  // Format data for UTM term chart
+  const getUtmTermData = () => {
+    if (!analytics || !analytics.clicksByUtmTerm) return [];
+
+    return Object.entries(analytics.clicksByUtmTerm)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([term, count]) => ({
+        name: term || 'None',
+        value: count
+      }));
+  };
+
+  // Format data for UTM content chart
+  const getUtmContentData = () => {
+    if (!analytics || !analytics.clicksByUtmContent) return [];
+
+    return Object.entries(analytics.clicksByUtmContent)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([content, count]) => ({
+        name: content || 'None',
+        value: count
+      }));
+  };
+
+  // Format data for custom UTM parameters
+  const getCustomUtmData = () => {
+    if (!analytics || !analytics.clicksByCustomUtm) return [];
+
+    // Flatten custom UTM data for display
+    const flattenedData: {name: string, value: number}[] = [];
+
+    Object.entries(analytics.clicksByCustomUtm).forEach(([paramName, values]) => {
+      Object.entries(values).forEach(([paramValue, count]) => {
+        flattenedData.push({
+          name: `${paramName}=${paramValue}`,
+          value: count
+        });
+      });
+    });
+
+    return flattenedData
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+  };
+
 
 
   // Format data for hourly clicks
@@ -421,10 +468,30 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
             <div className="mb-6">
               <div className="bg-white p-4 rounded-lg mb-6 border border-gray-200 shadow-sm">
                 <h3 className="text-sm font-medium text-amber-700 mb-2">What are UTM Parameters?</h3>
-                <p className="text-xs text-gray-700">
+                <p className="text-xs text-gray-700 mb-3">
                   UTM parameters are tags added to URLs to track the effectiveness of marketing campaigns across different channels.
                   They help identify which sources, mediums, and campaigns are driving traffic to your links.
                 </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="bg-amber-50 p-2 rounded border border-amber-100">
+                    <span className="font-medium text-amber-800">utm_source</span>: Identifies which site sent the traffic (e.g., google, facebook)
+                  </div>
+                  <div className="bg-amber-50 p-2 rounded border border-amber-100">
+                    <span className="font-medium text-amber-800">utm_medium</span>: Identifies what type of link was used (e.g., cpc, email)
+                  </div>
+                  <div className="bg-amber-50 p-2 rounded border border-amber-100">
+                    <span className="font-medium text-amber-800">utm_campaign</span>: Identifies a specific product promotion or campaign
+                  </div>
+                  <div className="bg-amber-50 p-2 rounded border border-amber-100">
+                    <span className="font-medium text-amber-800">utm_term</span>: Identifies search terms or keywords
+                  </div>
+                  <div className="bg-amber-50 p-2 rounded border border-amber-100">
+                    <span className="font-medium text-amber-800">utm_content</span>: Identifies what specifically was clicked (e.g., banner, textlink)
+                  </div>
+                  <div className="bg-amber-50 p-2 rounded border border-amber-100">
+                    <span className="font-medium text-amber-800">custom parameters</span>: Any additional utm_* parameters you define
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -508,23 +575,87 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
               </div>
             </div>
 
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-4">Top UTM Campaigns</h3>
-              <div className="h-[200px] bg-gray-50 rounded-lg border p-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={getUtmCampaignData()} layout="vertical" margin={{ left: 80 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                    <XAxis type="number" />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      tick={{ fontSize: 12 }}
-                      width={80}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="value" name="Clicks" fill="#d97706" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-4">Top UTM Campaigns</h3>
+                <div className="h-[200px] bg-gray-50 rounded-lg border p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={getUtmCampaignData()} layout="vertical" margin={{ left: 80 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                      <XAxis type="number" />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        tick={{ fontSize: 12 }}
+                        width={80}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar dataKey="value" name="Clicks" fill="#d97706" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-4">Top UTM Terms</h3>
+                <div className="h-[200px] bg-gray-50 rounded-lg border p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={getUtmTermData()} layout="vertical" margin={{ left: 80 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                      <XAxis type="number" />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        tick={{ fontSize: 12 }}
+                        width={80}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar dataKey="value" name="Clicks" fill="#b45309" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-4">Top UTM Content</h3>
+                <div className="h-[200px] bg-gray-50 rounded-lg border p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={getUtmContentData()} layout="vertical" margin={{ left: 80 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                      <XAxis type="number" />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        tick={{ fontSize: 12 }}
+                        width={80}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar dataKey="value" name="Clicks" fill="#92400e" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-4">Top Custom UTM Parameters</h3>
+                <div className="h-[200px] bg-gray-50 rounded-lg border p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={getCustomUtmData()} layout="vertical" margin={{ left: 80 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                      <XAxis type="number" />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        tick={{ fontSize: 12 }}
+                        width={80}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar dataKey="value" name="Clicks" fill="#78350f" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
 

@@ -305,7 +305,7 @@ const Hero = () => {
                       boxShadow: "0 10px 25px -5px rgba(13, 148, 136, 0.5)"
                     } : { scale: 1.02 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => scrollToSection('contact')}
+                    onClick={() => window.location.href = '/contact-form'}
                   >
                     <span className="relative z-10">Contact Me</span>
                     {!isLowPerformanceDevice && !prefersReducedMotion && (

@@ -53,7 +53,7 @@ export const HomeResourcePreloader = () => {
           link.rel = 'preload';
           link.as = 'image';
           link.href = src;
-          link.fetchPriority = 'high';
+          link.fetchpriority = 'high'; // lowercase for DOM attributes
           if (src.endsWith('.webp')) {
             link.type = 'image/webp';
           }

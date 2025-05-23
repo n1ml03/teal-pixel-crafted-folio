@@ -534,6 +534,7 @@ const ProjectDetail = () => {
               <motion.div
                 ref={techSectionRef}
                 className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 p-8"
+                style={{ position: 'relative' }} /* Add relative positioning for scroll tracking */
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.6 }}

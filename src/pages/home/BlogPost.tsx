@@ -279,6 +279,7 @@ const BlogPost = () => {
                   <motion.article
                     ref={articleRef}
                     className="prose prose-lg max-w-none prose-headings:text-gray-800 prose-headings:font-bold prose-p:text-gray-600 prose-p:leading-relaxed prose-p:text-lg prose-a:text-teal-600 prose-a:no-underline hover:prose-a:text-teal-700 prose-img:rounded-xl prose-img:shadow-md prose-code:bg-gray-100 prose-code:text-teal-700 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-gray-900 prose-pre:rounded-xl prose-pre:shadow-lg prose-pre:p-4 prose-pre:border prose-pre:border-gray-800 prose-blockquote:border-l-4 prose-blockquote:border-teal-500 prose-blockquote:bg-teal-50/50 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-md prose-blockquote:not-italic prose-blockquote:text-gray-700 prose-h1:text-3xl prose-h1:border-b prose-h1:border-gray-200 prose-h1:pb-2 prose-h2:text-2xl prose-h2:border-b prose-h2:border-gray-200 prose-h2:pb-2 prose-h3:text-xl prose-h4:text-lg prose-li:marker:text-teal-500 prose-li:text-gray-600 prose-li:leading-relaxed prose-li:text-lg prose-table:border prose-table:border-gray-300 prose-th:bg-gray-100 prose-th:p-2 prose-td:p-2 prose-td:border prose-td:border-gray-300"
+                    style={{ position: 'relative' }} /* Add relative positioning for scroll tracking */
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.5 }}

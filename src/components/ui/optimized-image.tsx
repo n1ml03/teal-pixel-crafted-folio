@@ -19,6 +19,7 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   fallbackSrc?: string;
   webpSrc?: string;
   isLCP?: boolean;
+  // This will be applied as lowercase 'fetchpriority' in the DOM
   fetchPriority?: 'high' | 'low' | 'auto';
   aspectRatio?: string;
   objectFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
@@ -62,7 +63,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
   // Use the webpSrc if provided, otherwise use the original src
   const finalSrc = webpSrc || src;
-  
+
   // Use the fallbackSrc if provided for error cases
   const errorFallbackSrc = fallbackSrc || src;
 
@@ -107,7 +108,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
   // Determine loading attribute based on priority and isLCP
   const loadingAttr = priority || isLCP ? 'eager' : loadingStrategy;
-  
+
   // Determine fetchPriority based on isLCP
   const finalFetchPriority = isLCP ? 'high' : fetchPriority;
 
@@ -157,7 +158,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
         height={height}
         loading={loadingAttr}
         decoding="async"
-        fetchPriority={finalFetchPriority}
+        fetchpriority={finalFetchPriority}
         style={{
           objectFit,
           objectPosition: 'center',

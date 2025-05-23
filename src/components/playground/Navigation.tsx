@@ -115,6 +115,27 @@ export const Navigation = ({ className }: NavigationProps) => {
     }
   };
 
+  // Handle search submission
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to help page with search query
+      navigate(`/playground/help?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchVisible(false);
+      setSearchQuery('');
+    }
+  };
+
+  // Handle search input key press
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit();
+    } else if (e.key === 'Escape') {
+      setSearchVisible(false);
+      setSearchQuery('');
+    }
+  };
+
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }}
@@ -186,6 +207,7 @@ export const Navigation = ({ className }: NavigationProps) => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="h-9"
                   autoFocus
+                  onKeyDown={handleSearchKeyPress}
                 />
               </motion.div>
             )}
