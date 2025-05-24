@@ -87,6 +87,9 @@ const URLShortenerPage: React.FC = () => {
     [urlHistory]
   );
 
+  // Simple analytics data
+  const analyticsData = currentURL?.analytics || null;
+
   // Memoize handlers to prevent unnecessary re-renders
   const handleURLShortened = useCallback((shortenedURL: ShortenedURL) => {
     setCurrentURL(shortenedURL);

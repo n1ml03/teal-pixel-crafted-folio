@@ -312,19 +312,25 @@ export async function supportsWebP(): Promise<boolean> {
 }
 
 /**
+ * @deprecated Use resourceManager.preloadMany() from resource-manager.ts instead
  * Preload critical images to improve LCP
  * @param urls Array of image URLs to preload
  */
 export function preloadCriticalImages(urls: string[]): void {
+  console.warn('preloadCriticalImages is deprecated. Use resourceManager from resource-manager.ts instead.');
+  
   if (typeof window === 'undefined') return;
 
-  urls.forEach(url => {
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'image';
-    link.href = url;
-    link.crossOrigin = 'anonymous';
-    document.head.appendChild(link);
+  // Import the new resource manager
+  import('./resource-manager').then(({ resourceManager }) => {
+    const resources = urls.map((url, index) => ({
+      href: url,
+      as: 'image' as const,
+      fetchpriority: index === 0 ? 'high' as const : 'auto' as const,
+      type: url.endsWith('.webp') ? 'image/webp' : undefined
+    }));
+    
+    resourceManager.preloadMany(resources);
   });
 }
 

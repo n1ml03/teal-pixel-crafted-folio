@@ -1,35 +1,52 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { loadFonts, preloadFonts } from './lib/font-loading'
-import { deferCSS, loadCSS } from './lib/css-optimization'
-import { preloadCriticalImages } from './lib/image-optimization'
+import { loadFonts, initResourceManager } from './lib'
+
+// Register service worker for caching
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('SW registered: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('SW registration failed: ', registrationError);
+      });
+  });
+}
+
+// Initialize centralized resource manager
+initResourceManager();
 
 // Start loading fonts immediately before DOM is fully loaded
 // This helps improve LCP by getting fonts ready earlier
 loadFonts();
 
-// Define non-critical CSS files to load later
-const nonCriticalCSS = [
-  // Add paths to non-critical CSS files here
-  // These will be loaded after the initial render
-  '/css/animations.css',
-  '/css/playground-extras.css'
+// Defer loading of non-critical CSS using ResourceManager
+const nonCriticalResources = [
+  {
+    href: '/css/animations.css',
+    as: 'style' as const,
+    rel: 'prefetch' as const
+  },
+  {
+    href: '/css/playground-extras.css',
+    as: 'style' as const,
+    rel: 'prefetch' as const
+  }
 ];
 
-// Defer loading of non-critical CSS
-deferCSS(nonCriticalCSS, {
-  delay: 1000, // Wait 1 second after idle to load non-critical CSS
-  onComplete: () => console.log('Non-critical CSS loaded')
-});
+// Use ResourceManager for non-critical CSS with delay
+setTimeout(() => {
+  import('./lib/resource-manager').then(({ resourceManager }) => {
+    resourceManager.preloadMany(nonCriticalResources);
+    console.log('Non-critical resources preloaded');
+  });
+}, 3000);
 
-// Preload critical images for LCP
-preloadCriticalImages([
-  // Add paths to critical images here
-  // These are images that appear above the fold on the initial page load
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=2076&h=1384&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=2000&h=1333&auto=format&fit=crop'
-]);
+// Critical resources are now handled automatically by initResourceManager()
+// No need to manually preload individual resources here
 
 // Ensure the DOM is fully loaded before rendering
 document.addEventListener('DOMContentLoaded', () => {

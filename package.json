@@ -9,7 +9,8 @@
     "build:dev": "bun run --bun vite build --mode development",
     "build:analyze": "bun run --bun vite build --mode analyze",
     "lint": "bun run --bun eslint .",
-    "preview": "bun run --bun vite preview"
+    "preview": "bun run --bun vite preview",
+    "perf": "bun run build && bun run preview --host"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.18.6",

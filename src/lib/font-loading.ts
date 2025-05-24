@@ -52,17 +52,23 @@ export function loadFonts(): void {
 }
 
 /**
+ * @deprecated Use resourceManager.preloadMany() from resource-manager.ts instead
  * Preloads critical fonts to reduce layout shifts
  * @param fontUrls Array of font URLs to preload
  */
 export function preloadFonts(fontUrls: string[]): void {
-  fontUrls.forEach(url => {
-    const link = document.createElement('link');
-    link.href = url;
-    link.rel = 'preload';
-    link.as = 'font';
-    link.type = 'font/woff2';
-    link.crossOrigin = 'anonymous';
-    document.head.appendChild(link);
+  console.warn('preloadFonts is deprecated. Use resourceManager from resource-manager.ts instead.');
+  
+  // Import the new resource manager
+  import('./resource-manager').then(({ resourceManager }) => {
+    const resources = fontUrls.map(url => ({
+      href: url,
+      as: 'font' as const,
+      type: 'font/woff2',
+      crossorigin: 'anonymous' as const,
+      fetchpriority: 'high' as const
+    }));
+    
+    resourceManager.preloadMany(resources);
   });
 }

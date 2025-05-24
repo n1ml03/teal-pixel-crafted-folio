@@ -12,9 +12,10 @@ import { ParallaxProvider } from "@/components/utils/ParallaxProvider.tsx";
 import RouterWrapper from "@/components/utils/RouterWrapper.tsx";
 import { lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import ResourcePreloader from "@/components/utils/ResourcePreloader.tsx";
+// ResourcePreloader removed - using centralized ResourceManager instead
 import { SkipLink } from "@/components/ui/skip-link";
 import EnhancedErrorBoundary from "@/components/ui/enhanced-error-boundary.tsx";
+
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import("./pages/home/Home.tsx"));
@@ -48,34 +49,7 @@ const PageLoader = () => (
 
 const queryClient = new QueryClient();
 
-// Critical resources to preload
-const criticalResources = [
-  // Preload LCP images with high priority
-  {
-    href: "/images/developer-portrait.webp",
-    as: "image",
-    type: "image/jpeg",
-    fetchPriority: "high"
-  },
-  {
-    href: "/images/coding-preview.webp",
-    as: "image",
-    type: "image/webp",
-    fetchPriority: "high"
-  },
-  {
-    href: "/images/testing-preview.webp",
-    as: "image",
-    type: "image/webp",
-    fetchPriority: "high"
-  },
-  // Load fonts directly as stylesheet
-  {
-    href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
-    as: "style",
-    crossOrigin: "anonymous"
-  }
-];
+// Critical resources are now handled by ResourceManager in main.tsx
 
 // Create router with future flags to address warnings
 const router = createBrowserRouter(
@@ -125,16 +99,6 @@ const App = () => {
         <ParallaxProvider>
           <TooltipProvider>
             <SkipLink targetId="main-content" />
-            <ResourcePreloader 
-              resources={criticalResources as Array<{
-                href: string;
-                as: "image" | "style" | "script" | "font";
-                type?: string;
-                crossOrigin?: "anonymous" | "use-credentials";
-                fetchPriority?: "high" | "low" | "auto";
-              }>} 
-              enableLogging={process.env.NODE_ENV === 'development'}
-            />
             <Toaster />
             <div id="app-container" style={{ minHeight: '100vh', contain: 'content' }}>
               <Suspense fallback={<PageLoader />}>
