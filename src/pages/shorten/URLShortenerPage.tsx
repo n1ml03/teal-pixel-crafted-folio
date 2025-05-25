@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, lazy, Suspense, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, lazy, Suspense, useRef, useEffect, Component } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
@@ -19,27 +19,10 @@ import { Badge } from "@/components/ui/badge.tsx";
 import { ScrollReveal } from "@/components/ui/scroll-reveal.tsx";
 import { MotionButton } from "@/components/ui/motion-button.tsx";
 
-// Lazy load components that aren't needed immediately with prefetch
-const URLAnalytics = lazy(() => {
-  // Prefetch the component when idle
-  const prefetch = () => import('@/components/shorten/URLAnalytics.tsx');
-  if (window.requestIdleCallback) {
-    window.requestIdleCallback(prefetch);
-  } else {
-    setTimeout(prefetch, 1000);
-  }
-  return prefetch();
-});
+// Lazy load components that aren't needed immediately
+const URLAnalytics = lazy(() => import('@/components/shorten/URLAnalytics'));
 
-const CampaignTemplates = lazy(() => {
-  const prefetch = () => import('@/components/shorten/CampaignTemplates.tsx').then(module => ({ default: module.CampaignTemplates }));
-  if (window.requestIdleCallback) {
-    window.requestIdleCallback(prefetch);
-  } else {
-    setTimeout(prefetch, 1500);
-  }
-  return prefetch();
-});
+const CampaignTemplates = lazy(() => import('@/components/shorten/CampaignTemplates').then(module => ({ default: module.CampaignTemplates })));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -48,6 +31,38 @@ const LoadingFallback = () => (
     <p className="text-xs sm:text-sm text-gray-500 animate-pulse">Loading content...</p>
   </div>
 );
+
+// Error boundary for lazy loaded components
+class LazyLoadErrorBoundary extends Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Lazy loading error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="p-4 sm:p-6 flex flex-col justify-center items-center min-h-[200px] bg-red-50/50 rounded-lg border border-red-100">
+          <div className="text-red-500 mb-3">⚠️</div>
+          <p className="text-xs sm:text-sm text-red-600">Failed to load component. Please refresh the page.</p>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const URLShortenerPage: React.FC = () => {
   // Initialize the URL Shortener Service and prefetch components
@@ -483,11 +498,13 @@ const URLShortenerPage: React.FC = () => {
                         </div>
                       </CardHeader>
                       <CardContent className="px-4 sm:px-6 py-5 sm:py-7">
-                        <Suspense fallback={<LoadingFallback />}>
-                          <CampaignTemplates
-                            onSelectTemplate={handleTemplateSelect}
-                          />
-                        </Suspense>
+                        <LazyLoadErrorBoundary>
+                          <Suspense fallback={<LoadingFallback />}>
+                            <CampaignTemplates
+                              onSelectTemplate={handleTemplateSelect}
+                            />
+                          </Suspense>
+                        </LazyLoadErrorBoundary>
                       </CardContent>
                     </Card>
                   </motion.div>
@@ -502,9 +519,11 @@ const URLShortenerPage: React.FC = () => {
                     {urlHistory.length > 0 ? (
                       currentURL ? (
                         <div className="space-y-6">
+                                                  <LazyLoadErrorBoundary>
                           <Suspense fallback={<LoadingFallback />}>
                             <URLAnalytics url={currentURL} />
                           </Suspense>
+                        </LazyLoadErrorBoundary>
                         </div>
                       ) : (
                         <Card className="border border-amber-100 shadow-md hover:shadow-lg transition-all duration-300 bg-white/90 backdrop-blur-md rounded-xl overflow-hidden">

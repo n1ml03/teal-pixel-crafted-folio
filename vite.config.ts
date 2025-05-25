@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     chunkSizeWarningLimit: 1000, // Increase the warning limit to 1000 kB
     minify: 'esbuild',
+    target: 'esnext',
     rollupOptions: {
       output: {
         // Ensure CSS is extracted to separate files
