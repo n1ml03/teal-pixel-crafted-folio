@@ -12,7 +12,6 @@ import { ParallaxProvider } from "@/components/utils/ParallaxProvider.tsx";
 import RouterWrapper from "@/components/utils/RouterWrapper.tsx";
 import { lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-// ResourcePreloader removed - using centralized ResourceManager instead
 import { SkipLink } from "@/components/ui/skip-link";
 import EnhancedErrorBoundary from "@/components/ui/enhanced-error-boundary.tsx";
 

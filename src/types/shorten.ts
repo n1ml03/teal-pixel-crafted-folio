@@ -10,6 +10,7 @@ export interface ShortenedURL {
   utmParameters?: UTMParams; // Optional UTM parameters
   clicks: number;          // Number of clicks
   isSuspicious?: boolean;  // Flag for potentially suspicious URLs
+  analytics?: URLAnalytics; // Optional analytics data
 }
 
 export interface URLClickData {

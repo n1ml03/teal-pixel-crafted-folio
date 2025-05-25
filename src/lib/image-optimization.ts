@@ -2,6 +2,7 @@
  * Utilities for optimizing image loading and rendering
  */
 import { useEffect, useState, useRef } from 'react';
+import { resourceManager } from './resource-manager';
 
 /**
  * Interface for optimized image sources
@@ -321,17 +322,14 @@ export function preloadCriticalImages(urls: string[]): void {
   
   if (typeof window === 'undefined') return;
 
-  // Import the new resource manager
-  import('./resource-manager').then(({ resourceManager }) => {
-    const resources = urls.map((url, index) => ({
-      href: url,
-      as: 'image' as const,
-      fetchpriority: index === 0 ? 'high' as const : 'auto' as const,
-      type: url.endsWith('.webp') ? 'image/webp' : undefined
-    }));
-    
-    resourceManager.preloadMany(resources);
-  });
+  const resources = urls.map((url, index) => ({
+    href: url,
+    as: 'image' as const,
+    fetchpriority: index === 0 ? 'high' as const : 'auto' as const,
+    type: url.endsWith('.webp') ? 'image/webp' : undefined
+  }));
+  
+  resourceManager.preloadMany(resources);
 }
 
 /**

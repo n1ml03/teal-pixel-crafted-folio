@@ -1,6 +1,7 @@
 /**
  * Font loading utilities to prevent layout shifts
  */
+import { resourceManager } from './resource-manager';
 
 /**
  * Loads fonts and adds a class to the document when they're ready
@@ -59,16 +60,13 @@ export function loadFonts(): void {
 export function preloadFonts(fontUrls: string[]): void {
   console.warn('preloadFonts is deprecated. Use resourceManager from resource-manager.ts instead.');
   
-  // Import the new resource manager
-  import('./resource-manager').then(({ resourceManager }) => {
-    const resources = fontUrls.map(url => ({
-      href: url,
-      as: 'font' as const,
-      type: 'font/woff2',
-      crossorigin: 'anonymous' as const,
-      fetchpriority: 'high' as const
-    }));
-    
-    resourceManager.preloadMany(resources);
-  });
+  const resources = fontUrls.map(url => ({
+    href: url,
+    as: 'font' as const,
+    type: 'font/woff2',
+    crossorigin: 'anonymous' as const,
+    fetchpriority: 'high' as const
+  }));
+  
+  resourceManager.preloadMany(resources);
 }

@@ -105,7 +105,7 @@ const Footer = () => {
                   </Link>
                 </li>
                 <li>
-                  <a href="/public#services" className="text-gray-700 hover:text-teal-600 transition-colors flex items-center">
+                  <a href="/home#services" className="text-gray-700 hover:text-teal-600 transition-colors flex items-center">
                     <Code className="w-4 h-4 mr-2" />
                     Services
                   </a>
@@ -123,13 +123,13 @@ const Footer = () => {
               <h3 className="font-medium text-gray-900 mb-3">More</h3>
               <ul className="space-y-2.5">
                 <li>
-                  <a href="/public#experience" className="text-gray-700 hover:text-teal-600 transition-colors flex items-center">
+                  <a href="/home#experience" className="text-gray-700 hover:text-teal-600 transition-colors flex items-center">
                     <Briefcase className="w-4 h-4 mr-2" />
                     Experience
                   </a>
                 </li>
                 <li>
-                  <a href="/public#certifications" className="text-gray-700 hover:text-teal-600 transition-colors flex items-center">
+                  <a href="/home#certifications" className="text-gray-700 hover:text-teal-600 transition-colors flex items-center">
                     <Award className="w-4 h-4 mr-2" />
                     Certifications
                   </a>

@@ -99,14 +99,7 @@ const Home = () => {
         <EnhancedErrorBoundary fallback={<footer className="py-8 text-center">© 2024 Nam Le</footer>}>
           <Footer />
         </EnhancedErrorBoundary>
-
-        {/* Simple dev info */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs z-50">
-            <div>Mobile: {isMobile ? '📱' : '💻'}</div>
-            <div>Loaded: {isLoaded ? '✅' : '⏳'}</div>
-          </div>
-        )}
+        
       </div>
     </EnhancedErrorBoundary>
   );

@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { loadFonts, initResourceManager } from './lib'
+import { loadFonts, initResourceManager, resourceManager } from './lib'
 
 // Register service worker for caching
 if ('serviceWorker' in navigator) {
@@ -39,10 +39,8 @@ const nonCriticalResources = [
 
 // Use ResourceManager for non-critical CSS with delay
 setTimeout(() => {
-  import('./lib/resource-manager').then(({ resourceManager }) => {
-    resourceManager.preloadMany(nonCriticalResources);
-    console.log('Non-critical resources preloaded');
-  });
+  resourceManager.preloadMany(nonCriticalResources);
+  console.log('Non-critical resources preloaded');
 }, 3000);
 
 // Critical resources are now handled automatically by initResourceManager()
