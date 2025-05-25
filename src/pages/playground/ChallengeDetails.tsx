@@ -27,7 +27,6 @@ import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import challengesMeta from '@/data/challengesMeta';
 import { ChallengeLoaderService } from '@/services/ChallengeLoaderService';
 import { ChallengeWithTests } from '@/services/ChallengeService';
-import { URLSanitizerService } from '@/services/URLSanitizerService';
 
 // Interface for the extended challenge data needed in ChallengeDetails
 interface ExtendedChallenge extends ChallengeWithTests {

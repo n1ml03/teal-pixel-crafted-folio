@@ -1,21 +1,21 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
-import Header from '@/components/home/Header.tsx';
-import Hero from '@/components/home/Hero.tsx';
-import ValueBanner from '@/components/home/ValueBanner.tsx';
-import Footer from '@/components/home/Footer.tsx';
-import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
-import SectionBackground from '@/components/utils/SectionBackground.tsx';
-import HomeResourcePreloader from '@/components/utils/HomeResourcePreloader.tsx';
-import EnhancedErrorBoundary from '@/components/ui/enhanced-error-boundary.tsx';
-import { SectionLoading, MinimalLoading } from '@/components/ui/enhanced-loading.tsx';
+import Header from '@/components/home/Header';
+import Hero from '@/components/home/Hero';
+import ValueBanner from '@/components/home/ValueBanner';
+import Footer from '@/components/home/Footer';
+import EnhancedBackground from '@/components/utils/EnhancedBackground';
+import SectionBackground from '@/components/utils/SectionBackground';
+import HomeResourcePreloader from '@/components/utils/HomeResourcePreloader';
+import EnhancedErrorBoundary from '@/components/ui/enhanced-error-boundary';
+import { SectionLoading, MinimalLoading } from '@/components/ui/enhanced-loading';
 import { useStableMemo, useMediaQuery } from '@/lib';
 
 // Lazy load non-critical sections
-const ServicesSection = lazy(() => import('@/components/home/ServicesSection.tsx'));
-const ProjectsSection = lazy(() => import('@/components/home/ProjectsSection.tsx'));
-const ExperienceSection = lazy(() => import('@/components/home/ExperienceSection.tsx'));
-const CertificationsSection = lazy(() => import('@/components/home/CertificationsSection.tsx'));
-const ContactSection = lazy(() => import('@/components/home/ContactSection.tsx'));
+const ServicesSection = lazy(() => import('@/components/home/ServicesSection'));
+const ProjectsSection = lazy(() => import('@/components/home/ProjectsSection'));
+const ExperienceSection = lazy(() => import('@/components/home/ExperienceSection'));
+const CertificationsSection = lazy(() => import('@/components/home/CertificationsSection'));
+const ContactSection = lazy(() => import('@/components/home/ContactSection'));
 
 const Home = () => {
   const [isLoaded, setIsLoaded] = useState(false);

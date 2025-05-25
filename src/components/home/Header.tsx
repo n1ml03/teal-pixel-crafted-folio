@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
-import { MotionButton } from "@/components/ui/motion-button.tsx";
-import { MotionLink } from "@/components/ui/motion-link.tsx";
+import { MotionButton } from "@/components/ui/motion-button";
+import { MotionLink } from "@/components/ui/motion-link";
 import {
   Menu,
   X,
@@ -11,10 +10,11 @@ import {
   MessageSquare,
   Layers,
   TestTube,
-  Link2
+  Link2,
+  Briefcase
 } from "lucide-react";
 import { motion } from 'framer-motion';
-import { softSpringTransition } from '@/lib/motion.ts';
+import { softSpringTransition } from '@/lib/motion';
 import { useLocation } from 'react-router-dom';
 
 const Header = () => {
@@ -115,6 +115,17 @@ const Header = () => {
           </MotionButton>
 
           <MotionButton
+            onClick={() => window.location.href = '/services'}
+            className={`flex items-center text-gray-700 hover:text-teal-500 transition-all duration-300 text-sm font-medium ${location.pathname.includes('/services') ? 'text-teal-500' : ''}`}
+            whileHover={{ y: -2, color: "rgb(20, 184, 166)" }}
+            whileTap={{ scale: 0.95 }}
+            variant="ghost"
+          >
+            <Briefcase className="w-4 h-4 mr-1" />
+            Services
+          </MotionButton>
+
+          <MotionButton
             onClick={() => window.location.href = '/resources'}
             className={`flex items-center text-gray-700 hover:text-teal-500 transition-all duration-300 text-sm font-medium ${location.pathname.includes('/resources') ? 'text-teal-500' : ''}`}
             whileHover={{ y: -2, color: "rgb(20, 184, 166)" }}
@@ -205,6 +216,19 @@ const Header = () => {
             >
               <Layers className="w-4 h-4 mr-2" />
               Projects
+            </MotionButton>
+
+            <MotionButton
+              onClick={() => window.location.href = '/services'}
+              className={`flex items-center text-gray-700 hover:text-teal-500 transition-colors py-2 border-b border-gray-100 px-4 rounded-lg hover:bg-gray-50 w-full justify-start ${location.pathname.includes('/services') ? 'text-teal-500 bg-gray-50' : ''}`}
+              whileHover={{ x: 5, backgroundColor: "rgb(249, 250, 251)" }}
+              whileTap={{ scale: 0.98 }}
+              variant="ghost"
+              transitionType="tween"
+              transitionDuration={0.2}
+            >
+              <Briefcase className="w-4 h-4 mr-2" />
+              Services
             </MotionButton>
 
             <MotionButton

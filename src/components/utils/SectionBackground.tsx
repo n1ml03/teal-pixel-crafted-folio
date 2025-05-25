@@ -4,7 +4,7 @@ import { optimizeForAnimation, cleanupAnimationOptimization } from '@/lib/scroll
 
 interface SectionBackgroundProps {
   sectionId: string;
-  variant?: 'hero' | 'services' | 'projects' | 'experience' | 'certifications' | 'contact';
+  variant?: 'hero' | 'services' | 'projects' | 'experience' | 'certifications' | 'contact' | 'playground';
   children?: React.ReactNode;
   optimizeRendering?: boolean; // New prop to enable performance optimizations
 }
@@ -119,6 +119,11 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
   const contactTop = useTransform(smoothProgress, [0, 1], [30, -30]);
   const contactBottom = useTransform(smoothProgress, [0, 1], [-30, 30]);
   const contactMiddle = useTransform(smoothProgress, [0, 1], [0, 20]);
+
+  // Playground section transforms
+  const playgroundTop = useTransform(smoothProgress, [0, 1], [20, -40]);
+  const playgroundBottom = useTransform(smoothProgress, [0, 1], [-30, 30]);
+  const playgroundMiddle = useTransform(smoothProgress, [0, 1], [10, -10]);
 
   // Define background elements based on section variant
   const renderBackgroundElements = () => {
@@ -298,6 +303,44 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
                 opacity,
                 scale,
                 y: contactMiddle
+              }}
+            />
+          </>
+        );
+
+      case 'playground':
+        return (
+          <>
+            <motion.div
+              className="section-bg-element absolute top-[10%] right-[5%] w-80 h-80 rounded-full bg-gradient-to-r from-blue-300/35 to-teal-300/35 blur-3xl"
+              style={{
+                opacity,
+                scale,
+                y: playgroundTop
+              }}
+            />
+            <motion.div
+              className="section-bg-element absolute bottom-[15%] left-[10%] w-72 h-72 rounded-full bg-gradient-to-r from-purple-200/30 to-blue-200/30 blur-3xl"
+              style={{
+                opacity,
+                scale,
+                y: playgroundBottom
+              }}
+            />
+            <motion.div
+              className="section-bg-element absolute top-[40%] left-[40%] w-64 h-64 rounded-full bg-gradient-to-r from-teal-200/25 to-cyan-200/25 blur-3xl"
+              style={{
+                opacity,
+                scale,
+                y: playgroundMiddle
+              }}
+            />
+            <motion.div
+              className="section-bg-element absolute top-[25%] right-[30%] w-48 h-48 rounded-full bg-gradient-to-r from-indigo-200/20 to-purple-200/20 blur-3xl"
+              style={{
+                opacity,
+                scale,
+                y: playgroundTop
               }}
             />
           </>

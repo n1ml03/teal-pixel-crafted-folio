@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback, memo } from 'react';
 import { EditorView, lineNumbers, highlightActiveLineGutter, highlightSpecialChars,
   drawSelection, dropCursor, rectangularSelection, crosshairCursor,
-  keymap, highlightActiveLine } from '@codemirror/view';
+  keymap, highlightActiveLine as highlightActiveLineExtension } from '@codemirror/view';
 import { EditorState, Compartment, Extension } from '@codemirror/state';
 import { javascript } from '@codemirror/lang-javascript';
 import { html } from '@codemirror/lang-html';
@@ -11,17 +11,29 @@ import { python } from '@codemirror/lang-python';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { autocompletion, CompletionContext, CompletionResult, completionKeymap } from '@codemirror/autocomplete';
-import { lintGutter, linter, Diagnostic } from '@codemirror/lint';
-import { indentUnit, syntaxHighlighting, HighlightStyle, foldGutter, foldKeymap } from '@codemirror/language';
+import { indentUnit, foldGutter, foldKeymap } from '@codemirror/language';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
-import { tags } from '@lezer/highlight';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Copy, Check, Code, Play, Save, Maximize2, Minimize2, Download, Upload, RefreshCw } from 'lucide-react';
+import { 
+  Copy, 
+  Check, 
+  Code, 
+  Save, 
+  Maximize2, 
+  Minimize2, 
+  RefreshCw,
+  Sparkles,
+  Zap,
+  Terminal,
+  FileCode,
+  Rocket
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { throttle } from '@/lib/scroll-optimization';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
 
 export type CodeLanguage = 'javascript' | 'typescript' | 'html' | 'css' | 'json' | 'python' | 'markdown';
 
@@ -53,6 +65,59 @@ interface CodeEditorProps {
   responsive?: boolean;
 }
 
+// Language configuration with enhanced metadata
+const languageConfig = {
+  javascript: {
+    name: 'JavaScript',
+    icon: FileCode,
+    color: 'text-yellow-600 dark:text-yellow-400',
+    bgColor: 'bg-yellow-100 dark:bg-yellow-900/20',
+    borderColor: 'border-yellow-200 dark:border-yellow-800'
+  },
+  typescript: {
+    name: 'TypeScript',
+    icon: Code,
+    color: 'text-blue-600 dark:text-blue-400',
+    bgColor: 'bg-blue-100 dark:bg-blue-900/20',
+    borderColor: 'border-blue-200 dark:border-blue-800'
+  },
+  html: {
+    name: 'HTML',
+    icon: FileCode,
+    color: 'text-orange-600 dark:text-orange-400',
+    bgColor: 'bg-orange-100 dark:bg-orange-900/20',
+    borderColor: 'border-orange-200 dark:border-orange-800'
+  },
+  css: {
+    name: 'CSS',
+    icon: Sparkles,
+    color: 'text-purple-600 dark:text-purple-400',
+    bgColor: 'bg-purple-100 dark:bg-purple-900/20',
+    borderColor: 'border-purple-200 dark:border-purple-800'
+  },
+  json: {
+    name: 'JSON',
+    icon: FileCode,
+    color: 'text-green-600 dark:text-green-400',
+    bgColor: 'bg-green-100 dark:bg-green-900/20',
+    borderColor: 'border-green-200 dark:border-green-800'
+  },
+  python: {
+    name: 'Python',
+    icon: Code,
+    color: 'text-indigo-600 dark:text-indigo-400',
+    bgColor: 'bg-indigo-100 dark:bg-indigo-900/20',
+    borderColor: 'border-indigo-200 dark:border-indigo-800'
+  },
+  markdown: {
+    name: 'Markdown',
+    icon: FileCode,
+    color: 'text-gray-600 dark:text-gray-400',
+    bgColor: 'bg-gray-100 dark:bg-gray-900/20',
+    borderColor: 'border-gray-200 dark:border-gray-800'
+  }
+};
+
 // Get language extension based on selected language
 const getLanguageExtension = (lang: CodeLanguage) => {
   switch (lang) {
@@ -75,66 +140,66 @@ const getLanguageExtension = (lang: CodeLanguage) => {
   }
 };
 
-// Custom autocompletion function with common web testing terms
+// Enhanced custom autocompletion with better categorization
 const testingAutocompletion = (context: CompletionContext): CompletionResult | null => {
   const word = context.matchBefore(/\w*/);
   if (!word || (word.from === word.to && !context.explicit)) return null;
 
   const testingTerms = [
     // Testing framework terms
-    { label: 'accessibility', type: 'keyword', info: 'Testing for accessibility compliance' },
-    { label: 'assert', type: 'function', info: 'Assert that a condition is true' },
-    { label: 'describe', type: 'function', info: 'Describe a test suite' },
-    { label: 'expect', type: 'function', info: 'Expect a value to match certain criteria' },
-    { label: 'performance', type: 'keyword', info: 'Testing for performance metrics' },
-    { label: 'responsive', type: 'keyword', info: 'Testing for responsive design' },
-    { label: 'security', type: 'keyword', info: 'Testing for security vulnerabilities' },
-    { label: 'test', type: 'function', info: 'Define a test case' },
-    { label: 'usability', type: 'keyword', info: 'Testing for usability issues' },
+    { label: 'accessibility', type: 'keyword', info: 'Testing for accessibility compliance', detail: 'a11y testing' },
+    { label: 'assert', type: 'function', info: 'Assert that a condition is true', detail: 'assertion method' },
+    { label: 'describe', type: 'function', info: 'Describe a test suite', detail: 'test suite' },
+    { label: 'expect', type: 'function', info: 'Expect a value to match certain criteria', detail: 'expectation' },
+    { label: 'performance', type: 'keyword', info: 'Testing for performance metrics', detail: 'perf testing' },
+    { label: 'responsive', type: 'keyword', info: 'Testing for responsive design', detail: 'responsive test' },
+    { label: 'security', type: 'keyword', info: 'Testing for security vulnerabilities', detail: 'security audit' },
+    { label: 'test', type: 'function', info: 'Define a test case', detail: 'test case' },
+    { label: 'usability', type: 'keyword', info: 'Testing for usability issues', detail: 'UX testing' },
 
     // DOM manipulation
-    { label: 'querySelector', type: 'method', info: 'Select elements using CSS selectors' },
-    { label: 'querySelectorAll', type: 'method', info: 'Select all elements matching CSS selectors' },
-    { label: 'getElementById', type: 'method', info: 'Get element by its ID' },
-    { label: 'getElementsByClassName', type: 'method', info: 'Get elements by class name' },
-    { label: 'getElementsByTagName', type: 'method', info: 'Get elements by tag name' },
-    { label: 'createElement', type: 'method', info: 'Create a new element' },
-    { label: 'appendChild', type: 'method', info: 'Append a child element' },
-    { label: 'removeChild', type: 'method', info: 'Remove a child element' },
-    { label: 'addEventListener', type: 'method', info: 'Add an event listener to an element' },
-    { label: 'removeEventListener', type: 'method', info: 'Remove an event listener from an element' },
+    { label: 'querySelector', type: 'method', info: 'Select elements using CSS selectors', detail: 'DOM query' },
+    { label: 'querySelectorAll', type: 'method', info: 'Select all elements matching CSS selectors', detail: 'DOM query all' },
+    { label: 'getElementById', type: 'method', info: 'Get element by its ID', detail: 'DOM by ID' },
+    { label: 'getElementsByClassName', type: 'method', info: 'Get elements by class name', detail: 'DOM by class' },
+    { label: 'getElementsByTagName', type: 'method', info: 'Get elements by tag name', detail: 'DOM by tag' },
+    { label: 'createElement', type: 'method', info: 'Create a new element', detail: 'DOM creation' },
+    { label: 'appendChild', type: 'method', info: 'Append a child element', detail: 'DOM manipulation' },
+    { label: 'removeChild', type: 'method', info: 'Remove a child element', detail: 'DOM manipulation' },
+    { label: 'addEventListener', type: 'method', info: 'Add an event listener to an element', detail: 'event handling' },
+    { label: 'removeEventListener', type: 'method', info: 'Remove an event listener from an element', detail: 'event handling' },
 
     // Browser APIs
-    { label: 'setTimeout', type: 'function', info: 'Execute code after a delay' },
-    { label: 'setInterval', type: 'function', info: 'Execute code repeatedly at intervals' },
-    { label: 'clearTimeout', type: 'function', info: 'Cancel a timeout' },
-    { label: 'clearInterval', type: 'function', info: 'Cancel an interval' },
-    { label: 'console.log', type: 'method', info: 'Log messages to the console' },
-    { label: 'console.error', type: 'method', info: 'Log error messages to the console' },
-    { label: 'console.warn', type: 'method', info: 'Log warning messages to the console' },
-    { label: 'console.info', type: 'method', info: 'Log informational messages to the console' },
-    { label: 'console.table', type: 'method', info: 'Display tabular data in the console' },
+    { label: 'setTimeout', type: 'function', info: 'Execute code after a delay', detail: 'async timing' },
+    { label: 'setInterval', type: 'function', info: 'Execute code repeatedly at intervals', detail: 'async timing' },
+    { label: 'clearTimeout', type: 'function', info: 'Cancel a timeout', detail: 'async timing' },
+    { label: 'clearInterval', type: 'function', info: 'Cancel an interval', detail: 'async timing' },
+    { label: 'console.log', type: 'method', info: 'Log messages to the console', detail: 'debugging' },
+    { label: 'console.error', type: 'method', info: 'Log error messages to the console', detail: 'debugging' },
+    { label: 'console.warn', type: 'method', info: 'Log warning messages to the console', detail: 'debugging' },
+    { label: 'console.info', type: 'method', info: 'Log informational messages to the console', detail: 'debugging' },
+    { label: 'console.table', type: 'method', info: 'Display tabular data in the console', detail: 'debugging' },
 
     // Global objects
-    { label: 'document', type: 'variable', info: 'The document object' },
-    { label: 'window', type: 'variable', info: 'The window object' },
-    { label: 'navigator', type: 'variable', info: 'The navigator object (browser information)' },
-    { label: 'location', type: 'variable', info: 'The location object (current URL)' },
-    { label: 'history', type: 'variable', info: 'The history object (browser history)' },
+    { label: 'document', type: 'variable', info: 'The document object', detail: 'global DOM' },
+    { label: 'window', type: 'variable', info: 'The window object', detail: 'global window' },
+    { label: 'navigator', type: 'variable', info: 'The navigator object (browser information)', detail: 'browser info' },
+    { label: 'location', type: 'variable', info: 'The location object (current URL)', detail: 'current URL' },
+    { label: 'history', type: 'variable', info: 'The history object (browser history)', detail: 'navigation' },
 
     // Network and storage
-    { label: 'fetch', type: 'function', info: 'Fetch resources from the network' },
-    { label: 'XMLHttpRequest', type: 'class', info: 'Make HTTP requests' },
-    { label: 'localStorage', type: 'variable', info: 'Local storage API' },
-    { label: 'sessionStorage', type: 'variable', info: 'Session storage API' },
-    { label: 'cookies', type: 'variable', info: 'Document cookies' },
+    { label: 'fetch', type: 'function', info: 'Fetch resources from the network', detail: 'HTTP requests' },
+    { label: 'XMLHttpRequest', type: 'class', info: 'Make HTTP requests', detail: 'legacy HTTP' },
+    { label: 'localStorage', type: 'variable', info: 'Local storage API', detail: 'persistent storage' },
+    { label: 'sessionStorage', type: 'variable', info: 'Session storage API', detail: 'session storage' },
+    { label: 'cookies', type: 'variable', info: 'Document cookies', detail: 'browser cookies' },
 
     // Testing-specific functions
-    { label: 'checkAccessibility', type: 'function', info: 'Check for accessibility issues' },
-    { label: 'testResponsiveness', type: 'function', info: 'Test responsive design' },
-    { label: 'validateForm', type: 'function', info: 'Validate form inputs' },
-    { label: 'simulateUserInteraction', type: 'function', info: 'Simulate user interactions' },
-    { label: 'checkPerformance', type: 'function', info: 'Check performance metrics' }
+    { label: 'checkAccessibility', type: 'function', info: 'Check for accessibility issues', detail: 'a11y validation' },
+    { label: 'testResponsiveness', type: 'function', info: 'Test responsive design', detail: 'responsive validation' },
+    { label: 'validateForm', type: 'function', info: 'Validate form inputs', detail: 'form validation' },
+    { label: 'simulateUserInteraction', type: 'function', info: 'Simulate user interactions', detail: 'user simulation' },
+    { label: 'checkPerformance', type: 'function', info: 'Check performance metrics', detail: 'performance metrics' }
   ];
 
   return {
@@ -178,8 +243,13 @@ export const CodeEditor = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [languageCompartment] = useState(new Compartment());
   const [themeCompartment] = useState(new Compartment());
+  const [isRunning, setIsRunning] = useState(false);
+  const [lastRunTime, setLastRunTime] = useState<number | null>(null);
   const previousValueRef = useRef<string>(value);
   const isMobile = useIsMobile();
+
+  // Get current language config
+  const currentLanguageConfig = languageConfig[language];
 
   // Create a throttled onChange handler to improve performance
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -192,7 +262,6 @@ export const CodeEditor = ({
     [onChange]
   );
 
-
   // Toggle fullscreen mode
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => {
@@ -204,378 +273,427 @@ export const CodeEditor = ({
     });
   }, [onFullscreenChange]);
 
-  // Handle escape key to exit fullscreen
+  // Enhanced copy handler with feedback
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      toast.success("Code copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      toast.error("Failed to copy code");
+    }
+  };
+
+  // Enhanced run handler with loading state
+  const handleRun = async () => {
+    if (!onRun || isRunning) return;
+    
+    setIsRunning(true);
+    const startTime = Date.now();
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for visual feedback
+      onRun(value);
+      const runTime = Date.now() - startTime;
+      setLastRunTime(runTime);
+      toast.success(`Code executed successfully in ${runTime}ms`);
+    } catch (error) {
+      console.error('Error running code:', error);
+      toast.error("Error executing code");
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  // Enhanced save handler
+  const handleSave = () => {
+    if (onSave) {
+      onSave(value);
+      toast.success("Code saved successfully!");
+    }
+  };
+
+  // Initialize CodeMirror
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        toggleFullscreen();
-      }
-    };
+    if (!editorRef.current) return;
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFullscreen, toggleFullscreen]);
+    // Create extensions array
+    const extensions: Extension[] = [
+      lineNumbers(),
+      highlightActiveLineGutter(),
+      highlightSpecialChars(),
+      history(),
+      foldGutter(),
+      drawSelection(),
+      dropCursor(),
+      rectangularSelection(),
+      crosshairCursor(),
+      EditorState.allowMultipleSelections.of(true),
+      indentUnit.of("  "),
+      EditorView.lineWrapping,
+      keymap.of([
+        ...defaultKeymap,
+        ...historyKeymap,
+        ...foldKeymap,
+        ...completionKeymap
+      ]),
+      languageCompartment.of(getLanguageExtension(language)),
+      themeCompartment.of(theme === 'dark' ? oneDark : [])
+    ];
 
-  // Create custom editor setup with configurable features
-  const createEditorSetup = useCallback(() => {
-    const extensions: Extension[] = [];
-
-    // Line numbers
+    // Add optional extensions
     if (showLineNumbers) {
       extensions.push(lineNumbers());
     }
 
-    // Active line highlighting and code folding
-    if (highlightActiveLine) {
-      extensions.push(highlightActiveLineGutter());
-    }
-
-    // Code folding
     if (showFoldGutter) {
       extensions.push(foldGutter());
-      extensions.push(keymap.of(foldKeymap));
     }
 
-    // Basic editor features
-    extensions.push(
-      highlightSpecialChars(),
-      history(),
-      drawSelection(),
-      dropCursor(),
-      EditorState.allowMultipleSelections.of(true),
-      indentUnit.of('  '),
-      EditorView.lineWrapping,
-      keymap.of([...defaultKeymap, ...historyKeymap]),
-      EditorState.readOnly.of(readOnly)
-    );
+    if (highlightActiveLine) {
+      extensions.push(highlightActiveLineExtension());
+    }
 
-    // Autocompletion
     if (enableAutocompletion) {
-      extensions.push(autocompletion({
-        override: [testingAutocompletion],
-        defaultKeymap: true,
-        activateOnTyping: true
-      }));
-    }
-
-    // Linting
-    if (enableLinting) {
-      extensions.push(lintGutter());
-    }
-
-    // Update listener
-    extensions.push(
-      EditorView.updateListener.of(update => {
-        if (update.docChanged) {
-          const newValue = update.state.doc.toString();
-          throttledOnChange(newValue);
-        }
-      })
-    );
-
-    // Placeholder text
-    if (placeholder) {
       extensions.push(
-        EditorView.contentAttributes.of({
-          'data-placeholder': placeholder
+        autocompletion({
+          override: [testingAutocompletion]
         })
       );
     }
 
-    return extensions;
-  }, [
-    showLineNumbers,
-    highlightActiveLine,
-    showFoldGutter,
-    enableAutocompletion,
-    enableLinting,
-    readOnly,
-    placeholder,
-    throttledOnChange
-  ]);
+    // Custom styling
+    extensions.push(
+      EditorView.theme({
+        '&': {
+          fontSize: fontSize,
+          fontFamily: fontFamily
+        },
+        '.cm-content': {
+          padding: '16px',
+          lineHeight: lineHeight,
+          minHeight: height
+        },
+        '.cm-focused': {
+          outline: 'none'
+        },
+        '.cm-editor': {
+          borderRadius: '8px'
+        },
+        '.cm-scroller': {
+          fontFamily: fontFamily
+        }
+      })
+    );
 
-  // Initialize editor
-  useEffect(() => {
-    if (!editorRef.current) return;
+    // Add change listener
+    extensions.push(
+      EditorView.updateListener.of(update => {
+        if (update.docChanged && !readOnly) {
+          const newValue = update.state.doc.toString();
+          if (newValue !== previousValueRef.current) {
+            previousValueRef.current = newValue;
+            throttledOnChange(newValue);
+          }
+        }
+      })
+    );
+
+    // Create editor state
+    const state = EditorState.create({
+      doc: value,
+      extensions
+    });
 
     // Create editor view
-    const extensions = [
-      ...createEditorSetup(),
-      languageCompartment.of(getLanguageExtension(language)),
-      themeCompartment.of(theme === 'dark' ? oneDark : []),
-    ];
-
     const view = new EditorView({
-      state: EditorState.create({
-        doc: value,
-        extensions
-      }),
+      state,
       parent: editorRef.current
     });
 
     editorViewRef.current = view;
 
+    // Cleanup function
     return () => {
       view.destroy();
       editorViewRef.current = null;
     };
-  // We only want to initialize once, so we're intentionally not including all dependencies
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update editor when language changes
+  // Update editor when value changes externally
   useEffect(() => {
-    if (!editorViewRef.current) return;
-
-    editorViewRef.current.dispatch({
-      effects: languageCompartment.reconfigure(getLanguageExtension(language))
-    });
-  }, [language, languageCompartment]);
-
-  // Update editor when theme changes
-  useEffect(() => {
-    if (!editorViewRef.current) return;
-
-    editorViewRef.current.dispatch({
-      effects: themeCompartment.reconfigure(theme === 'dark' ? oneDark : [])
-    });
-  }, [theme, themeCompartment]);
-
-  // Update editor content when value prop changes
-  useEffect(() => {
-    if (!editorViewRef.current) return;
-
-    // Only update if the value has actually changed and is different from what we have
-    const currentValue = editorViewRef.current.state.doc.toString();
-    if (value !== currentValue && value !== previousValueRef.current) {
-      // Store the new value to avoid unnecessary updates
-      previousValueRef.current = value;
-
-      // Use a more efficient update approach for large documents
-      editorViewRef.current.dispatch({
-        changes: {
-          from: 0,
-          to: currentValue.length,
-          insert: value
-        }
-      });
+    if (editorViewRef.current && value !== previousValueRef.current) {
+      const view = editorViewRef.current;
+      const currentValue = view.state.doc.toString();
+      
+      if (currentValue !== value) {
+        view.dispatch({
+          changes: {
+            from: 0,
+            to: currentValue.length,
+            insert: value
+          }
+        });
+        previousValueRef.current = value;
+      }
     }
   }, [value]);
 
-  // Copy code to clipboard
-  const handleCopy = async () => {
-    if (!editorViewRef.current) return;
-
-    const code = editorViewRef.current.state.doc.toString();
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      toast.success('Code copied to clipboard');
-
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy code:', error);
-      toast.error('Failed to copy code to clipboard');
+  // Update language when it changes
+  useEffect(() => {
+    if (editorViewRef.current) {
+      editorViewRef.current.dispatch({
+        effects: languageCompartment.reconfigure(getLanguageExtension(language))
+      });
     }
-  };
+  }, [language, languageCompartment]);
 
-  // Run code
-  const handleRun = () => {
-    if (!editorViewRef.current || !onRun) return;
-
-    try {
-      const code = editorViewRef.current.state.doc.toString();
-      onRun(code);
-    } catch (error) {
-      console.error('Failed to run code:', error);
-      toast.error('Failed to run code');
+  // Update theme when it changes
+  useEffect(() => {
+    if (editorViewRef.current) {
+      editorViewRef.current.dispatch({
+        effects: themeCompartment.reconfigure(theme === 'dark' ? oneDark : [])
+      });
     }
-  };
+  }, [theme, themeCompartment]);
 
-  // Save code
-  const handleSave = () => {
-    if (!editorViewRef.current || !onSave) return;
-
-    try {
-      const code = editorViewRef.current.state.doc.toString();
-      onSave(code);
-    } catch (error) {
-      console.error('Failed to save code:', error);
-      toast.error('Failed to save code');
-    }
-  };
+  // Calculate line count
+  const lineCount = value.split('\n').length;
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
       className={cn(
-        "relative border rounded-md overflow-hidden transition-all duration-300",
-        isFullscreen && "fixed inset-0 z-50 border-0 rounded-none",
+        "relative bg-gradient-to-br from-background via-background to-muted/10 rounded-xl border border-border/50 overflow-hidden backdrop-blur-sm",
+        isFullscreen && "fixed inset-4 z-50 bg-background shadow-2xl",
         className
       )}
+      style={{ height: isFullscreen ? 'calc(100vh - 2rem)' : height }}
     >
-      <div className={`flex items-center justify-between ${isMobile ? 'p-1.5' : 'p-2'} border-b bg-muted/50`}>
-        <div className="flex items-center overflow-hidden">
-          <Code className={`${isMobile ? 'h-3.5 w-3.5 mr-1.5' : 'h-4 w-4 mr-2'} text-muted-foreground flex-shrink-0`} />
-          <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-medium truncate`}>{language.charAt(0).toUpperCase() + language.slice(1)}</span>
+      {/* Enhanced Header */}
+      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-background/90 to-muted/20 border-b border-border/50 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "p-2 rounded-lg border transition-all duration-200",
+              currentLanguageConfig.bgColor,
+              currentLanguageConfig.borderColor
+            )}>
+              {(() => {
+                const IconComponent = currentLanguageConfig.icon;
+                return <IconComponent className={cn("h-4 w-4", currentLanguageConfig.color)} />;
+              })()}
+            </div>
+            <div>
+              <Badge 
+                className={cn(
+                  "font-medium transition-all duration-200",
+                  currentLanguageConfig.bgColor,
+                  currentLanguageConfig.borderColor,
+                  currentLanguageConfig.color
+                )}
+              >
+                {currentLanguageConfig.name}
+              </Badge>
+              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                <span>{lineCount} lines</span>
+                {lastRunTime && (
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    • Last run: {lastRunTime}ms
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {showRunButton && onRun && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`${isMobile ? 'h-6 w-6 p-0' : 'h-7 px-2'} hover:bg-primary/10`}
-              onClick={handleRun}
-              title="Run code"
-            >
-              <Play className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} flex-shrink-0`} />
-              {!isMobile && <span className="text-xs hidden sm:inline-block truncate">Run</span>}
-            </Button>
-          )}
+        <div className="flex items-center gap-2">
+          <AnimatePresence>
+            {showCopyButton && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopy}
+                  className="hover:bg-accent/50 transition-all duration-200 hover:scale-105"
+                  disabled={!value}
+                >
+                  <AnimatePresence mode="wait">
+                    {copied ? (
+                      <motion.div
+                        key="check"
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.5, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Check className="h-4 w-4 text-emerald-500" />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="copy"
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.5, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  {!isMobile && <span className="ml-2">Copy</span>}
+                </Button>
+              </motion.div>
+            )}
 
-          {showSaveButton && onSave && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`${isMobile ? 'h-6 w-6 p-0' : 'h-7 px-2'} hover:bg-primary/10`}
-              onClick={handleSave}
-              title="Save code"
-            >
-              <Save className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} flex-shrink-0`} />
-              {!isMobile && <span className="text-xs hidden sm:inline-block truncate">Save</span>}
-            </Button>
-          )}
+            {showRunButton && onRun && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2, delay: 0.1 }}
+              >
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleRun}
+                  disabled={!value || isRunning}
+                  className={cn(
+                    "bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700",
+                    "transition-all duration-200 hover:scale-105 shadow-lg shadow-emerald-500/25"
+                  )}
+                >
+                  {isRunning ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      {!isMobile && "Running..."}
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="h-4 w-4 mr-2" />
+                      {!isMobile && "Run"}
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            )}
 
-          {showCopyButton && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`${isMobile ? 'h-6 w-6 p-0' : 'h-7 px-2'} hover:bg-primary/10`}
-              onClick={handleCopy}
-              title="Copy code"
-            >
-              {copied ? (
-                <Check className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} text-green-500 flex-shrink-0`} />
-              ) : (
-                <Copy className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} flex-shrink-0`} />
-              )}
-              {!isMobile && <span className="text-xs hidden sm:inline-block truncate">{copied ? 'Copied' : 'Copy'}</span>}
-            </Button>
-          )}
+            {showSaveButton && onSave && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2, delay: 0.2 }}
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSave}
+                  className="hover:bg-accent/50 transition-all duration-200 hover:scale-105 border-border/50"
+                  disabled={!value}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {!isMobile && "Save"}
+                </Button>
+              </motion.div>
+            )}
 
-          {showFullscreenButton && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`${isMobile ? 'h-6 w-6 p-0' : 'h-7 px-2'} hover:bg-primary/10`}
-              onClick={toggleFullscreen}
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            >
-              {isFullscreen ? (
-                <Minimize2 className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} flex-shrink-0`} />
-              ) : (
-                <Maximize2 className={`${isMobile ? 'h-3 w-3' : 'h-3.5 w-3.5 mr-1'} flex-shrink-0`} />
-              )}
-              {!isMobile && <span className="text-xs hidden sm:inline-block truncate">
-                {isFullscreen ? 'Exit' : 'Fullscreen'}
-              </span>}
-            </Button>
-          )}
+            {showFullscreenButton && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2, delay: 0.3 }}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleFullscreen}
+                  className="hover:bg-accent/50 transition-all duration-200 hover:scale-105"
+                >
+                  {isFullscreen ? (
+                    <Minimize2 className="h-4 w-4" />
+                  ) : (
+                    <Maximize2 className="h-4 w-4" />
+                  )}
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      <div
-        ref={editorRef}
-        className={cn(
-          "overflow-auto",
-          theme === 'dark' ? 'bg-[#282c34]' : 'bg-white',
-          "cm-editor-wrapper", // Add custom class for styling
-          isFullscreen && "h-[calc(100vh-40px)]" // Adjust height in fullscreen mode
+      {/* Enhanced Editor Container */}
+      <div className="relative flex-1 overflow-hidden">
+        <div
+          ref={editorRef}
+          className={cn(
+            "h-full w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900",
+            "focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200",
+            readOnly && "opacity-75"
+          )}
+          style={{ minHeight: height }}
+        />
+        
+        {/* Loading overlay for run action */}
+        <AnimatePresence>
+          {isRunning && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center"
+            >
+              <div className="flex items-center gap-3 bg-background/90 rounded-lg px-4 py-2 border border-border/50 shadow-lg">
+                <RefreshCw className="h-5 w-5 animate-spin text-primary" />
+                <span className="text-sm font-medium">Executing code...</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Empty state */}
+        {!value && placeholder && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-center text-muted-foreground/50">
+              <Terminal className="h-12 w-12 mx-auto mb-3" />
+              <p className="text-sm">{placeholder}</p>
+            </div>
+          </div>
         )}
-        style={{
-          height: isFullscreen ? 'calc(100vh - 40px)' : height,
-          // Add CSS for placeholder and custom styling
-          "--placeholder": `"${placeholder}"`,
-          "--editor-font-size": fontSize,
-          "--editor-line-height": lineHeight,
-          "--editor-font-family": fontFamily
-        } as React.CSSProperties}
-      />
+      </div>
 
-      {/* Add global styles for editor customization */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          .cm-editor-wrapper .cm-content:empty::before {
-            content: var(--placeholder);
-            color: #888;
-            pointer-events: none;
-          }
-
-          .cm-editor {
-            height: 100%;
-          }
-
-          .cm-editor .cm-content {
-            font-family: var(--editor-font-family, monospace);
-            font-size: var(--editor-font-size, 14px);
-            line-height: var(--editor-line-height, 1.5);
-          }
-
-          .cm-editor .cm-gutters {
-            background-color: ${theme === 'dark' ? '#21252b' : '#f5f5f5'};
-            border-right: 1px solid ${theme === 'dark' ? '#333' : '#ddd'};
-          }
-
-          .cm-editor .cm-activeLineGutter {
-            background-color: ${theme === 'dark' ? '#2c313a' : '#e8f2ff'};
-          }
-
-          .cm-editor .cm-activeLine {
-            background-color: ${theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'};
-          }
-
-          /* Responsive adjustments */
-          @media (max-width: 768px) {
-            .cm-editor .cm-content {
-              font-size: 12px;
-            }
-
-            .cm-editor .cm-gutters {
-              padding-right: 4px;
-            }
-
-            .cm-editor .cm-gutterElement {
-              padding-left: 4px;
-              padding-right: 4px;
-            }
-
-            /* Increase touch targets */
-            .cm-editor .cm-line {
-              padding-top: 2px;
-              padding-bottom: 2px;
-            }
-
-            /* Adjust scrollbar for touch */
-            .cm-editor-wrapper::-webkit-scrollbar {
-              width: 8px;
-              height: 8px;
-            }
-
-            .cm-editor-wrapper::-webkit-scrollbar-thumb {
-              background-color: rgba(128, 128, 128, 0.5);
-              border-radius: 4px;
-            }
-          }
-
-          /* Small mobile screens */
-          @media (max-width: 480px) {
-            .cm-editor .cm-content {
-              font-size: 11px;
-            }
-          }
-        `
-      }} />
-    </div>
+      {/* Enhanced Status Bar */}
+      <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-muted/30 to-background/50 border-t border-border/50 text-xs text-muted-foreground backdrop-blur-sm">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+            Ready
+          </span>
+          <span>{lineCount} lines</span>
+          <span>{value.length} characters</span>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          {enableAutocompletion && (
+            <span className="flex items-center gap-1">
+              <Zap className="h-3 w-3" />
+              Smart completion
+            </span>
+          )}
+          <span className="capitalize">{language}</span>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 

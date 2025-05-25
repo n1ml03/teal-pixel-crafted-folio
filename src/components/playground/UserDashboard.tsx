@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { softSpringTransition } from '@/lib/motion';
 import {
@@ -31,7 +31,31 @@ interface UserDashboardProps {
   className?: string;
 }
 
-export const UserDashboard = ({ className }: UserDashboardProps) => {
+// Icon mappings for better performance
+const achievementIconMap = {
+  award: Award,
+  bug: Bug,
+  'check-circle': CheckCircle,
+  clock: Clock,
+  star: Star,
+  trophy: Trophy,
+  target: Target,
+  zap: Zap,
+  server: Server,
+} as const;
+
+const activityIconMap = {
+  challenge_started: Target,
+  challenge_completed: Trophy,
+  achievement_unlocked: Award,
+  level_up: ArrowUpRight,
+  bug_reported: Bug,
+  test_passed: CheckCircle,
+  test_failed: Zap,
+  default: Calendar,
+} as const;
+
+export const UserDashboard = memo(({ className }: UserDashboardProps) => {
   const { user } = useAuth();
   const prefersReducedMotion = useReducedMotion();
   const isMobile = useIsMobile();
@@ -128,56 +152,19 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
     loadUserData();
   }, [user]);
 
-  // Get icon for achievement
-  const getAchievementIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'award':
-        return <Award className="h-6 w-6" />;
-      case 'bug':
-        return <Bug className="h-6 w-6" />;
-      case 'check-circle':
-        return <CheckCircle className="h-6 w-6" />;
-      case 'clock':
-        return <Clock className="h-6 w-6" />;
-      case 'star':
-        return <Star className="h-6 w-6" />;
-      case 'trophy':
-        return <Trophy className="h-6 w-6" />;
-      case 'target':
-        return <Target className="h-6 w-6" />;
-      case 'zap':
-        return <Zap className="h-6 w-6" />;
-      case 'server':
-        return <Server className="h-6 w-6" />;
-      default:
-        return <Award className="h-6 w-6" />;
-    }
-  };
+  // Memoized icon functions for better performance
+  const getAchievementIcon = useCallback((iconName: string) => {
+    const IconComponent = achievementIconMap[iconName as keyof typeof achievementIconMap] || Award;
+    return <IconComponent className="h-6 w-6" />;
+  }, []);
 
-  // Get icon for activity
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'challenge_started':
-        return <Target className="h-4 w-4" />;
-      case 'challenge_completed':
-        return <Trophy className="h-4 w-4" />;
-      case 'achievement_unlocked':
-        return <Award className="h-4 w-4" />;
-      case 'level_up':
-        return <ArrowUpRight className="h-4 w-4" />;
-      case 'bug_reported':
-        return <Bug className="h-4 w-4" />;
-      case 'test_passed':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'test_failed':
-        return <Zap className="h-4 w-4" />;
-      default:
-        return <Calendar className="h-4 w-4" />;
-    }
-  };
+  const getActivityIcon = useCallback((type: string) => {
+    const IconComponent = activityIconMap[type as keyof typeof activityIconMap] || Calendar;
+    return <IconComponent className="h-4 w-4" />;
+  }, []);
 
-  // Format activity message
-  const formatActivityMessage = (activity: UserActivity): string => {
+  // Memoized activity message formatter for better performance
+  const formatActivityMessage = useCallback((activity: UserActivity): string => {
     switch (activity.type) {
       case 'challenge_started':
         return `Started a new challenge`;
@@ -196,7 +183,7 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
       default:
         return (activity.details.message as string) || 'Activity recorded';
     }
-  };
+  }, []);
 
   // Show loading state while data is being fetched
   if (isLoading) {
@@ -893,6 +880,8 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
       </Tabs>
     </div>
   );
-};
+});
+
+UserDashboard.displayName = 'UserDashboard';
 
 export default UserDashboard;

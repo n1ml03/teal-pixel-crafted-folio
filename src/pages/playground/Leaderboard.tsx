@@ -11,7 +11,8 @@ import {
   ChevronDown,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  MoreHorizontal
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,10 +27,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import { useAuth } from '@/contexts/auth-utils';
 import { LeaderboardEntry } from '../../types/playground';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/lib';
 
 // Mock leaderboard data
 const mockLeaderboardData: LeaderboardEntry[] = [
@@ -133,6 +134,7 @@ type SortDirection = 'asc' | 'desc';
 const Leaderboard = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('global');
   const [sortField, setSortField] = useState<SortField>('rank');
@@ -195,262 +197,357 @@ const Leaderboard = () => {
       : <ArrowDown className="h-4 w-4 ml-1" />;
   };
 
-
-
   return (
-    <div className="min-h-screen relative">
-      {/* Enhanced background with gradient and animated elements */}
-      <EnhancedBackground optimizeForLowPerformance={true} reducedAnimations={true} />
-
-      <div className="container py-6 pt-20 md:py-8 md:pt-24 relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div>
-            <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-2 flex items-center`}>
-              <Trophy className={`${isMobile ? 'h-6 w-6' : 'h-8 w-8'} mr-2 text-yellow-500`} />
-              Leaderboard
-            </h1>
-            <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>
-              See how you rank against other testers
-            </p>
-          </div>
-
-          <div className={`flex ${isMobile ? 'flex-col w-full' : 'items-center'} gap-2`}>
-            <div className="relative w-full md:w-auto">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search users..."
-                className="w-full md:w-[200px] pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className={isMobile ? 'w-full' : ''}>
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filter
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align={isMobile ? "center" : "end"} className={isMobile ? "w-[90vw]" : "w-[200px]"}>
-                <DropdownMenuLabel>Filter by Badge</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>All Users</DropdownMenuItem>
-                <DropdownMenuItem>Expert</DropdownMenuItem>
-                <DropdownMenuItem>Advanced</DropdownMenuItem>
-                <DropdownMenuItem>Intermediate</DropdownMenuItem>
-                <DropdownMenuItem>Beginner</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Bug Hunters</DropdownMenuItem>
-                <DropdownMenuItem>API Masters</DropdownMenuItem>
-                <DropdownMenuItem>Security Sentinels</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4 md:mb-6">
-          <TabsList className={`${isMobile ? 'w-full' : ''}`}>
-            <TabsTrigger value="global" className={`${isMobile ? 'flex-1 text-xs' : ''}`}>Global</TabsTrigger>
-            <TabsTrigger value="monthly" className={`${isMobile ? 'flex-1 text-xs' : ''}`}>Monthly</TabsTrigger>
-            <TabsTrigger value="weekly" className={`${isMobile ? 'flex-1 text-xs' : ''}`}>Weekly</TabsTrigger>
-            <TabsTrigger value="friends" className={`${isMobile ? 'flex-1 text-xs' : ''}`}>Friends</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {user && currentUserRank > 0 && (
-          <div className="mb-4 md:mb-6">
-            <div className="rounded-lg border bg-card p-3 md:p-4 shadow-sm">
-              <h2 className={`${isMobile ? 'text-base' : 'text-lg'} font-medium mb-3 md:mb-4`}>Your Ranking</h2>
-              <div className={`${isMobile ? 'flex flex-col gap-4' : 'flex items-center justify-between'}`}>
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 mr-3 md:mr-4">
-                    <div className="relative">
-                      <Avatar className={`${isMobile ? 'h-10 w-10' : 'h-12 w-12'} border-2 border-primary`}>
-                        <AvatarImage src={user.avatar} alt={user.displayName} />
-                        <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className={`absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full ${isMobile ? 'w-5 h-5 text-[10px]' : 'w-6 h-6 text-xs'} flex items-center justify-center font-bold`}>
-                        {currentUserRank}
+    <div className="relative">
+      <main className="container py-6 pt-24 relative z-10" style={{ contentVisibility: 'auto', containIntrinsicSize: '0 800px' }}>
+        {/* Hero Section */}
+        <motion.section 
+          className="mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className={`${isMobile ? 'p-4' : 'p-8'} bg-gradient-to-r from-blue-500/10 via-teal-500/10 to-purple-500/10 backdrop-blur-md rounded-xl border border-white/20 shadow-lg`}>
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="flex-1">
+                <motion.h1 
+                  className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-600`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                >
+                  Leaderboard
+                </motion.h1>
+                <motion.p 
+                  className={`text-gray-700 mb-4 ${isMobile ? 'text-sm' : 'text-base'}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                >
+                  See how you rank against other testers in the community. Compete in challenges and climb the leaderboard!
+                </motion.p>
+                
+                {/* Current User Rank */}
+                {user && currentUserRank > 0 && (
+                  <motion.div 
+                    className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-sm border border-white/50"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="bg-teal-100 p-2 rounded-full">
+                        <Trophy className="w-5 h-5 text-teal-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Your Current Rank</p>
+                        <p className="text-xl font-bold text-teal-600">#{currentUserRank}</p>
                       </div>
                     </div>
-                  </div>
-
-                  <div>
-                    <div className={`font-medium ${isMobile ? 'text-sm' : ''}`}>{user.displayName}</div>
-                    <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>@{user.username}</div>
-                  </div>
-                </div>
-
-                <div className={`flex items-center ${isMobile ? 'justify-between w-full' : 'gap-6'}`}>
-                  <div className="text-center">
-                    <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>{user.level}</div>
-                    <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>Level</div>
-                  </div>
-
-                  <div className="text-center">
-                    <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>{user.points}</div>
-                    <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>Points</div>
-                  </div>
-
-                  <div className="text-center">
-                    <div className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>{leaderboardData.find(e => e.userId === user.id)?.challengesCompleted || 0}</div>
-                    <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-muted-foreground`}>Challenges</div>
-                  </div>
-                </div>
+                  </motion.div>
+                )}
               </div>
+              
+              {!isMobile && (
+                <motion.div
+                  className="flex justify-center"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                >
+                  <div className="w-32 h-32 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-full flex items-center justify-center shadow-lg">
+                    <Trophy className="w-16 h-16 text-yellow-600" />
+                  </div>
+                </motion.div>
+              )}
             </div>
           </div>
-        )}
+        </motion.section>
 
-        <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-muted/50">
-                  <th className={`text-left ${isMobile ? 'p-2' : 'p-4'} font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                    <button
-                      className="flex items-center"
-                      onClick={() => handleSort('rank')}
-                    >
-                      {isMobile ? '#' : 'Rank'}
-                      {getSortIcon('rank')}
-                    </button>
-                  </th>
-                  <th className={`text-left ${isMobile ? 'p-2' : 'p-4'} font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>User</th>
-                  <th className={`text-left ${isMobile ? 'p-2' : 'p-4'} font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                    <button
-                      className="flex items-center"
-                      onClick={() => handleSort('level')}
-                    >
-                      {isMobile ? 'Lvl' : 'Level'}
-                      {getSortIcon('level')}
-                    </button>
-                  </th>
-                  <th className={`text-left ${isMobile ? 'p-2' : 'p-4'} font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                    <button
-                      className="flex items-center"
-                      onClick={() => handleSort('points')}
-                    >
-                      {isMobile ? 'Pts' : 'Points'}
-                      {getSortIcon('points')}
-                    </button>
-                  </th>
-                  {!isMobile && (
-                    <th className="text-left p-4 font-medium text-sm">
-                      <button
-                        className="flex items-center"
-                        onClick={() => handleSort('challengesCompleted')}
-                      >
-                        Challenges
-                        {getSortIcon('challengesCompleted')}
-                      </button>
-                    </th>
-                  )}
-                  {!isMobile && (
-                    <th className="text-left p-4 font-medium text-sm">Badges</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {sortedData.map((entry, index) => {
-                  const isCurrentUser = user && entry.userId === user.id;
+        {/* Search and Filter Section */}
+        <motion.section 
+          className="mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-sm border border-white/50">
+            <div className={`flex ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'} gap-4 mb-4`}>
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-white/70 border-gray-200"
+                />
+              </div>
 
-                  return (
-                    <motion.tr
-                      key={entry.userId}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className={`border-b last:border-0 ${isCurrentUser ? 'bg-primary/5' : 'hover:bg-muted/50'}`}
-                    >
-                      <td className={isMobile ? 'p-2' : 'p-4'}>
-                        <div className="flex items-center">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
+                <TabsList className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-sm">
+                  <TabsTrigger value="global" className={isMobile ? 'text-xs' : 'text-sm'}>Global</TabsTrigger>
+                  <TabsTrigger value="weekly" className={isMobile ? 'text-xs' : 'text-sm'}>Weekly</TabsTrigger>
+                  <TabsTrigger value="monthly" className={isMobile ? 'text-xs' : 'text-sm'}>Monthly</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            {/* Sort Controls - Mobile Optimized */}
+            {isMobile ? (
+              <div className="w-full">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full bg-white/70 border-gray-200 hover:bg-white/90 justify-between">
+                      <span>Sort by: {sortField === 'rank' ? 'Rank' : sortField === 'points' ? 'Points' : sortField === 'level' ? 'Level' : 'Challenges'}</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    <DropdownMenuLabel>Sort Options</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleSort('rank')}>
+                      Rank {getSortIcon('rank')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleSort('points')}>
+                      Points {getSortIcon('points')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleSort('level')}>
+                      Level {getSortIcon('level')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleSort('challengesCompleted')}>
+                      Challenges {getSortIcon('challengesCompleted')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSort('rank')}
+                  className="bg-white/70 border-gray-200 hover:bg-white/90"
+                >
+                  Rank {getSortIcon('rank')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSort('points')}
+                  className="bg-white/70 border-gray-200 hover:bg-white/90"
+                >
+                  Points {getSortIcon('points')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSort('level')}
+                  className="bg-white/70 border-gray-200 hover:bg-white/90"
+                >
+                  Level {getSortIcon('level')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSort('challengesCompleted')}
+                  className="bg-white/70 border-gray-200 hover:bg-white/90"
+                >
+                  Challenges {getSortIcon('challengesCompleted')}
+                </Button>
+              </div>
+            )}
+          </div>
+        </motion.section>
+
+        {/* Leaderboard */}
+        <motion.section
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-white/50 overflow-hidden">
+            <div className="space-y-0">
+              {sortedData.map((entry, index) => (
+                <motion.div
+                  key={entry.userId}
+                  className={`${isMobile ? 'p-3' : 'p-4'} border-b border-gray-100 last:border-b-0 hover:bg-white/60 transition-colors ${
+                    user && entry.userId === user.id ? 'bg-teal-50/50 border-teal-200' : ''
+                  }`}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  whileHover={!prefersReducedMotion ? { scale: 1.01 } : {}}
+                >
+                  {isMobile ? (
+                    // Mobile Layout - Stacked
+                    <div className="space-y-3">
+                      {/* Top Row: Rank + Avatar + Name */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 w-10 text-center">
                           {entry.rank <= 3 ? (
-                            <div className={`
-                              ${isMobile ? 'w-6 h-6 text-xs' : 'w-8 h-8'} rounded-full flex items-center justify-center text-white font-bold
-                              ${entry.rank === 1 ? 'bg-yellow-500' :
-                                entry.rank === 2 ? 'bg-gray-400' :
-                                'bg-amber-700'}
-                            `}>
-                              {entry.rank}
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center mx-auto ${
+                              entry.rank === 1 ? 'bg-yellow-100 text-yellow-600' :
+                              entry.rank === 2 ? 'bg-gray-100 text-gray-600' :
+                              'bg-orange-100 text-orange-600'
+                            }`}>
+                              {entry.rank === 1 ? <Trophy className="w-3 h-3" /> :
+                               entry.rank === 2 ? <Medal className="w-3 h-3" /> :
+                               <Award className="w-3 h-3" />}
                             </div>
                           ) : (
-                            <div className={`${isMobile ? 'w-6 h-6 text-xs' : 'w-8 h-8'} rounded-full bg-muted flex items-center justify-center font-medium`}>
-                              {entry.rank}
-                            </div>
+                            <span className="text-sm font-bold text-gray-600">#{entry.rank}</span>
                           )}
                         </div>
-                      </td>
-                      <td className={isMobile ? 'p-2' : 'p-4'}>
-                        <div className="flex items-center">
-                          <Avatar className={`${isMobile ? 'h-8 w-8 mr-2' : 'h-10 w-10 mr-3'}`}>
-                            <AvatarImage src={entry.avatar} alt={entry.displayName} />
-                            <AvatarFallback>{entry.displayName.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className={`font-medium ${isMobile ? 'text-sm' : ''}`}>{entry.displayName}</div>
-                            <div className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
-                              {isMobile ? entry.username.substring(0, 8) + (entry.username.length > 8 ? '...' : '') : '@' + entry.username}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className={isMobile ? 'p-2' : 'p-4'}>
-                        <div className="flex items-center">
-                          <div className={`bg-primary/10 text-primary rounded-full ${isMobile ? 'w-6 h-6 text-xs' : 'w-8 h-8'} flex items-center justify-center font-bold ${isMobile ? 'mr-1' : 'mr-2'}`}>
-                            {entry.level}
-                          </div>
-                        </div>
-                      </td>
-                      <td className={`${isMobile ? 'p-2 text-sm' : 'p-4'} font-medium`}>{isMobile ? entry.points : entry.points.toLocaleString()}</td>
-                      {!isMobile && (
-                        <td className="p-4">
-                          <div className="flex items-center">
-                            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                            {entry.challengesCompleted}
-                          </div>
-                        </td>
-                      )}
-                      {!isMobile && (
-                        <td className="p-4">
-                          <div className="flex flex-wrap gap-1">
-                            {entry.badges.slice(0, 3).map(badge => {
-                              const BadgeIcon = badgeInfo[badge]?.icon || Trophy;
-                              return (
-                                <Badge
-                                  key={badge}
-                                  className={badgeInfo[badge]?.color || "bg-gray-100 text-gray-800"}
-                                >
-                                  <BadgeIcon className="h-3 w-3 mr-1" />
-                                  {badgeInfo[badge]?.label || badge}
-                                </Badge>
-                              );
-                            })}
-                            {entry.badges.length > 3 && (
-                              <Badge variant="outline">+{entry.badges.length - 3}</Badge>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </motion.tr>
-                  );
-                })}
 
-                {sortedData.length === 0 && (
-                  <tr>
-                    <td colSpan={isMobile ? 4 : 6} className={`${isMobile ? 'p-4' : 'p-8'} text-center text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>
-                      No users found matching your search criteria
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={entry.avatar} alt={entry.displayName} />
+                          <AvatarFallback className="text-xs">{entry.displayName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-800 truncate text-sm">{entry.displayName}</p>
+                          <p className="text-xs text-gray-500 truncate">@{entry.username}</p>
+                        </div>
+                      </div>
+
+                      {/* Bottom Row: Stats + Badges */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 text-xs">
+                          <div className="text-center">
+                            <p className="font-bold text-teal-600">{entry.points.toLocaleString()}</p>
+                            <p className="text-gray-500">Points</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="font-bold text-blue-600">Lv.{entry.level}</p>
+                            <p className="text-gray-500">{entry.challengesCompleted} done</p>
+                          </div>
+                        </div>
+
+                        {/* Mobile Badges - Compact */}
+                        <div className="flex flex-wrap gap-1 max-w-24">
+                          {entry.badges.slice(0, 2).map((badge) => {
+                            const badgeData = badgeInfo[badge];
+                            if (!badgeData) return null;
+                            const IconComponent = badgeData.icon;
+                            return (
+                              <Badge
+                                key={badge}
+                                variant="secondary"
+                                className={`text-xs p-1 ${badgeData.color} border-0`}
+                              >
+                                <IconComponent className="w-2 h-2" />
+                              </Badge>
+                            );
+                          })}
+                          {entry.badges.length > 2 && (
+                            <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 p-1">
+                              +{entry.badges.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Desktop Layout - Horizontal
+                    <div className="flex items-center gap-4">
+                      {/* Rank */}
+                      <div className="flex-shrink-0 w-12 text-center">
+                        {entry.rank <= 3 ? (
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto ${
+                            entry.rank === 1 ? 'bg-yellow-100 text-yellow-600' :
+                            entry.rank === 2 ? 'bg-gray-100 text-gray-600' :
+                            'bg-orange-100 text-orange-600'
+                          }`}>
+                            {entry.rank === 1 ? <Trophy className="w-4 h-4" /> :
+                             entry.rank === 2 ? <Medal className="w-4 h-4" /> :
+                             <Award className="w-4 h-4" />}
+                          </div>
+                        ) : (
+                          <span className="text-lg font-bold text-gray-600">#{entry.rank}</span>
+                        )}
+                      </div>
+
+                      {/* Avatar and Name */}
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={entry.avatar} alt={entry.displayName} />
+                          <AvatarFallback>{entry.displayName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-800 truncate">{entry.displayName}</p>
+                          <p className="text-sm text-gray-500 truncate">@{entry.username}</p>
+                        </div>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="text-center">
+                          <p className="font-bold text-teal-600">{entry.points.toLocaleString()}</p>
+                          <p className="text-gray-500">Points</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="font-bold text-blue-600">Level {entry.level}</p>
+                          <p className="text-gray-500">{entry.challengesCompleted} Challenges</p>
+                        </div>
+                      </div>
+
+                      {/* Badges */}
+                      <div className="flex flex-wrap gap-1 max-w-32">
+                        {entry.badges.slice(0, 3).map((badge) => {
+                          const badgeData = badgeInfo[badge];
+                          if (!badgeData) return null;
+                          const IconComponent = badgeData.icon;
+                          return (
+                            <Badge
+                              key={badge}
+                              variant="secondary"
+                              className={`text-xs ${badgeData.color} border-0`}
+                            >
+                              <IconComponent className="w-3 h-3 mr-1" />
+                              {badgeData.label}
+                            </Badge>
+                          );
+                        })}
+                        {entry.badges.length > 3 && (
+                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
+                            +{entry.badges.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
-      </div>
+
+          {sortedData.length === 0 && (
+            <motion.div 
+              className="text-center py-12"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/50">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">No users found</h3>
+                <p className="text-gray-600 mb-4">
+                  Try adjusting your search terms.
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSearchQuery('')}
+                  className="bg-white/70 border-gray-200 hover:bg-white/90"
+                >
+                  Clear Search
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </motion.section>
+      </main>
     </div>
   );
 };

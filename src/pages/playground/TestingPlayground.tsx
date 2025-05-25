@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Smartphone, Monitor } from 'lucide-react';
 import ResizablePanelLayout from '@/components/playground/ResizablePanelLayout';
 import InstructionsPanel, { Objective, Hint } from '@/components/playground/InstructionsPanel';
 import TestingEnvironment from '@/components/playground/TestingEnvironment';
@@ -14,6 +14,7 @@ import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import { useAuth } from '@/contexts/auth-utils';
 import { UserProgressService } from '@/services/UserProgressService';
 import { ChallengeLoaderService } from '@/services/ChallengeLoaderService';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Default fallback sandbox URL in case a challenge doesn't have one
 const DEFAULT_SANDBOX_URL = 'https://jsonplaceholder.typicode.com/';
@@ -22,6 +23,7 @@ const TestingPlayground = () => {
   const { challengeId } = useParams<{ challengeId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [challenge, setChallenge] = useState<{
     id: string;
     title: string;
@@ -291,8 +293,6 @@ if (header.exists()) {
     toast.info("Challenge has been reset");
   };
 
-
-
   const handleExit = async () => {
     // Navigate back to dashboard
     if (window.confirm("Are you sure you want to exit? Your progress will be saved.")) {
@@ -438,8 +438,6 @@ if (header.exists()) {
     }
   };
 
-
-
   // Reset animation states after they're shown
   const handleAnimationComplete = () => {
     setTimeout(() => {
@@ -462,7 +460,7 @@ if (header.exists()) {
         )}
 
         {error && (
-          <div className="container py-8">
+          <div className={`container py-8 ${isMobile ? 'px-4' : ''}`}>
             <Alert variant="destructive" className="mb-6">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
@@ -481,55 +479,93 @@ if (header.exists()) {
           <ResizablePanelLayout
             leftPanel={
               <div className="flex flex-col h-full">
-                <InstructionsPanel
-                  title={challenge.title}
-                  difficulty={challenge.difficulty}
-                  description={challenge.description}
-                  objectives={challenge.objectives}
-                  hints={challenge.hints}
-                  timeElapsed={timeElapsed}
-                  onObjectiveToggle={handleObjectiveToggle}
-                  onReset={handleReset}
-                  onSave={handleSave}
-                  onExit={handleExit}
-                  onSubmit={handleSubmit}
-                >
-                  {lastSaved && (
-                    <div className="text-xs text-muted-foreground mt-2 flex items-center">
-                      <div className={isSaving ? "animate-pulse mr-1 h-2 w-2 rounded-full bg-green-500" : "mr-1 h-2 w-2 rounded-full bg-green-500"} />
-                      Last saved: {lastSaved.toLocaleTimeString()}
-                    </div>
-                  )}
-                </InstructionsPanel>
+                <div className="flex-1 overflow-y-auto">
+                  <InstructionsPanel
+                    title={challenge.title}
+                    difficulty={challenge.difficulty}
+                    description={challenge.description}
+                    objectives={challenge.objectives}
+                    hints={challenge.hints}
+                    timeElapsed={timeElapsed}
+                    onObjectiveToggle={handleObjectiveToggle}
+                    onReset={handleReset}
+                    onSave={handleSave}
+                    onExit={handleExit}
+                    onSubmit={handleSubmit}
+                  >
+                    {lastSaved && (
+                      <div className="text-xs text-muted-foreground mt-2 flex items-center">
+                        <div className={isSaving ? "animate-pulse mr-1 h-2 w-2 rounded-full bg-green-500" : "mr-1 h-2 w-2 rounded-full bg-green-500"} />
+                        Last saved: {lastSaved.toLocaleTimeString()}
+                      </div>
+                    )}
+                  </InstructionsPanel>
+                </div>
 
-                {/* Code Editor Section */}
-                <div className="mt-4 p-4 border-t">
-                  <h3 className="text-sm font-medium mb-3">Custom Test Script</h3>
-                  <div className="overflow-hidden">
+                {/* Code Editor Section - Mobile Optimized */}
+                <div className={`${isMobile ? 'mt-2 p-3' : 'mt-4 p-4'} border-t bg-card/50 backdrop-blur-sm`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className={`${isMobile ? 'text-sm' : 'text-sm'} font-medium`}>Custom Test Script</h3>
+                    {isMobile && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Monitor className="w-3 h-3" />
+                        <span>Swipe to test environment</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="overflow-hidden rounded-md border bg-background">
                     <CodeEditor
                       value={testCode}
                       onChange={setTestCode}
                       language="javascript"
-                      height="200px"
+                      height={isMobile ? "150px" : "200px"}
                       showRunButton
                       onRun={handleRunTestCode}
+                      className={isMobile ? "text-sm" : ""}
+                      fontSize={isMobile ? "12px" : "14px"}
+                      lineHeight={isMobile ? "1.4" : "1.5"}
+                      showLineNumbers={!isMobile}
+                      showFoldGutter={!isMobile}
+                      responsive={isMobile}
                     />
                   </div>
+                  
+                  {/* Mobile Helper Text */}
+                  {isMobile && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      <p>💡 Tip: Use the run button to test your code in the environment</p>
+                    </div>
+                  )}
                 </div>
               </div>
             }
             rightPanel={
-              <TestingEnvironment
-                initialUrl={challenge.sandboxUrl}
-                onScreenshot={handleTakeScreenshot}
-                onBugReport={handleBugReport}
-              />
+              <div className="h-full">
+                {isMobile && (
+                  <div className="flex items-center justify-between p-3 border-b bg-card/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Testing Environment</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Swipe to instructions
+                    </div>
+                  </div>
+                )}
+                                 <TestingEnvironment
+                   initialUrl={challenge.sandboxUrl}
+                   onScreenshot={handleTakeScreenshot}
+                   onBugReport={handleBugReport}
+                 />
+              </div>
             }
-            defaultLeftSize={40}
-            defaultRightSize={60}
-            minLeftSize={25}
-            minRightSize={40}
+            defaultLeftSize={isMobile ? 100 : 40}
+            defaultRightSize={isMobile ? 100 : 60}
+            minLeftSize={isMobile ? 100 : 25}
+            minRightSize={isMobile ? 100 : 40}
             mobileView="stacked"
+            leftPanelLabel="Instructions & Code"
+            rightPanelLabel="Testing Environment"
           />
         )}
       </div>

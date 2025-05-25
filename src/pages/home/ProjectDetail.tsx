@@ -1,30 +1,31 @@
-import { useEffect, useState, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence, useScroll } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Badge } from "@/components/ui/badge.tsx";
-import { MotionButton } from "@/components/ui/motion-button.tsx";
-import { MotionLink } from "@/components/ui/motion-link.tsx";
 import { getProjectBySlug, getRelatedProjects } from '@/data/projects.ts';
 import { Project } from '@/types/project.ts';
 import Header from '@/components/home/Header.tsx';
 import Footer from '@/components/home/Footer.tsx';
 import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
 import SocialActions from '@/components/ui/social-actions.tsx';
-import { Parallax, ParallaxProvider } from 'react-scroll-parallax';
 import {
   Calendar,
   ArrowLeft,
-  ExternalLink,
-  FileText,
-  Code2,
   Tag as TagIcon,
   Layers,
   CheckCircle2,
   XCircle,
   LightbulbIcon,
-  Trophy,
-  Code,
-  ArrowRight
+  ArrowRight,
+  Star,
+  Github,
+  Play,
+  Eye,
+  Zap,
+  Target,
+  Rocket,
+  Settings,
+  TrendingUp
 } from 'lucide-react';
 import { toast } from "sonner";
 
@@ -38,17 +39,13 @@ const ProjectDetail = () => {
   const [averageRating, setAverageRating] = useState<number>(0);
   const [ratingCount, setRatingCount] = useState<number>(0);
   const [showTechDetails, setShowTechDetails] = useState(false);
-  const navigate = useNavigate();
+  const [isLiked, setIsLiked] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
-  // Refs for scroll animations
-  const contentRef = useRef<HTMLDivElement>(null);
-  const techSectionRef = useRef<HTMLDivElement>(null);
 
-  // Scroll animation controls
-  useScroll({
-    target: techSectionRef,
-    offset: ["start end", "end start"]
-  });
+  // Enhanced scroll animation controls
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 1000], [0, -50]);
 
   useEffect(() => {
     // Scroll to top when component mounts
@@ -77,32 +74,6 @@ const ProjectDetail = () => {
       setCurrentImageIndex((prevIndex) =>
         prevIndex === 0 ? project.images.gallery.length - 1 : prevIndex - 1
       );
-    }
-  };
-
-  // Toggle fullscreen image view
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-
-    // When entering fullscreen, prevent body scroll
-    if (!isFullscreen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-  };
-
-  // Download current image
-  const downloadImage = () => {
-    if (project) {
-      const link = document.createElement('a');
-      link.href = project.images.gallery[currentImageIndex] || project.images.main;
-      link.download = `${project.title}-image-${currentImageIndex + 1}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast.success("Image download started");
     }
   };
 
@@ -164,21 +135,15 @@ const ProjectDetail = () => {
     toast.success(`You rated this project ${rating} stars!`);
   };
 
-  // Toggle tech details visibility
-  const toggleTechDetails = () => {
-    setShowTechDetails(prev => !prev);
+  // Handle like and bookmark actions
+  const handleLike = () => {
+    setIsLiked(!isLiked);
+    toast.success(isLiked ? "Removed from favorites" : "Added to favorites!");
   };
 
-  // Helper function to copy text to clipboard
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(
-      () => {
-        toast.success("Link copied to clipboard!");
-      },
-      () => {
-        toast.error("Failed to copy link");
-      }
-    );
+  const handleBookmark = () => {
+    setIsBookmarked(!isBookmarked);
+    toast.success(isBookmarked ? "Bookmark removed" : "Bookmarked for later!");
   };
 
   if (!project) {
@@ -189,24 +154,31 @@ const ProjectDetail = () => {
         <main className="pt-24 pb-16 relative z-0">
           <div className="container mx-auto px-4 text-center py-16">
             <motion.div
-              className="text-gray-400 mb-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              className="text-teal-400 mb-6"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6 }}
             >
-              <Layers className="h-16 w-16 mx-auto" />
+              <Layers className="h-20 w-20 mx-auto" />
             </motion.div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Project Not Found</h2>
-            <p className="text-gray-600 mb-8">The project you're looking for doesn't exist or has been removed.</p>
-            <MotionButton
-              onClick={() => navigate('/projects')}
-              className="bg-teal-600 text-white rounded-lg px-6 py-2 inline-flex items-center"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <motion.h2 
+              className="text-3xl font-bold text-gray-800 mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Projects
-            </MotionButton>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-500">
+                Project Not Found
+              </span>
+            </motion.h2>
+            <motion.p 
+              className="text-gray-600 mb-8 text-lg"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              The project you're looking for doesn't exist or has been moved.
+            </motion.p>
           </div>
         </main>
         <Footer />
@@ -218,635 +190,595 @@ const ProjectDetail = () => {
     <div className="min-h-screen relative">
       <EnhancedBackground optimizeForLowPerformance={true} reducedAnimations={true} />
       <Header />
-
-      <main id="main-content" className="relative z-0 pt-16 pb-16">
-        {/* Hero section with parallax effect */}
-        <div className="relative w-full h-[50vh] md:h-[60vh] overflow-hidden mb-8">
-          {/* Background gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-teal-900/30 to-blue-900/30 mix-blend-multiply z-10" />
-
-          {/* Hero image with parallax effect */}
-          <ParallaxProvider>
-            <Parallax
-              className="absolute inset-0 w-full h-full"
-              translateY={['-10%', '10%']}
-              scale={[1.1, 1]}
-            >
-              <img
-                src={project.images.main}
-                alt={project.title}
-                className="w-full h-full object-cover"
-              />
-            </Parallax>
-          </ParallaxProvider>
-
-          {/* Content overlay */}
-          <div className="absolute inset-0 z-20 flex flex-col justify-end">
-            <div className="container mx-auto px-4 pb-12">
-              {/* Breadcrumb navigation */}
-              <nav className="flex items-center text-sm mb-4">
-                <Link to="/" className="text-white/80 hover:text-white transition-colors">
-                  Home
-                </Link>
-                <span className="mx-2 text-white/60">/</span>
-                <Link to="/projects" className="text-white/80 hover:text-white transition-colors">
-                  Projects
-                </Link>
-                <span className="mx-2 text-white/60">/</span>
-                <span className="text-white font-medium">{project.title}</span>
-              </nav>
-
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="text-white">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Badge className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 border-none">
+      
+      <main className="pt-24 pb-16">
+        {/* Enhanced Hero Section */}
+        <section className="relative py-20 overflow-hidden">
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-br from-teal-50/80 via-blue-50/40 to-white/60"
+            style={{ y: y1 }}
+          />
+          
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                {/* Project Info */}
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                  >
+                    <Badge
+                      variant="secondary"
+                      className="mb-6 bg-teal-50/80 text-teal-700 hover:bg-teal-100 px-6 py-2 text-sm font-medium border border-teal-100/50 backdrop-blur-sm shadow-sm"
+                    >
+                      <TagIcon className="w-4 h-4 mr-2" />
                       {project.category}
                     </Badge>
-                    <div className="flex items-center text-sm text-white/80">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      {project.year}
-                    </div>
-                  </div>
+                  </motion.div>
+
                   <motion.h1
-                    className="text-4xl md:text-5xl font-bold text-white mb-4"
+                    className="text-4xl md:text-5xl lg:text-6xl font-bold mb-8 leading-tight"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
                   >
-                    {project.title}
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-teal-500 to-blue-500">
+                      {project.title}
+                    </span>
+                    <motion.div 
+                      className="absolute -bottom-4 left-0 w-24 h-1.5 bg-gradient-to-r from-teal-500 to-teal-600 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: 96 }}
+                      transition={{ duration: 0.8, delay: 0.7 }}
+                    />
                   </motion.h1>
+
                   <motion.p
-                    className="text-white/90 text-lg max-w-2xl"
+                    className="text-xl text-gray-600 mb-8 leading-relaxed"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.1 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
                   >
                     {project.description}
                   </motion.p>
-                </div>
 
-                <div className="flex items-center gap-3">
-                  {project.links.github && (
-                    <MotionLink
-                      href={project.links.github}
-                      className="bg-white/10 backdrop-blur-sm text-white border border-white/20 rounded-lg px-4 py-2 inline-flex items-center"
-                      whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.2)" }}
-                      whileTap={{ scale: 0.95 }}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Code2 className="mr-2 h-4 w-4" />
-                      GitHub
-                    </MotionLink>
-                  )}
-                  {project.links.demo && (
-                    <MotionLink
-                      href={project.links.demo}
-                      className="bg-teal-500/80 backdrop-blur-sm text-white rounded-lg px-4 py-2 inline-flex items-center"
-                      whileHover={{ scale: 1.05, backgroundColor: "rgba(20, 184, 166, 0.9)" }}
-                      whileTap={{ scale: 0.95 }}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Live Demo
-                    </MotionLink>
-                  )}
-                </div>
-              </div>
-
-              <motion.div
-                className="flex flex-wrap gap-2 mt-6"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                {project.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="bg-white/10 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full flex items-center border border-white/10 hover:bg-white/20 transition-colors"
+                  {/* Enhanced Project Meta */}
+                  <motion.div
+                    className="flex flex-wrap items-center gap-6 mb-8"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
                   >
-                    <TagIcon className="w-3 h-3 mr-1 text-teal-300" />
-                    {tag}
-                  </span>
-                ))}
-              </motion.div>
-            </div>
-          </div>
-        </div>
+                    <div className="flex items-center bg-white/70 backdrop-blur-sm px-4 py-2 rounded-2xl border border-teal-100/50 shadow-sm">
+                      <Calendar className="w-5 h-5 text-teal-500 mr-2" />
+                      <span className="text-gray-600 font-medium">{project.year}</span>
+                    </div>
+                    
+                    {/* Note: duration and team properties don't exist in Project type - removing these sections */}
 
-        <div className="container mx-auto px-4" ref={contentRef}>
-
-          {/* Project content */}
-          <div className="w-full max-w-4xl mx-auto space-y-8">
-            {/* Main content - 2/3 width on large screens */}
-            <div className="w-full space-y-8">
-              {/* Project description with social actions */}
-              <motion.div
-                className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 p-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                whileHover={{ boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className="flex justify-between items-start mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-                      <div className="bg-teal-50 p-2 rounded-lg mr-3">
-                        <FileText className="h-6 w-6 text-teal-600" />
+                    {averageRating > 0 && (
+                      <div className="flex items-center bg-white/70 backdrop-blur-sm px-4 py-2 rounded-2xl border border-teal-100/50 shadow-sm">
+                        <Star className="w-5 h-5 text-yellow-500 mr-2 fill-current" />
+                        <span className="text-gray-600 font-medium">{averageRating} ({ratingCount})</span>
                       </div>
-                      Project Overview
-                    </h2>
+                    )}
+                  </motion.div>
 
-                    {/* Social Actions */}
+                  {/* Enhanced Action Buttons */}
+                  <motion.div
+                    className="flex flex-wrap items-center gap-4 mb-8"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                  >
+                    {project.links?.demo && (
+                      <motion.a
+                        href={project.links.demo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white px-8 py-3 rounded-2xl font-semibold shadow-lg transition-all duration-300"
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Play className="w-5 h-5 mr-2" />
+                        View Live Demo
+                      </motion.a>
+                    )}
+
+                    {project.links?.github && (
+                      <motion.a
+                        href={project.links.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center bg-white/70 text-gray-700 border border-gray-200 hover:bg-gray-50 hover:text-gray-800 px-8 py-3 rounded-2xl font-semibold backdrop-blur-sm shadow-sm transition-all duration-300"
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Github className="w-5 h-5 mr-2" />
+                        View Code
+                      </motion.a>
+                    )}
+
                     <SocialActions
                       contentId={project.id}
                       contentType="project"
                       contentTitle={project.title}
-                      contentUrl={window.location.href}
-                      size="md"
-                      showLabels={false}
+                      contentUrl={`${window.location.origin}/projects/${project.slug}`}
+                      className="bg-white/70 backdrop-blur-sm border border-gray-200 hover:bg-teal-50 hover:text-teal-600 rounded-2xl px-6 py-3 shadow-sm transition-all duration-300"
                     />
-                  </div>
-
-                  <div className="prose prose-teal prose-lg max-w-none">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                      {project.longDescription}
-                    </p>
-                  </div>
-                </motion.div>
-              </motion.div>
-
-              {/* Features */}
-              <motion.div
-                className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 p-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                whileHover={{ boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                    <div className="bg-teal-50 p-2 rounded-lg mr-3">
-                      <Layers className="h-6 w-6 text-teal-600" />
-                    </div>
-                    Key Features
-                  </h2>
-                  <ul className="space-y-4">
-                    {project.features.map((feature, index) => (
-                      <motion.li
-                        key={index}
-                        className="flex items-start bg-gray-50 rounded-lg p-4 hover:bg-teal-50 transition-colors duration-300"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.1 }}
-                        whileHover={{ x: 5 }}
-                      >
-                        <div className="bg-white p-2 rounded-full shadow-sm mr-4 flex-shrink-0">
-                          <CheckCircle2 className="h-5 w-5 text-teal-500" />
-                        </div>
-                        <span className="text-gray-700 font-medium pt-1">{feature}</span>
-                      </motion.li>
-                    ))}
-                  </ul>
-                </motion.div>
-              </motion.div>
-
-              {/* Challenges and Solutions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <motion.div
-                  className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 p-8"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                  whileHover={{ boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-                >
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                      <div className="bg-red-50 p-2 rounded-lg mr-3">
-                        <XCircle className="h-6 w-6 text-red-500" />
-                      </div>
-                      Challenges
-                    </h2>
-                    <ul className="space-y-4">
-                      {project.challenges.map((challenge, index) => (
-                        <motion.li
-                          key={index}
-                          className="bg-gray-50 rounded-lg p-4 hover:bg-red-50 transition-colors duration-300"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.1 }}
-                          whileHover={{ x: 5 }}
-                        >
-                          <div className="flex items-start">
-                            <div className="bg-white h-6 w-6 rounded-full shadow-sm mr-3 flex items-center justify-center text-red-500 font-medium flex-shrink-0">
-                              {index + 1}
-                            </div>
-                            <span className="text-gray-700">{challenge}</span>
-                          </div>
-                        </motion.li>
-                      ))}
-                    </ul>
                   </motion.div>
                 </motion.div>
 
+                {/* Enhanced Project Image */}
                 <motion.div
-                  className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 p-8"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                  whileHover={{ boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
+                  className="relative"
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
                 >
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
+                  <motion.div 
+                    className="relative bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-teal-100 overflow-hidden"
+                    whileHover={{ y: -10, scale: 1.02 }}
+                    transition={{ type: "spring", damping: 20 }}
                   >
-                    <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                      <div className="bg-yellow-50 p-2 rounded-lg mr-3">
-                        <LightbulbIcon className="h-6 w-6 text-yellow-500" />
-                      </div>
-                      Solutions
-                    </h2>
-                    <ul className="space-y-4">
-                      {project.solutions.map((solution, index) => (
-                        <motion.li
-                          key={index}
-                          className="bg-gray-50 rounded-lg p-4 hover:bg-yellow-50 transition-colors duration-300"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.1 }}
-                          whileHover={{ x: 5 }}
-                        >
-                          <div className="flex items-start">
-                            <div className="bg-white h-6 w-6 rounded-full shadow-sm mr-3 flex items-center justify-center text-yellow-500 font-medium flex-shrink-0">
-                              {index + 1}
-                            </div>
-                            <span className="text-gray-700">{solution}</span>
-                          </div>
-                        </motion.li>
-                      ))}
-                    </ul>
+                    {/* Animated background gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-teal-50/80 via-blue-50/40 to-white/60 rounded-3xl" />
+                    
+                    <div className="relative">
+                      <motion.div 
+                        className="rounded-2xl overflow-hidden shadow-xl border border-teal-100"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        <img
+                          src={project.images?.main}
+                          alt={project.title}
+                          className="w-full h-auto object-cover cursor-pointer"
+                        />
+                      </motion.div>
+
+                    </div>
                   </motion.div>
                 </motion.div>
               </div>
+            </div>
+          </div>
+        </section>
 
-              {/* Outcome */}
-              <motion.div
-                className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 p-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                whileHover={{ boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                    <div className="bg-amber-50 p-2 rounded-lg mr-3">
-                      <Trophy className="h-6 w-6 text-amber-500" />
-                    </div>
-                    Project Outcome
-                  </h2>
-                  <div className="bg-gradient-to-r from-amber-50 to-transparent p-6 rounded-lg border border-amber-100">
-                    <p className="text-gray-700 leading-relaxed">
-                      {project.outcome}
-                    </p>
-                  </div>
-                </motion.div>
-              </motion.div>
-
-              {/* Technologies Used */}
-              <motion.div
-                ref={techSectionRef}
-                className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 p-8"
-                style={{ position: 'relative' }} /* Add relative positioning for scroll tracking */
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-                whileHover={{ boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <div className="flex justify-between items-start mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-                      <div className="bg-blue-50 p-2 rounded-lg mr-3">
-                        <Code className="h-6 w-6 text-blue-600" />
+        {/* Enhanced Content Sections */}
+        <section className="py-20">
+          <div className="container mx-auto px-4">
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                
+                {/* Main Content */}
+                <div className="lg:col-span-2 space-y-12">
+                  
+                  {/* Enhanced Overview */}
+                  <motion.div 
+                    className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 md:p-12 shadow-2xl border border-teal-100 relative overflow-hidden"
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    viewport={{ once: true }}
+                  >
+                    {/* Animated background gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-teal-50/20 to-blue-50/30 rounded-3xl" />
+                    
+                    <div className="relative">
+                      <div className="flex items-center mb-8">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white mr-6 shadow-lg">
+                          <LightbulbIcon className="w-8 h-8" />
+                        </div>
+                        <div>
+                          <h2 className="text-3xl font-bold text-gray-800">Project Overview</h2>
+                          <p className="text-gray-600">The story behind this project</p>
+                        </div>
                       </div>
-                      Technologies Used
-                    </h2>
 
-                    <MotionButton
-                      onClick={toggleTechDetails}
-                      className="text-sm bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg px-3 py-1.5"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      <div className="prose prose-lg prose-teal max-w-none">
+                        <p className="text-gray-600 leading-relaxed text-lg mb-6">
+                          {project.longDescription || project.description}
+                        </p>
+                        
+                        {project.challenges && project.challenges.length > 0 && project.challenges[0] && (
+                          <div className="mb-8 p-6 bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl border border-orange-100">
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                              <Target className="w-6 h-6 text-orange-500 mr-3" />
+                              The Challenge
+                            </h3>
+                            <p className="text-gray-600 leading-relaxed">{project.challenges[0]}</p>
+                          </div>
+                        )}
+
+                        {project.solutions && project.solutions.length > 0 && project.solutions[0] && (
+                          <div className="mb-8 p-6 bg-gradient-to-r from-green-50 to-teal-50 rounded-2xl border border-green-100">
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                              <Rocket className="w-6 h-6 text-green-500 mr-3" />
+                              The Solution
+                            </h3>
+                            <p className="text-gray-600 leading-relaxed">{project.solutions[0]}</p>
+                          </div>
+                        )}
+
+                        {project.outcome && (
+                          <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border border-blue-100">
+                            <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                              <TrendingUp className="w-6 h-6 text-blue-500 mr-3" />
+                              Results & Impact
+                            </h3>
+                            <p className="text-gray-600 leading-relaxed">{project.outcome}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Enhanced Features Section */}
+                  {project.features && project.features.length > 0 && (
+                    <motion.div 
+                      className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 md:p-12 shadow-2xl border border-teal-100 relative overflow-hidden"
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                      viewport={{ once: true }}
                     >
-                      {showTechDetails ? "Hide Details" : "Show Details"}
-                    </MotionButton>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 mb-6">
-                    {project.technologies.map((tech, index) => (
-                      <motion.div
-                        key={index}
-                        className="bg-white border border-gray-200 rounded-lg px-4 py-2 flex items-center shadow-sm hover:shadow-md transition-all duration-300"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                        whileHover={{ y: -5, backgroundColor: "#f0f9ff" }}
-                      >
-                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                        <span className="text-gray-700 font-medium">{tech}</span>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <AnimatePresence>
-                    {showTechDetails && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="bg-blue-50/50 rounded-lg p-6 border border-blue-100">
-                          <h3 className="text-lg font-semibold text-gray-800 mb-4">Technical Details</h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-white rounded-lg p-4 shadow-sm">
-                              <h4 className="text-sm font-medium text-gray-600 mb-2">Frontend</h4>
-                              <ul className="space-y-2">
-                                {project.technologies
-                                  .filter(tech =>
-                                    ['React', 'Vue', 'Angular', 'JavaScript', 'TypeScript', 'HTML', 'CSS', 'Tailwind', 'Bootstrap']
-                                    .some(frontendTech => tech.includes(frontendTech))
-                                  )
-                                  .map((tech, i) => (
-                                    <li key={i} className="flex items-center text-sm">
-                                      <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span>
-                                      {tech}
-                                    </li>
-                                  ))
-                                }
-                              </ul>
-                            </div>
-                            <div className="bg-white rounded-lg p-4 shadow-sm">
-                              <h4 className="text-sm font-medium text-gray-600 mb-2">Backend</h4>
-                              <ul className="space-y-2">
-                                {project.technologies
-                                  .filter(tech =>
-                                    ['Node', 'Express', 'Django', 'Flask', 'Spring', 'Java', 'Python', 'PHP', 'Ruby', 'Go', 'C#', '.NET']
-                                    .some(backendTech => tech.includes(backendTech))
-                                  )
-                                  .map((tech, i) => (
-                                    <li key={i} className="flex items-center text-sm">
-                                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span>
-                                      {tech}
-                                    </li>
-                                  ))
-                                }
-                              </ul>
-                            </div>
-                            <div className="bg-white rounded-lg p-4 shadow-sm">
-                              <h4 className="text-sm font-medium text-gray-600 mb-2">Database</h4>
-                              <ul className="space-y-2">
-                                {project.technologies
-                                  .filter(tech =>
-                                    ['SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Firebase', 'DynamoDB', 'Redis', 'Oracle']
-                                    .some(dbTech => tech.includes(dbTech))
-                                  )
-                                  .map((tech, i) => (
-                                    <li key={i} className="flex items-center text-sm">
-                                      <span className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2"></span>
-                                      {tech}
-                                    </li>
-                                  ))
-                                }
-                              </ul>
-                            </div>
-                            <div className="bg-white rounded-lg p-4 shadow-sm">
-                              <h4 className="text-sm font-medium text-gray-600 mb-2">DevOps & Tools</h4>
-                              <ul className="space-y-2">
-                                {project.technologies
-                                  .filter(tech =>
-                                    ['Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP', 'CI/CD', 'Jenkins', 'Git', 'GitHub', 'GitLab']
-                                    .some(devopsTech => tech.includes(devopsTech))
-                                  )
-                                  .map((tech, i) => (
-                                    <li key={i} className="flex items-center text-sm">
-                                      <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mr-2"></span>
-                                      {tech}
-                                    </li>
-                                  ))
-                                }
-                              </ul>
-                            </div>
+                      {/* Animated background gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-teal-50/80 via-blue-50/40 to-white/60 rounded-3xl" />
+                      
+                      <div className="relative">
+                        <div className="flex items-center mb-8">
+                          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white mr-6 shadow-lg">
+                            <Zap className="w-8 h-8" />
+                          </div>
+                          <div>
+                            <h2 className="text-3xl font-bold text-gray-800">Key Features</h2>
+                            <p className="text-gray-600">What makes this project special</p>
                           </div>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              </motion.div>
 
-              {/* Project Rating */}
-              <motion.div
-                className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 p-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.7 }}
-                whileHover={{ boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                    <div className="bg-yellow-50 p-2 rounded-lg mr-3">
-                      <svg className="h-6 w-6 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                      </svg>
-                    </div>
-                    Rate This Project
-                  </h2>
-
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-yellow-50 to-transparent p-6 rounded-lg border border-yellow-100">
-                    <div>
-                      <div className="flex items-center mb-2">
-                        <div className="text-3xl font-bold text-gray-800 mr-2">{averageRating}</div>
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <svg
-                              key={star}
-                              className={`w-5 h-5 ${star <= Math.round(averageRating) ? 'text-yellow-500' : 'text-gray-300'}`}
-                              fill="currentColor"
-                              viewBox="0 0 24 24"
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {project.features.map((feature, index) => (
+                            <motion.div
+                              key={index}
+                              className="flex items-start p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-teal-100 shadow-sm"
+                              initial={{ opacity: 0, y: 20 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4, delay: 0.1 * index }}
+                              viewport={{ once: true }}
+                              whileHover={{ scale: 1.02, y: -2 }}
                             >
-                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                            </svg>
+                              <div className="w-10 h-10 bg-teal-500 rounded-2xl flex items-center justify-center mr-4 flex-shrink-0 shadow-md">
+                                <CheckCircle2 className="w-5 h-5 text-white" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-gray-800 mb-2">{feature}</h3>
+                              </div>
+                            </motion.div>
                           ))}
                         </div>
                       </div>
-                      <div className="text-sm text-gray-600">
-                        {ratingCount} {ratingCount === 1 ? 'rating' : 'ratings'}
-                      </div>
-                    </div>
+                    </motion.div>
+                  )}
 
-                    <div>
-                      <div className="text-sm font-medium text-gray-700 mb-2">Rate this project:</div>
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <motion.button
-                            key={star}
-                            onClick={() => handleRating(star)}
-                            className={`p-1 rounded-full transition-colors ${userRating === star ? 'bg-yellow-100' : 'hover:bg-yellow-50'}`}
-                            whileHover={{ scale: 1.2 }}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            <svg
-                              className={`w-8 h-8 ${userRating && star <= userRating ? 'text-yellow-500' : 'text-gray-300'}`}
-                              fill="currentColor"
-                              viewBox="0 0 24 24"
+                  {/* Enhanced Gallery Section */}
+                  {project.images?.gallery && project.images.gallery.length > 0 && (
+                    <motion.div 
+                      className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 md:p-12 shadow-2xl border border-teal-100 relative overflow-hidden"
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.3 }}
+                      viewport={{ once: true }}
+                    >
+                      {/* Animated background gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-purple-50/40 to-white/60 rounded-3xl" />
+                      
+                      <div className="relative">
+                        <div className="flex items-center mb-8">
+                          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white mr-6 shadow-lg">
+                            <Eye className="w-8 h-8" />
+                          </div>
+                          <div>
+                            <h2 className="text-3xl font-bold text-gray-800">Project Gallery</h2>
+                            <p className="text-gray-600">Visual showcase of the project</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {project.images.gallery.map((image, index) => (
+                            <motion.div
+                              key={index}
+                              className="rounded-2xl overflow-hidden shadow-lg border border-gray-100 cursor-pointer group"
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              whileInView={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.4, delay: 0.1 * index }}
+                              viewport={{ once: true }}
+                              whileHover={{ scale: 1.05 }}
+                              onClick={() => {
+                                setCurrentImageIndex(index);
+                              }}
                             >
-                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                            </svg>
-                          </motion.button>
+                              <img
+                                src={image}
+                                alt={`${project.title} - Image ${index + 1}`}
+                                className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                              />
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Enhanced Sidebar */}
+                <div className="lg:col-span-1 space-y-8">
+                  
+                  {/* Enhanced Tech Stack */}
+                  <motion.div 
+                    className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-teal-100 relative overflow-hidden sticky top-32"
+                    initial={{ opacity: 0, x: 30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6 }}
+                    viewport={{ once: true }}
+                  >
+                    {/* Animated background gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-teal-50/80 via-blue-50/40 to-white/60 rounded-3xl" />
+                    
+                    <div className="relative">
+                      <div className="flex items-center mb-6">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white mr-4 shadow-lg">
+                          <Settings className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-800">Tech Stack</h3>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-3">
+                        {project.technologies?.map((tech, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.1 * index }}
+                            viewport={{ once: true }}
+                            whileHover={{ scale: 1.05, y: -2 }}
+                          >
+                            <Badge 
+                              variant="outline" 
+                              className="text-teal-600 border-teal-200 bg-teal-50/50 px-3 py-2 hover:bg-teal-100 transition-colors"
+                            >
+                              {tech}
+                            </Badge>
+                          </motion.div>
                         ))}
                       </div>
+
+                      {/* Enhanced Rating Section */}
+                      <div className="mt-8 pt-6 border-t border-teal-100">
+                        <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
+                          <Star className="w-5 h-5 text-yellow-500 mr-2" />
+                          Rate this Project
+                        </h4>
+                        
+                        <div className="flex items-center gap-2 mb-4">
+                          {[1, 2, 3, 4, 5].map((rating) => (
+                            <motion.button
+                              key={rating}
+                              onClick={() => handleRating(rating)}
+                              className="focus:outline-none"
+                              whileHover={{ scale: 1.2 }}
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              <Star
+                                className={`w-6 h-6 transition-colors ${
+                                  rating <= (userRating || 0)
+                                    ? 'text-yellow-500 fill-current'
+                                    : 'text-gray-300 hover:text-yellow-400'
+                                }`}
+                              />
+                            </motion.button>
+                          ))}
+                        </div>
+                        
+                        {averageRating > 0 && (
+                          <p className="text-sm text-gray-600">
+                            Average: {averageRating}/5 ({ratingCount} {ratingCount === 1 ? 'rating' : 'ratings'})
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              </motion.div>
-            </div>
-
-            {/* Sidebar - 1/3 width on large screens */}
-
-          </div>
-
-          {/* Related Projects Section */}
-          {relatedProjects.length > 0 && (
-            <motion.div
-              className="mt-16 mb-12"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-            >
-              <div className="text-center mb-10">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Related Projects</h2>
-                <p className="text-gray-600">Explore more projects similar to this one</p>
+                  </motion.div>
+                </div>
               </div>
+            </div>
+          </div>
+        </section>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {relatedProjects.map((relatedProject, index) => (
-                  <motion.div
-                    key={relatedProject.id}
-                    className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md border border-gray-100 overflow-hidden group hover:border-teal-200 transition-all duration-300"
+        {/* Enhanced Related Projects */}
+        {relatedProjects.length > 0 && (
+          <section className="py-20">
+            <div className="container mx-auto px-4">
+              <motion.div 
+                className="max-w-7xl mx-auto"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+              >
+                <div className="text-center mb-16">
+                  <motion.h2 
+                    className="text-4xl md:text-5xl font-bold mb-6"
                     initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1 * index }}
-                    whileHover={{
-                      y: -8,
-                      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.1)"
-                    }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    viewport={{ once: true }}
                   >
-                    <Link to={`/projects/${relatedProject.slug}`} className="block">
-                      <div className="relative h-48 overflow-hidden">
-                        <img
-                          src={relatedProject.images.main}
-                          alt={relatedProject.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
-                          <div className="p-4 w-full">
-                            <Badge className="bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 border-none mb-2">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-teal-500 to-blue-500">
+                      Related Projects
+                    </span>
+                  </motion.h2>
+                  
+                  <motion.p 
+                    className="text-xl text-gray-600"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                    viewport={{ once: true }}
+                  >
+                    Explore more of my work
+                  </motion.p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {relatedProjects.map((relatedProject, index) => (
+                    <motion.div
+                      key={relatedProject.id}
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.1 * index }}
+                      viewport={{ once: true }}
+                      whileHover={{ y: -10, scale: 1.02 }}
+                      className="group"
+                    >
+                      <Link 
+                        to={`/projects/${relatedProject.slug}`}
+                        className="block h-full"
+                      >
+                        <motion.div 
+                          className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-teal-100 h-full relative overflow-hidden"
+                          whileHover={{ 
+                            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                            borderColor: "rgb(45 212 191)"
+                          }}
+                          transition={{ type: "spring", damping: 20 }}
+                        >
+                          {/* Animated background gradient */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-teal-50/80 via-blue-50/40 to-white/60 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          
+                          <div className="relative">
+                            {relatedProject.images?.main && (
+                              <motion.div 
+                                className="mb-6 rounded-2xl overflow-hidden shadow-lg"
+                                whileHover={{ scale: 1.05 }}
+                                transition={{ duration: 0.4 }}
+                              >
+                                <img
+                                  src={relatedProject.images.main}
+                                  alt={relatedProject.title}
+                                  className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                                />
+                              </motion.div>
+                            )}
+
+                            <Badge 
+                              variant="secondary" 
+                              className="mb-4 bg-teal-50 text-teal-700 border border-teal-100"
+                            >
                               {relatedProject.category}
                             </Badge>
+
+                            <h3 className="text-xl font-bold text-gray-800 mb-4 group-hover:text-teal-600 transition-colors">
+                              {relatedProject.title}
+                            </h3>
+
+                            <p className="text-gray-600 mb-6 line-clamp-3">
+                              {relatedProject.description}
+                            </p>
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                                <span className="text-sm text-gray-500">{relatedProject.year}</span>
+                              </div>
+                              
+                              <div className="flex items-center text-teal-600 group-hover:translate-x-2 transition-transform">
+                                <span className="mr-2 text-sm font-medium">View Project</span>
+                                <ArrowRight className="w-4 h-4" />
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-
-                      <div className="p-6">
-                        <div className="flex items-center text-xs text-gray-500 mb-3">
-                          <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                          <span>{relatedProject.year}</span>
-                        </div>
-
-                        <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-teal-600 transition-colors">
-                          {relatedProject.title}
-                        </h3>
-
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                          {relatedProject.description}
-                        </p>
-
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {relatedProject.tags.slice(0, 3).map((tag, tagIndex) => (
-                            <span key={tagIndex} className="bg-teal-50 text-teal-700 text-xs px-3 py-1 rounded-full flex items-center">
-                              <span className="w-1.5 h-1.5 bg-teal-500 rounded-full mr-1.5"></span>
-                              {tag}
-                            </span>
-                          ))}
-                          {relatedProject.tags.length > 3 && (
-                            <span className="bg-gray-50 text-gray-600 text-xs px-3 py-1 rounded-full">
-                              +{relatedProject.tags.length - 3} more
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex justify-end">
-                          <motion.div
-                            className="text-teal-600 font-medium text-sm flex items-center"
-                            whileHover={{ x: 5 }}
-                          >
-                            View Project <ArrowRight className="ml-1 h-4 w-4" />
-                          </motion.div>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Back to projects button */}
-          <motion.div
-            className="text-center mt-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-          >
-            <MotionLink
-              href="/projects"
-              className="inline-flex items-center bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 border border-gray-200 rounded-full px-8 py-3 text-sm font-medium shadow-sm"
-              whileHover={{ scale: 1.05, y: -3, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to All Projects
-            </MotionLink>
-          </motion.div>
-        </div>
+                        </motion.div>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          </section>
+        )}
       </main>
+
+      {/* Enhanced Fullscreen Image Modal */}
+      <AnimatePresence>
+        {isFullscreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="relative max-w-6xl max-h-[90vh] w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <motion.img
+                src={project.images?.gallery?.[currentImageIndex] || project.images?.main}
+                alt={`${project.title} - Fullscreen view`}
+                className="w-full h-full object-contain rounded-2xl shadow-2xl"
+                layoutId="project-image"
+              />
+              
+              {/* Close button */}
+              <motion.button
+                className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <XCircle className="w-6 h-6 text-gray-700" />
+              </motion.button>
+
+              {/* Image navigation */}
+              {project.images?.gallery && project.images.gallery.length > 1 && (
+                <>
+                  <motion.button
+                    onClick={prevImage}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <ArrowLeft className="w-6 h-6 text-gray-700" />
+                  </motion.button>
+
+                  <motion.button
+                    onClick={nextImage}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <ArrowRight className="w-6 h-6 text-gray-700" />
+                  </motion.button>
+                </>
+              )}
+
+              {/* Image counter */}
+              {project.images?.gallery && project.images.gallery.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm">
+                  {currentImageIndex + 1} / {project.images.gallery.length}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </div>

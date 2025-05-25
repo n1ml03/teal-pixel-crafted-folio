@@ -1,41 +1,110 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Badge } from "@/components/ui/badge.tsx";
 import { Input } from "@/components/ui/input.tsx";
-import { ScrollReveal } from "@/components/ui/scroll-reveal.tsx";
-import { MotionButton } from "@/components/ui/motion-button.tsx";
+import { Button } from "@/components/ui/button.tsx";
 import { Resource, resourceCategories, resources } from '@/data/resources.ts';
 import Header from '@/components/home/Header.tsx';
 import Footer from '@/components/home/Footer.tsx';
-import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
 import ResourceCard from '@/components/utils/ResourceCard.tsx';
 import {
   Search,
-  Tag as TagIcon,
   Filter,
   Code,
-  TestTube,
-  Palette,
-  Zap,
-  GraduationCap,
   BookOpen,
   Download,
-  Server,
-  Shield,
   Star,
   Info,
   Sparkles,
   Bookmark,
   Layers,
-  Wrench,
-  Globe,
-  Boxes,
-  Library,
-  BookText,
-  FileBox,
   ChevronUp,
-  ChevronDown
-} from 'lucide-react';
+  ChevronDown,
+  Users,
+  Quote,
+  Github,
+  Heart} from 'lucide-react';
+
+// Enhanced Category Filter Component
+const CategoryFilter = ({ 
+  categories, 
+  selectedCategory, 
+  onCategoryChange 
+}: { 
+  categories: any[]; 
+  selectedCategory: string; 
+  onCategoryChange: (category: string) => void; 
+}) => {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <motion.button
+        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+          selectedCategory === ''
+            ? 'bg-teal-500 text-white shadow-lg'
+            : 'bg-white/80 text-gray-600 hover:bg-teal-50 border border-gray-200'
+        }`}
+        onClick={() => onCategoryChange('')}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        All Resources
+      </motion.button>
+      {categories.map((category) => (
+        <motion.button
+          key={category.id}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+            selectedCategory === category.name
+              ? 'bg-teal-500 text-white shadow-lg'
+              : 'bg-white/80 text-gray-600 hover:bg-teal-50 border border-gray-200'
+          }`}
+          onClick={() => onCategoryChange(category.name)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {category.name}
+        </motion.button>
+      ))}
+    </div>
+  );
+};
+
+// Enhanced Stats Component
+const ResourceStats = () => {
+  const stats = [
+    { number: `${resources.length}+`, label: "Curated Resources", icon: <BookOpen className="w-5 h-5" /> },
+    { number: `${resourceCategories.length}`, label: "Categories", icon: <Layers className="w-5 h-5" /> },
+    { number: `${resources.filter(r => r.featured).length}`, label: "Featured Tools", icon: <Star className="w-5 h-5" /> },
+    { number: "10K+", label: "Developers Helped", icon: <Users className="w-5 h-5" /> }
+  ];
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {stats.map((stat, index) => (
+        <motion.div
+          key={index}
+          className="text-center bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-gray-100"
+          initial={{ opacity: 0, scale: 0.5, y: 20 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: index * 0.1, type: "spring", damping: 25 }}
+          viewport={{ once: true }}
+          whileHover={{ y: -4, scale: 1.02 }}
+        >
+          <motion.div 
+            className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center text-white mx-auto mb-3 shadow-lg"
+            whileHover={{ rotate: 360 }}
+            transition={{ duration: 0.6 }}
+          >
+            {stat.icon}
+          </motion.div>
+          <div className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-blue-500 bg-clip-text text-transparent mb-1">
+            {stat.number}
+          </div>
+          <div className="text-gray-600 text-sm font-medium">{stat.label}</div>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
 
 const Resources = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,6 +115,9 @@ const Resources = () => {
   const [selectedPricing, setSelectedPricing] = useState('');
   const [filteredResources, setFilteredResources] = useState<Resource[]>(resources);
   const [isFilterExpanded, setIsFilterExpanded] = useState(true);
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 1000], [0, -50]);
+  const y2 = useTransform(scrollY, [0, 1000], [0, 50]);
 
   // Load search history from localStorage on component mount
   useEffect(() => {
@@ -184,114 +256,139 @@ const Resources = () => {
   };
 
   // Get all unique tags from resources
-  const allTags = Array.from(new Set(resources.flatMap(resource => resource.tags))).sort();
+
+  // Enhanced testimonials data
+
+  // FAQ data
 
   return (
-    <div className="min-h-screen relative">
-      <EnhancedBackground optimizeForLowPerformance={true} />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-teal-50 relative overflow-hidden">
+      {/* Animated background elements */}
+      <motion.div 
+        className="absolute top-20 left-10 w-32 h-32 bg-teal-100 rounded-full opacity-20"
+        style={{ y: y1 }}
+      />
+      <motion.div 
+        className="absolute bottom-20 right-10 w-24 h-24 bg-blue-100 rounded-full opacity-30"
+        style={{ y: y2 }}
+      />
+      <motion.div 
+        className="absolute top-1/2 left-1/2 w-40 h-40 bg-purple-100 rounded-full opacity-10 -translate-x-1/2 -translate-y-1/2"
+        animate={{ rotate: 360, scale: [1, 1.05, 1] }}
+        transition={{ duration: 20, repeat: Infinity }}
+      />
 
       <Header />
-      <main id="main-content" className="pt-24 pb-16">
-        {/* Hero section */}
-        <section className="relative py-24 overflow-hidden">
-          <div className="container mx-auto px-4 relative z-10">
-            <ScrollReveal>
-              <div className="text-center max-w-4xl mx-auto">
-                <Badge
-                  variant="secondary"
-                  className="mb-4 bg-teal-50 text-teal-700 hover:bg-teal-100 px-4 py-1.5 text-sm font-medium item-center"
-                >
-                  <Sparkles className="w-4 h-4 mr-2 text-teal-500" />
-                  CURATED COLLECTION
-                </Badge>
 
-                <motion.h1
-                  className="text-5xl md:text-5xl font-bold mb-6 leading-tight"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6 }}
-                >
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-teal-500 to-blue-500">
-                    Developer Resources & Tools
-                  </span>
-                </motion.h1>
+      <main className="pt-20 relative z-10">
+        {/* Enhanced Hero Section */}
+        <section className="py-24 relative overflow-hidden">
+          <div className="container mx-auto px-4 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, type: "spring", damping: 25 }}
+            >
+              {/* Floating badge */}
+              <motion.div
+                className="inline-flex items-center bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 mb-6 shadow-lg border border-teal-100"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Sparkles className="w-4 h-4 text-teal-500 mr-2" />
+                <span className="text-sm font-medium text-gray-700">Curated Developer Collection</span>
+              </motion.div>
 
-                <motion.p
-                  className="text-lg text-gray-600 mb-8"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                >
-                  A handpicked collection of the best tools, resources, and guides for developers and QA engineers to boost your productivity and skills.
-                </motion.p>
+              <motion.h1 
+                className="text-5xl md:text-6xl font-bold text-gray-800 mb-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+              >
+                Developer{" "}
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-teal-500 to-blue-500 relative">
+                  Resources
+                  <motion.div
+                    className="absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-blue-400 rounded-full"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ delay: 0.8, duration: 0.6 }}
+                  />
+                </span>
+              </motion.h1>
+              
+              <motion.p 
+                className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                A handpicked collection of the best tools, resources, and guides for developers 
+                and QA engineers to boost productivity and enhance skills.
+              </motion.p>
 
-                {/* Stats */}
-                <motion.div
-                  className="flex flex-wrap justify-center gap-8 mt-12"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8 }}
-                >
-                  <div className="text-center">
-                    <motion.p
-                      className="text-3xl font-bold text-gray-800"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.9 }}
-                    >
-                      {resources.length}+
-                    </motion.p>
-                    <p className="text-gray-500">Resources</p>
-                  </div>
+              {/* Enhanced Search Bar */}
+              <motion.div
+                className="relative max-w-2xl mx-auto"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <form onSubmit={handleSearchSubmit}>
+                  <Input
+                    type="text"
+                    placeholder="Search tools, libraries, frameworks, and resources..."
+                    className="pl-12 pr-4 py-4 rounded-2xl border-gray-200 focus:border-teal-500 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                </form>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
 
-                  <div className="text-center">
-                    <motion.p
-                      className="text-3xl font-bold text-gray-800"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 1 }}
-                    >
-                      {resourceCategories.length}
-                    </motion.p>
-                    <p className="text-gray-500">Categories</p>
-                  </div>
-
-                  <div className="text-center">
-                    <motion.p
-                      className="text-3xl font-bold text-gray-800"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 1.1 }}
-                    >
-                      {resources.filter(r => r.featured).length}
-                    </motion.p>
-                    <p className="text-gray-500">Featured</p>
-                  </div>
-                </motion.div>
-              </div>
-            </ScrollReveal>
+        {/* Category Filter */}
+        <section className="py-8 bg-white/20">
+          <div className="container mx-auto px-4">
+            <motion.div
+              className="flex flex-col items-center"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="text-lg font-semibold text-gray-800 mb-6">Filter by Category</h3>
+              <CategoryFilter
+                categories={resourceCategories}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+              />
+            </motion.div>
           </div>
         </section>
 
         {/* Main content */}
-        <section className="py-16">
+        <section className="py-24">
           <div className="container mx-auto px-4">
-            <div className="flex flex-col lg:flex-row gap-8">
-              {/* Sidebar with filters */}
+            <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto">
+              {/* Enhanced Sidebar with filters */}
               <div className="lg:w-1/4">
-                <div className="bg-white rounded-xl border border-gray-100 shadow-lg p-6 sticky top-24">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-lg p-6 sticky top-24">
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center">
-                        <Filter className="w-4 h-4 mr-2 text-teal-500" />
-                        <h3 className="font-bold text-gray-800">Filters</h3>
+                        <Filter className="w-5 h-5 mr-2 text-teal-500" />
+                        <h3 className="text-xl font-bold text-gray-800">Filters</h3>
                       </div>
                       <div className="flex items-center space-x-2">
                         {(selectedCategory || selectedTag || selectedType || selectedPricing || searchQuery) && (
                           <motion.button
                             onClick={resetFilters}
-                            className="text-xs text-teal-600 hover:text-teal-700 flex items-center"
-                            whileHover={{ x: 2 }}
+                            className="text-xs text-teal-600 hover:text-teal-700 flex items-center bg-teal-50 px-2 py-1 rounded-full"
+                            whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
                             Reset All
@@ -299,7 +396,7 @@ const Resources = () => {
                         )}
                         <motion.button
                           onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-                          className="p-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-200"
+                          className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-200"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           aria-label={isFilterExpanded ? "Collapse filters" : "Expand filters"}
@@ -314,32 +411,6 @@ const Resources = () => {
                       </div>
                     </div>
 
-                    {/* Search in sidebar - always visible */}
-                    <div className="mb-6">
-                      <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                        <Search className="w-3.5 h-3.5 mr-1.5 text-teal-500" />
-                        Search Resources
-                      </h4>
-                      <form onSubmit={handleSearchSubmit} className="relative">
-                        <div className="relative flex items-center">
-                          <Input
-                            type="text"
-                            placeholder="Search..."
-                            className="pr-10 py-2 rounded-md border-gray-200 focus:border-teal-500 focus:ring-teal-500 text-sm"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                          />
-                          <button
-                            type="submit"
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-teal-500 hover:bg-teal-600 active:bg-teal-700 text-white p-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center hover:shadow-[0_3px_10px_rgba(20,184,166,0.3)]"
-                            aria-label="Search"
-                          >
-                            <Search className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-
                     {/* Filter content - collapsible */}
                     <motion.div
                       className="space-y-6"
@@ -351,42 +422,10 @@ const Resources = () => {
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       style={{ overflow: "hidden" }}
                     >
-                      {/* Categories */}
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                          <Layers className="w-3.5 h-3.5 mr-1.5 text-teal-500" />
-                          Categories
-                        </h4>
-                        <div className="space-y-2">
-                          {resourceCategories.map(category => (
-                            <motion.button
-                              key={category.id}
-                              onClick={() => setSelectedCategory(category.name === selectedCategory ? '' : category.name)}
-                              className={`text-sm py-1.5 px-3 rounded-lg w-full text-left flex items-center transition-all ${
-                                selectedCategory === category.name
-                                  ? 'bg-teal-50 text-teal-700 font-medium shadow-sm'
-                                  : 'text-gray-600 hover:bg-gray-50'
-                              }`}
-                              whileHover={{ x: 2 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              {category.name === 'Testing & QA' && <TestTube className="w-3.5 h-3.5 mr-2 text-purple-500" />}
-                              {category.name === 'Development' && <Code className="w-3.5 h-3.5 mr-2 text-blue-500" />}
-                              {category.name === 'Design' && <Palette className="w-3.5 h-3.5 mr-2 text-pink-500" />}
-                              {category.name === 'Productivity' && <Zap className="w-3.5 h-3.5 mr-2 text-yellow-500" />}
-                              {category.name === 'Learning' && <GraduationCap className="w-3.5 h-3.5 mr-2 text-green-500" />}
-                              {category.name === 'DevOps' && <Server className="w-3.5 h-3.5 mr-2 text-indigo-500" />}
-                              {category.name === 'Security' && <Shield className="w-3.5 h-3.5 mr-2 text-red-500" />}
-                              {category.name}
-                            </motion.button>
-                          ))}
-                        </div>
-                      </div>
-
                       {/* Resource Type */}
                       <div>
                         <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                          <BookOpen className="w-3.5 h-3.5 mr-1.5 text-teal-500" />
+                          <BookOpen className="w-4 h-4 mr-2 text-teal-500" />
                           Resource Type
                         </h4>
                         <div className="grid grid-cols-2 gap-2">
@@ -396,25 +435,15 @@ const Resources = () => {
                             return (
                               <Badge
                                 key={type}
-                                className={`cursor-pointer flex items-center justify-between px-3 py-1.5 transition-all duration-300 ${
+                                className={`cursor-pointer flex items-center justify-between px-3 py-2 transition-all duration-300 ${
                                   isSelected
-                                    ? 'bg-teal-100 text-teal-700 hover:bg-teal-200'
-                                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                    ? 'bg-teal-100 text-teal-700 border-teal-200 shadow-sm'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200'
                                 }`}
                                 onClick={() => applyTypeFilter(type)}
                               >
-                                <div className="flex items-center gap-1.5">
-                                  {type === 'tool' && <Wrench className="w-3.5 h-3.5" />}
-                                  {type === 'library' && <Library className="w-3.5 h-3.5" />}
-                                  {type === 'framework' && <Boxes className="w-3.5 h-3.5" />}
-                                  {type === 'language' && <Code className="w-3.5 h-3.5" />}
-                                  {type === 'service' && <Globe className="w-3.5 h-3.5" />}
-                                  {type === 'course' && <GraduationCap className="w-3.5 h-3.5" />}
-                                  {type === 'guide' && <BookText className="w-3.5 h-3.5" />}
-                                  {type === 'template' && <FileBox className="w-3.5 h-3.5" />}
-                                  <span className="capitalize">{type}</span>
-                                </div>
-                                <span className={`ml-1 ${isSelected ? 'bg-teal-50' : 'bg-white'} px-1.5 py-0.5 rounded-full text-xs ${isSelected ? 'text-teal-600' : 'text-gray-500'}`}>
+                                <span className="capitalize text-xs">{type}</span>
+                                <span className="ml-1 bg-white/50 px-1.5 py-0.5 rounded-full text-xs">
                                   {count}
                                 </span>
                               </Badge>
@@ -423,91 +452,34 @@ const Resources = () => {
                         </div>
                       </div>
 
-                      {/* Popular Tags */}
-                      {/* <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                          <TagIcon className="w-3.5 h-3.5 mr-1.5 text-teal-500" />
-                          Popular Tags
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {allTags.slice(0, 15).map((tag, index) => (
-                            <Badge
-                              key={index}
-                              className={`cursor-pointer flex items-center transition-all duration-300 ${
-                                selectedTag === tag
-                                  ? 'bg-teal-100 text-teal-700 hover:bg-teal-200'
-                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              }`}
-                              onClick={() => setSelectedTag(selectedTag === tag ? '' : tag)}
-                            >
-                              <TagIcon className="w-3 h-3 mr-1" />
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div> */}
-
                       {/* Pricing */}
                       <div>
                         <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                          <Download className="w-3.5 h-3.5 mr-1.5 text-teal-500" />
+                          <Star className="w-4 h-4 mr-2 text-teal-500" />
                           Pricing
                         </h4>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                           {['free', 'freemium', 'paid', 'open-source'].map((pricing) => {
                             const count = resources.filter(r => r.pricing === pricing).length;
                             const isSelected = selectedPricing === pricing;
-
-                            // Color configurations for each pricing type
-                            const colorConfig = {
-                              'free': {
-                                base: 'bg-green-50 text-green-700',
-                                selected: 'bg-green-100 text-green-800',
-                                hover: 'hover:bg-green-100 hover:text-green-800',
-                                active: 'active:bg-green-200 active:text-green-900',
-                                countBg: isSelected ? 'bg-white/70' : 'bg-white/50'
-                              },
-                              'freemium': {
-                                base: 'bg-blue-50 text-blue-700',
-                                selected: 'bg-blue-100 text-blue-800',
-                                hover: 'hover:bg-blue-100 hover:text-blue-800',
-                                active: 'active:bg-blue-200 active:text-blue-900',
-                                countBg: isSelected ? 'bg-white/70' : 'bg-white/50'
-                              },
-                              'paid': {
-                                base: 'bg-purple-50 text-purple-700',
-                                selected: 'bg-purple-100 text-purple-800',
-                                hover: 'hover:bg-purple-100 hover:text-purple-800',
-                                active: 'active:bg-purple-200 active:text-purple-900',
-                                countBg: isSelected ? 'bg-white/70' : 'bg-white/50'
-                              },
-                              'open-source': {
-                                base: 'bg-orange-50 text-orange-700',
-                                selected: 'bg-orange-100 text-orange-800',
-                                hover: 'hover:bg-orange-100 hover:text-orange-800',
-                                active: 'active:bg-orange-200 active:text-orange-900',
-                                countBg: isSelected ? 'bg-white/70' : 'bg-white/50'
-                              }
-                            };
-
-                            const config = colorConfig[pricing];
-                            const baseClasses = isSelected ? config.selected : config.base;
-                            const interactionClasses = isSelected ? config.active : `${config.hover} ${config.active}`;
-
                             return (
                               <Badge
                                 key={pricing}
-                                className={`cursor-pointer ${baseClasses} ${interactionClasses} px-3 py-1.5 flex items-center justify-between shadow-sm transition-all duration-300`}
+                                className={`cursor-pointer flex items-center justify-between px-3 py-2 transition-all duration-300 ${
+                                  isSelected
+                                    ? 'bg-teal-100 text-teal-700 border-teal-200 shadow-sm'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200'
+                                }`}
                                 onClick={() => applyPricingFilter(pricing)}
                               >
                                 <div className="flex items-center gap-1.5">
-                                  {pricing === 'free' && <Download className="w-3.5 h-3.5" />}
-                                  {pricing === 'freemium' && <Star className="w-3.5 h-3.5" />}
-                                  {pricing === 'paid' && <Bookmark className="w-3.5 h-3.5" />}
-                                  {pricing === 'open-source' && <Code className="w-3.5 h-3.5" />}
-                                  <span className="capitalize">{pricing}</span>
+                                  {pricing === 'free' && <Download className="w-3 h-3" />}
+                                  {pricing === 'freemium' && <Star className="w-3 h-3" />}
+                                  {pricing === 'paid' && <Bookmark className="w-3 h-3" />}
+                                  {pricing === 'open-source' && <Code className="w-3 h-3" />}
+                                  <span className="capitalize text-xs">{pricing}</span>
                                 </div>
-                                <span className={`ml-1 ${config.countBg} px-1.5 py-0.5 rounded-full text-xs`}>
+                                <span className="ml-1 bg-white/50 px-1.5 py-0.5 rounded-full text-xs">
                                   {count}
                                 </span>
                               </Badge>
@@ -522,127 +494,111 @@ const Resources = () => {
 
               {/* Main content area */}
               <div className="lg:w-3/4">
-                {/* Results count and sorting */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                  <div className="flex items-center mb-3 md:mb-0">
-                    <Info className="w-4 h-4 text-teal-500 mr-2 flex-shrink-0" />
-                    <p className="text-gray-600">
-                      Showing <span className="font-medium">{filteredResources.length}</span> of <span className="font-medium">{resources.length}</span> resources
-                      {searchQuery && (
-                        <span className="ml-1">
-                          for <span className="font-medium italic">"{searchQuery}"</span>
-                        </span>
-                      )}
-                    </p>
-                  </div>
-
-                  {(selectedCategory || selectedTag || selectedType || selectedPricing || searchQuery) && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      {searchQuery && (
-                        <Badge className="bg-gray-100 text-gray-700 px-3 py-1 flex items-center gap-1">
-                          <Search className="w-3 h-3" />
-                          {searchQuery}
-                          <button
-                            onClick={() => setSearchQuery('')}
-                            className="ml-1 hover:text-gray-900"
-                            aria-label="Clear search"
-                          >
-                            ×
-                          </button>
-                        </Badge>
-                      )}
-
-                      {selectedCategory && (
-                        <Badge className="bg-teal-100 text-teal-700 px-3 py-1 flex items-center gap-1">
-                          <Layers className="w-3 h-3" />
-                          {selectedCategory}
-                          <button
-                            onClick={() => setSelectedCategory('')}
-                            className="ml-1 hover:text-teal-900"
-                            aria-label="Clear category filter"
-                          >
-                            ×
-                          </button>
-                        </Badge>
-                      )}
-
-                      {selectedTag && (
-                        <Badge className="bg-blue-100 text-blue-700 px-3 py-1 flex items-center gap-1">
-                          <TagIcon className="w-3 h-3" />
-                          {selectedTag}
-                          <button
-                            onClick={() => setSelectedTag('')}
-                            className="ml-1 hover:text-blue-900"
-                            aria-label="Clear tag filter"
-                          >
-                            ×
-                          </button>
-                        </Badge>
-                      )}
-
-                      {selectedType && (
-                        <Badge className="bg-indigo-100 text-indigo-700 px-3 py-1 flex items-center gap-1">
-                          {selectedType === 'tool' && <Wrench className="w-3 h-3" />}
-                          {selectedType === 'library' && <Library className="w-3 h-3" />}
-                          {selectedType === 'framework' && <Boxes className="w-3 h-3" />}
-                          {selectedType === 'language' && <Code className="w-3 h-3" />}
-                          {selectedType === 'service' && <Globe className="w-3 h-3" />}
-                          {selectedType === 'course' && <GraduationCap className="w-3 h-3" />}
-                          {selectedType === 'guide' && <BookText className="w-3 h-3" />}
-                          {selectedType === 'template' && <FileBox className="w-3 h-3" />}
-                          {selectedType}
-                          <button
-                            onClick={() => setSelectedType('')}
-                            className="ml-1 hover:text-indigo-900"
-                            aria-label="Clear type filter"
-                          >
-                            ×
-                          </button>
-                        </Badge>
-                      )}
-
-                      {selectedPricing && (
-                        <Badge className="bg-purple-100 text-purple-700 px-3 py-1 flex items-center gap-1">
-                          {selectedPricing === 'free' && <Download className="w-3 h-3" />}
-                          {selectedPricing === 'freemium' && <Star className="w-3 h-3" />}
-                          {selectedPricing === 'paid' && <Bookmark className="w-3 h-3" />}
-                          {selectedPricing === 'open-source' && <Code className="w-3 h-3" />}
-                          {selectedPricing}
-                          <button
-                            onClick={() => setSelectedPricing('')}
-                            className="ml-1 hover:text-purple-900"
-                            aria-label="Clear pricing filter"
-                          >
-                            ×
-                          </button>
-                        </Badge>
-                      )}
-
-                      {(selectedCategory || selectedTag || selectedType || selectedPricing || searchQuery) && (
-                        <button
-                          onClick={resetFilters}
-                          className="text-xs text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 transition-all duration-300 px-2 py-1 rounded-md flex items-center"
-                        >
-                          Clear All Filters
-                        </button>
-                      )}
+                {/* Enhanced Results count and active filters */}
+                <div className="mb-8">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-100">
+                    <div className="flex items-center mb-3 md:mb-0">
+                      <Info className="w-5 h-5 text-teal-500 mr-2 flex-shrink-0" />
+                      <p className="text-gray-600">
+                        Showing <span className="font-medium text-lg text-teal-600">{filteredResources.length}</span> of <span className="font-medium text-lg">{resources.length}</span> resources
+                        {searchQuery && (
+                          <span className="ml-1">
+                            for <span className="font-medium italic text-teal-600">"{searchQuery}"</span>
+                          </span>
+                        )}
+                      </p>
                     </div>
-                  )}
+
+                    {(selectedCategory || selectedTag || selectedType || selectedPricing || searchQuery) && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        {searchQuery && (
+                          <Badge className="bg-gray-100 text-gray-700 px-3 py-2 flex items-center gap-2 hover:bg-gray-200 transition-colors">
+                            <Search className="w-3 h-3" />
+                            {searchQuery}
+                            <button
+                              onClick={() => setSearchQuery('')}
+                              className="ml-1 hover:text-gray-900 font-bold"
+                              aria-label="Clear search"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        )}
+
+                        {selectedCategory && (
+                          <Badge className="bg-teal-100 text-teal-700 px-3 py-2 flex items-center gap-2 hover:bg-teal-200 transition-colors">
+                            <Layers className="w-3 h-3" />
+                            {selectedCategory}
+                            <button
+                              onClick={() => setSelectedCategory('')}
+                              className="ml-1 hover:text-teal-900 font-bold"
+                              aria-label="Clear category filter"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        )}
+
+                        {selectedType && (
+                          <Badge className="bg-indigo-100 text-indigo-700 px-3 py-2 flex items-center gap-2 hover:bg-indigo-200 transition-colors">
+                            <BookOpen className="w-3 h-3" />
+                            {selectedType}
+                            <button
+                              onClick={() => setSelectedType('')}
+                              className="ml-1 hover:text-indigo-900 font-bold"
+                              aria-label="Clear type filter"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        )}
+
+                        {selectedPricing && (
+                          <Badge className="bg-purple-100 text-purple-700 px-3 py-2 flex items-center gap-2 hover:bg-purple-200 transition-colors">
+                            <Star className="w-3 h-3" />
+                            {selectedPricing}
+                            <button
+                              onClick={() => setSelectedPricing('')}
+                              className="ml-1 hover:text-purple-900 font-bold"
+                              aria-label="Clear pricing filter"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        )}
+
+                        {(selectedCategory || selectedTag || selectedType || selectedPricing || searchQuery) && (
+                          <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <Button
+                              onClick={resetFilters}
+                              variant="outline"
+                              className="text-sm text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 border-gray-200 px-4 py-2 rounded-xl"
+                            >
+                              Clear All Filters
+                            </Button>
+                          </motion.div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Resources grid */}
                 {filteredResources.length > 0 ? (
                   <>
-                    {/* Featured resources section - only show if there are featured resources in filtered results */}
+                    {/* Featured resources section */}
                     {filteredResources.some(r => r.featured) && (
                       <div className="mb-12">
-                        <div className="flex items-center mb-6">
-                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
-                          <h3 className="text-lg font-bold text-gray-800 px-4 flex items-center">
-                            <Star className="w-5 h-5 mr-2 text-amber-500" fill="currentColor" />
+                        <div className="flex items-center mb-8">
+                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-teal-200 to-transparent"></div>
+                          <h3 className="text-2xl font-bold text-gray-800 px-6 flex items-center">
+                            <Star className="w-6 h-6 mr-3 text-amber-500" fill="currentColor" />
                             Featured Resources
                           </h3>
-                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
+                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-teal-200 to-transparent"></div>
                         </div>
 
                         <motion.div
@@ -652,17 +608,19 @@ const Resources = () => {
                           transition={{ duration: 0.5 }}
                         >
                           {filteredResources.filter(r => r.featured).map((resource, index) => (
-                            <ScrollReveal
+                            <motion.div
                               key={resource.id}
-                              delay={index * 0.05} // Reduced delay for faster appearance
-                              threshold={0.05}
+                              initial={{ opacity: 0, y: 20 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.5, delay: index * 0.1 }}
+                              viewport={{ once: true }}
                             >
                               <ResourceCard
                                 resource={resource}
                                 index={index}
                                 onTagClick={setSelectedTag}
                               />
-                            </ScrollReveal>
+                            </motion.div>
                           ))}
                         </motion.div>
                       </div>
@@ -671,9 +629,9 @@ const Resources = () => {
                     {/* Regular resources */}
                     <div className="mb-6">
                       {filteredResources.some(r => r.featured) && (
-                        <div className="flex items-center mb-6">
+                        <div className="flex items-center mb-8">
                           <div className="h-px flex-grow bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
-                          <h3 className="text-lg font-bold text-gray-800 px-4">All Resources</h3>
+                          <h3 className="text-2xl font-bold text-gray-800 px-6">All Resources</h3>
                           <div className="h-px flex-grow bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
                         </div>
                       )}
@@ -687,116 +645,67 @@ const Resources = () => {
                         {filteredResources
                           .filter(r => filteredResources.some(fr => fr.featured) ? !r.featured : true)
                           .map((resource, index) => (
-                            <ScrollReveal
+                            <motion.div
                               key={resource.id}
-                              delay={index * 0.05} // Reduced delay for faster appearance
-                              threshold={0.05}
+                              initial={{ opacity: 0, y: 20 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.5, delay: index * 0.05 }}
+                              viewport={{ once: true }}
                             >
                               <ResourceCard
                                 resource={resource}
                                 index={index}
                                 onTagClick={setSelectedTag}
                               />
-                            </ScrollReveal>
+                            </motion.div>
                           ))}
                       </motion.div>
                     </div>
                   </>
                 ) : (
                   <motion.div
-                    className="text-center py-16 bg-white rounded-2xl shadow-md border border-gray-100 p-8"
+                    className="text-center py-20"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
+                    transition={{ duration: 0.6 }}
                   >
-                    <div className="flex justify-center mb-6">
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.1, 1],
-                          rotate: [0, 5, -5, 0]
-                        }}
-                        transition={{
-                          duration: 4,
-                          repeat: Infinity,
-                          repeatType: "reverse"
-                        }}
-                      >
-                        <Search className="w-20 h-20 text-gray-200" />
-                      </motion.div>
-                    </div>
-                    <motion.h3
-                      className="text-2xl font-bold text-gray-800 mb-3"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      {searchQuery
-                        ? `No results found for "${searchQuery}"`
-                        : "No resources found"
-                      }
-                    </motion.h3>
-                    <motion.p
-                      className="text-gray-500 mb-8 max-w-md mx-auto"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                    >
-                      {searchQuery ? (
-                        <>
-                          We couldn't find any resources matching your search. Try:
-                          <ul className="mt-4 text-left max-w-xs mx-auto space-y-2">
-                            <li className="flex items-start">
-                              <span className="bg-teal-100 text-teal-700 rounded-full w-5 h-5 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">1</span>
-                              <span>Checking for typos or misspellings</span>
-                            </li>
-                            <li className="flex items-start">
-                              <span className="bg-teal-100 text-teal-700 rounded-full w-5 h-5 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">2</span>
-                              <span>Using more general keywords</span>
-                            </li>
-                            <li className="flex items-start">
-                              <span className="bg-teal-100 text-teal-700 rounded-full w-5 h-5 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">3</span>
-                              <span>Removing filters to broaden your search</span>
-                            </li>
-                          </ul>
-                        </>
-                      ) : (
-                        "We couldn't find any resources matching your criteria. Try adjusting your filters."
-                      )}
-                    </motion.p>
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 }}
-                      className="flex flex-col sm:flex-row gap-4 justify-center"
+                      className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-gray-100 p-12 relative overflow-hidden max-w-2xl mx-auto"
+                      initial={{ scale: 0.9 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
                     >
-                      <MotionButton
-                        onClick={resetFilters}
-                        className="bg-gray-700 text-white px-8 py-3 rounded-xl shadow-md"
-                        whileHover={{
-                          scale: 1.03,
-                          boxShadow: "0 8px 20px -5px rgba(0, 0, 0, 0.2)"
+                      <motion.div
+                        className="text-gray-400 mb-6 bg-gray-50 rounded-full p-6 w-24 h-24 flex items-center justify-center mx-auto"
+                        initial={{ y: 10 }}
+                        animate={{ y: 0 }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatType: "reverse",
+                          ease: "easeInOut"
                         }}
-                        whileTap={{ scale: 0.97 }}
                       >
-                        Reset All Filters
-                      </MotionButton>
+                        <BookOpen className="h-12 w-12 text-teal-500" />
+                      </motion.div>
 
-                      {searchQuery && (
-                        <MotionButton
-                          onClick={() => {
-                            // Keep other filters but clear search
-                            setSearchQuery('');
-                          }}
-                          className="bg-white border border-gray-200 text-gray-700 px-8 py-3 rounded-xl shadow-sm"
-                          whileHover={{
-                            scale: 1.03,
-                            boxShadow: "0 8px 15px -5px rgba(0, 0, 0, 0.05)"
-                          }}
-                          whileTap={{ scale: 0.97 }}
+                      <h3 className="text-2xl font-bold text-gray-800 mb-3">No Resources Found</h3>
+                      <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                        We couldn't find any resources matching your current filters. Try adjusting your search criteria or reset all filters.
+                      </p>
+
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Button
+                          onClick={resetFilters}
+                          className="bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl px-8 py-3 shadow-lg"
                         >
-                          Clear Search Only
-                        </MotionButton>
-                      )}
+                          <Filter className="mr-2 h-4 w-4" />
+                          Reset All Filters
+                        </Button>
+                      </motion.div>
                     </motion.div>
                   </motion.div>
                 )}
@@ -804,7 +713,124 @@ const Resources = () => {
             </div>
           </div>
         </section>
+
+        {/* Resource Stats */}
+        <section className="py-24 bg-white/40 backdrop-blur-sm">
+          <div className="container mx-auto px-4">
+            <motion.div
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-4xl font-bold text-gray-800 mb-4">
+                Resource <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-500">Impact</span>
+              </h2>
+              <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
+                Numbers that reflect the value and reach of our curated collection
+              </p>
+            </motion.div>
+            <ResourceStats />
+          </div>
+        </section>
+
+        {/* Enhanced CTA Section */}
+        <section className="py-24 relative overflow-hidden">
+          {/* Animated background */}
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-br from-teal-600 via-teal-500 to-blue-500"
+            animate={{ 
+              background: [
+                "linear-gradient(135deg, #0d9488 0%, #14b8a6 50%, #3b82f6 100%)",
+                "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #0d9488 100%)",
+                "linear-gradient(135deg, #3b82f6 0%, #0d9488 50%, #14b8a6 100%)"
+              ]
+            }}
+            transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
+          />
+          
+          {/* Floating elements */}
+          <motion.div 
+            className="absolute top-16 left-16 w-24 h-24 bg-white/10 rounded-full"
+            animate={{ y: [0, -20, 0], x: [0, 15, 0] }}
+            transition={{ duration: 6, repeat: Infinity }}
+          />
+          <motion.div 
+            className="absolute bottom-16 right-16 w-20 h-20 bg-white/10 rounded-full"
+            animate={{ y: [0, 15, 0], x: [0, -20, 0] }}
+            transition={{ duration: 8, repeat: Infinity }}
+          />
+
+          <div className="container mx-auto px-4 text-center relative z-10">
+            <motion.div
+              className="max-w-3xl mx-auto"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, type: "spring", damping: 25 }}
+              viewport={{ once: true }}
+            >
+              <motion.h2 
+                className="text-4xl md:text-5xl font-bold text-white mb-6"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                viewport={{ once: true }}
+              >
+                Boost Your
+                <br />
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 to-orange-300">
+                  Development Workflow
+                </span>
+              </motion.h2>
+              
+              <motion.p 
+                className="text-xl text-white/90 mb-8 leading-relaxed"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                viewport={{ once: true }}
+              >
+                Discover new tools, stay updated with the latest resources, and connect with 
+                the developer community for continuous learning and growth.
+              </motion.p>
+              
+              <motion.div 
+                className="flex flex-col sm:flex-row gap-4 justify-center"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                viewport={{ once: true }}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button 
+                    className="bg-white text-teal-600 hover:bg-gray-50 px-8 py-3 rounded-xl font-semibold shadow-lg"
+                  >
+                    <Heart className="w-4 h-4 mr-2" />
+                    Suggest Resource
+                  </Button>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button 
+                    variant="outline" 
+                    className="border-2 border-white text-white hover:bg-white/10 px-8 py-3 rounded-xl font-semibold"
+                  >
+                    <Github className="w-4 h-4 mr-2" />
+                    Contribute
+                  </Button>
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
       </main>
+
       <Footer />
     </div>
   );

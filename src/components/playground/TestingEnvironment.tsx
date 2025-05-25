@@ -9,11 +9,18 @@ import {
   Tablet,
   Monitor,
   Camera,
-  Code,
   Play,
   Pause,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Terminal,
+  Globe,
+  Activity,
+  Zap,
+  Eye,
+  FlaskConical,
+  Star,
+  CircuitBoard
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,6 +97,7 @@ interface DevicePreset {
   height: number;
   userAgent?: string;
   name: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const devicePresets: Record<DeviceType, DevicePreset> = {
@@ -97,19 +105,43 @@ const devicePresets: Record<DeviceType, DevicePreset> = {
     width: 1280,
     height: 800,
     name: 'Desktop',
+    icon: Monitor,
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
   },
   tablet: {
     width: 768,
     height: 1024,
     name: 'iPad',
+    icon: Tablet,
     userAgent: 'Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
   },
   mobile: {
     width: 375,
     height: 667,
     name: 'iPhone SE',
+    icon: Smartphone,
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1'
+  }
+};
+
+// Console log type styling
+const consoleLogStyles = {
+  info: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800',
+  warning: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800',
+  error: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800',
+  debug: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800'
+};
+
+// HTTP status code styling
+const getStatusBadgeStyle = (status: number) => {
+  if (status >= 200 && status < 300) {
+    return 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800';
+  } else if (status >= 300 && status < 400) {
+    return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800';
+  } else if (status >= 400 && status < 500) {
+    return 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800';
+  } else {
+    return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800';
   }
 };
 
@@ -133,6 +165,9 @@ export const TestingEnvironment = ({
   const [recordingInterval, setRecordingInterval] = useState<NodeJS.Timeout | null>(null);
   const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
   const [isRunningTests, setIsRunningTests] = useState(false);
+  const [testProgress, setTestProgress] = useState(0);
+  const [currentTestIndex, setCurrentTestIndex] = useState(-1);
+  const [showTestSuccess, setShowTestSuccess] = useState(false);
 
   // Refs
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -167,6 +202,33 @@ export const TestingEnvironment = ({
     ]);
   }, []);
 
+  // Load URL function
+  const loadUrl = useCallback((newUrl: string) => {
+    if (!newUrl || newUrl === url) return;
+    
+    setIsLoading(true);
+    setUrl(newUrl);
+
+    // Update history
+    if (historyRef.current[historyPositionRef.current] !== newUrl) {
+      historyRef.current = [
+        ...historyRef.current.slice(0, historyPositionRef.current + 1),
+        newUrl
+      ];
+      historyPositionRef.current = historyRef.current.length - 1;
+    }
+
+    if (onUrlChange) {
+      onUrlChange(newUrl);
+    }
+
+    // Simulate loading delay
+    setTimeout(() => {
+      setIsLoading(false);
+      addConsoleLog('info', `Navigated to ${newUrl}`);
+    }, 500);
+  }, [url, onUrlChange, addConsoleLog]);
+
   // Handle messages from the iframe
   const handleIframeMessage = useCallback((event: MessageEvent) => {
     const { type, data } = event.data || {};
@@ -200,43 +262,7 @@ export const TestingEnvironment = ({
     setNetworkRequests(prev => [request, ...prev]);
   };
 
-  // Load URL in iframe
-  const loadUrl = useCallback((urlToLoad: string) => {
-    setIsLoading(true);
-
-    // Add protocol if missing
-    if (!/^https?:\/\//i.test(urlToLoad) && urlToLoad !== 'about:blank') {
-      urlToLoad = 'https://' + urlToLoad;
-    }
-
-    // Update URL
-    setUrl(urlToLoad);
-
-    // Add to history
-    if (historyPositionRef.current === historyRef.current.length - 1) {
-      historyRef.current.push(urlToLoad);
-      historyPositionRef.current++;
-    } else {
-      // If we're in the middle of the history, truncate and add
-      historyRef.current = historyRef.current.slice(0, historyPositionRef.current + 1);
-      historyRef.current.push(urlToLoad);
-      historyPositionRef.current = historyRef.current.length - 1;
-    }
-
-    // Clear console and network
-    setConsoleLogs([{ type: 'info', message: `Navigating to ${urlToLoad}`, timestamp: getCurrentTimestamp() }]);
-    setNetworkRequests([]);
-
-    // Notify parent
-    onUrlChange?.(urlToLoad);
-
-    // Simulate loading time
-    setTimeout(() => {
-      setIsLoading(false);
-      addConsoleLog('info', `Page loaded: ${urlToLoad}`);
-    }, 1000);
-  }, [onUrlChange, addConsoleLog]);
-
+  // Event handlers
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     loadUrl(inputUrl);
@@ -249,10 +275,9 @@ export const TestingEnvironment = ({
   const handleBack = () => {
     if (historyPositionRef.current > 0) {
       historyPositionRef.current--;
-      const prevUrl = historyRef.current[historyPositionRef.current];
-      setUrl(prevUrl);
-      setInputUrl(prevUrl);
-      loadUrl(prevUrl);
+      const previousUrl = historyRef.current[historyPositionRef.current];
+      setUrl(previousUrl);
+      setInputUrl(previousUrl);
     }
   };
 
@@ -262,82 +287,56 @@ export const TestingEnvironment = ({
       const nextUrl = historyRef.current[historyPositionRef.current];
       setUrl(nextUrl);
       setInputUrl(nextUrl);
-      loadUrl(nextUrl);
     }
   };
 
   const handleDeviceChange = (newDevice: DeviceType) => {
     setDevice(newDevice);
     setViewportSize(devicePresets[newDevice]);
-
-    // Add console log
-    addConsoleLog('info', `Device changed to ${devicePresets[newDevice].name}`);
+    addConsoleLog('info', `Switched to ${devicePresets[newDevice].name} view`);
   };
 
-  // Handle screenshot
   const takeScreenshot = () => {
-    if (!iframeRef.current) {
-      toast.error("Cannot take screenshot: iframe not available");
-      return;
-    }
-
-    // In a real implementation, we would use html2canvas or a similar library
-    // For now, we'll simulate it
-    addConsoleLog('info', 'Screenshot taken');
-
-    // Create a mock screenshot data URL
-    const mockScreenshotUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
-
     if (onScreenshot) {
-      onScreenshot(mockScreenshotUrl);
+      // In a real implementation, this would capture the iframe content
+      onScreenshot('data:image/png;base64,screenshot-data');
+      toast.success("Screenshot captured!");
     }
-
-    toast.success("Screenshot captured");
   };
 
-  // Handle recording
   const toggleRecording = () => {
     if (isRecording) {
-      // Stop recording
+      setIsRecording(false);
       if (recordingInterval) {
         clearInterval(recordingInterval);
         setRecordingInterval(null);
       }
-      setIsRecording(false);
-      addConsoleLog('info', `Recording stopped after ${Math.floor(recordingTime / 60)}m ${recordingTime % 60}s`);
-      toast.success(`Recording stopped after ${Math.floor(recordingTime / 60)}m ${recordingTime % 60}s`);
+      setRecordingTime(0);
+      toast.success("Recording stopped");
     } else {
-      // Start recording
       setIsRecording(true);
       setRecordingTime(0);
       const interval = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
       setRecordingInterval(interval);
-      addConsoleLog('info', 'Recording started');
       toast.success("Recording started");
     }
   };
 
-  // State for test progress animation
-  const [testProgress, setTestProgress] = useState(0);
-  const [showTestSuccess, setShowTestSuccess] = useState(false);
-  const [currentTestIndex, setCurrentTestIndex] = useState(0);
-
-  // Run tests with visual feedback
+  // Test running functionality
   const runTests = useCallback(async () => {
     if (challengeTests.length === 0) {
-      toast.info("No tests available for this challenge");
+      toast.error("No tests available");
       return;
     }
 
     setIsRunningTests(true);
     setTestProgress(0);
-    setCurrentTestIndex(0);
+    setCurrentTestIndex(-1);
+    setTestResults({});
     setShowTestSuccess(false);
-    addConsoleLog('info', 'Running tests...');
 
-    // Create a sandbox environment object to pass to tests
     const testEnv = {
       iframe: iframeRef.current,
       url,
@@ -493,488 +492,517 @@ export const TestingEnvironment = ({
   const isNarrowViewport = useIsMobile();
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      <div className={`${isNarrowViewport ? 'p-1.5' : 'p-2'} border-b flex flex-wrap items-center gap-1 md:gap-2`}>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
-            onClick={handleBack}
-            disabled={historyPositionRef.current <= 0}
-          >
-            <ArrowLeft className={`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
-            onClick={handleForward}
-            disabled={historyPositionRef.current >= historyRef.current.length - 1}
-          >
-            <ArrowRight className={`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
-            onClick={handleRefresh}
-          >
-            <RefreshCw className={cn(`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`, isLoading && "animate-spin")} />
-          </Button>
+    <div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-muted/10 backdrop-blur-sm">
+      {/* Enhanced Browser Controls */}
+      <div className={cn(
+        "p-4 border-b border-border/50 bg-gradient-to-r from-background/90 to-muted/20 backdrop-blur-md",
+        "flex flex-wrap items-center gap-3"
+      )}>
+        <div className="flex items-center gap-2">
+          {/* Navigation Controls */}
+          <div className="flex items-center bg-muted/30 rounded-lg p-1 border border-border/50">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-accent/50 transition-all duration-200"
+              onClick={handleBack}
+              disabled={historyPositionRef.current <= 0}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-accent/50 transition-all duration-200"
+              onClick={handleForward}
+              disabled={historyPositionRef.current >= historyRef.current.length - 1}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-accent/50 transition-all duration-200"
+              onClick={handleRefresh}
+            >
+              <RefreshCw className={cn("h-4 w-4 transition-transform", isLoading && "animate-spin")} />
+            </Button>
+          </div>
+
+          {/* Device Controls */}
+          <div className="flex items-center bg-muted/30 rounded-lg p-1 border border-border/50">
+            {(Object.keys(devicePresets) as DeviceType[]).map((deviceType) => {
+              const preset = devicePresets[deviceType];
+              const IconComponent = preset.icon;
+              return (
+                <Button
+                  key={deviceType}
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-8 w-8 transition-all duration-200",
+                    device === deviceType
+                      ? "bg-primary/20 text-primary border border-primary/30"
+                      : "hover:bg-accent/50"
+                  )}
+                  onClick={() => handleDeviceChange(deviceType)}
+                >
+                  <IconComponent className="h-4 w-4" />
+                </Button>
+              );
+            })}
+          </div>
         </div>
 
-        <form onSubmit={handleUrlSubmit} className="flex-1 flex min-w-[100px]">
-          <Input
-            value={inputUrl}
-            onChange={(e) => setInputUrl(e.target.value)}
-            className={`${isNarrowViewport ? 'h-7 text-xs' : 'h-8 text-sm'}`}
-            placeholder={isNarrowViewport ? "Enter URL" : "Enter URL to test"}
-            disabled={isLoading}
-          />
+        {/* URL Input */}
+        <form onSubmit={handleUrlSubmit} className="flex-1 flex min-w-[200px]">
+          <div className="relative flex-1">
+            <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={inputUrl}
+              onChange={(e) => setInputUrl(e.target.value)}
+              className="pl-10 bg-background/50 border-border/50 focus:border-primary/50 transition-all duration-200"
+              placeholder="Enter URL to test"
+              disabled={isLoading}
+            />
+            {isLoading && (
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 0.5 }}
+                className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full"
+              />
+            )}
+          </div>
         </form>
 
-        <div className="flex items-center gap-1">
+        {/* Action Controls */}
+        <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
-            size="icon"
-            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
-            onClick={() => handleDeviceChange('mobile')}
+            variant="outline"
+            size="sm"
+            className="border-border/50 hover:border-border hover:bg-muted/50"
+            onClick={takeScreenshot}
           >
-            <Smartphone className={cn(`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`, device === 'mobile' && "text-primary")} />
+            <Camera className="h-4 w-4 mr-2" />
+            Screenshot
           </Button>
           <Button
-            variant="ghost"
-            size="icon"
-            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
-            onClick={() => handleDeviceChange('tablet')}
+            variant="outline"
+            size="sm"
+            className={cn(
+              "border-border/50 hover:border-border transition-all duration-200",
+              isRecording && "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+            )}
+            onClick={toggleRecording}
           >
-            <Tablet className={cn(`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`, device === 'tablet' && "text-primary")} />
+            {isRecording ? (
+              <>
+                <Pause className="h-4 w-4 mr-2" />
+                Stop ({recordingTime}s)
+              </>
+            ) : (
+              <>
+                <Activity className="h-4 w-4 mr-2" />
+                Record
+              </>
+            )}
           </Button>
           <Button
-            variant="ghost"
-            size="icon"
-            className={`${isNarrowViewport ? 'h-7 w-7' : 'h-8 w-8'}`}
-            onClick={() => handleDeviceChange('desktop')}
+            variant="outline"
+            size="sm"
+            className="border-border/50 hover:border-border hover:bg-muted/50"
+            onClick={onBugReport}
           >
-            <Monitor className={cn(`${isNarrowViewport ? 'h-3.5 w-3.5' : 'h-4 w-4'}`, device === 'desktop' && "text-primary")} />
+            <Bug className="h-4 w-4 mr-2" />
+            Report Bug
           </Button>
         </div>
       </div>
 
+      {/* Enhanced Tab System */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className={cn(
-          "justify-start",
-          isNarrowViewport ? "mx-2 mt-2 flex-wrap gap-1 w-full" : "mx-4 mt-2"
-        )}>
-          <TabsTrigger
-            value="application"
-            className={cn(
-              isNarrowViewport ? "px-2 py-1 text-xs flex-1" : "px-3"
-            )}
-          >
-            {isNarrowViewport ? "App" : "Application"}
-          </TabsTrigger>
-          <TabsTrigger
-            value="console"
-            className={cn(
-              isNarrowViewport ? "px-2 py-1 text-xs flex-1" : "px-3"
-            )}
-          >
-            Console
-          </TabsTrigger>
-          <TabsTrigger
-            value="network"
-            className={cn(
-              isNarrowViewport ? "px-2 py-1 text-xs flex-1" : "px-3"
-            )}
-          >
-            {isNarrowViewport ? "Net" : "Network"}
-          </TabsTrigger>
-          <TabsTrigger
-            value="elements"
-            className={cn(
-              isNarrowViewport ? "px-2 py-1 text-xs flex-1" : "px-3"
-            )}
-          >
-            {isNarrowViewport ? "DOM" : "Elements"}
-          </TabsTrigger>
-          {challengeTests.length > 0 && (
-            <TabsTrigger
-              value="tests"
-              className={cn(
-                isNarrowViewport ? "px-2 py-1 text-xs flex-1" : "px-3"
-              )}
+        <div className="px-4 pt-2 pb-0 bg-gradient-to-r from-background/80 to-muted/10">
+          <TabsList className="grid w-full grid-cols-4 bg-muted/30 border border-border/50">
+            <TabsTrigger 
+              value="application" 
+              className="data-[state=active]:bg-background data-[state=active]:shadow-md transition-all duration-200"
             >
-              <span className="truncate">Tests</span>
-              {Object.values(testResults).some(result => result.passed) && (
-                <Badge className={`${isNarrowViewport ? 'ml-1 text-[10px] px-1 py-0' : 'ml-2'} bg-green-100 text-green-800 flex-shrink-0`}>
-                  {Object.values(testResults).filter(result => result.passed).length}/{challengeTests.length}
-                </Badge>
-              )}
+              <Eye className="h-4 w-4 mr-2" />
+              Preview
             </TabsTrigger>
-          )}
-        </TabsList>
-
-        <TabsContent value="application" className={cn(
-          "flex-1 flex flex-col",
-          isNarrowViewport ? "p-2" : "p-4"
-        )}>
-          <div
-            className="flex-1 border rounded-md overflow-hidden flex items-center justify-center bg-muted/30 relative"
-            style={{
-              maxWidth: isNarrowViewport ? '100%' : `${viewportSize.width}px`,
-              maxHeight: `${viewportSize.height}px`,
-              margin: '0 auto',
-              width: '100%',
-              height: '100%'
-            }}
-          >
-            {isLoading ? (
-              <div className="text-center">
-                <RefreshCw className={`${isNarrowViewport ? 'h-6 w-6' : 'h-8 w-8'} animate-spin mx-auto mb-2 text-muted-foreground`} />
-                <p className={`${isNarrowViewport ? 'text-xs' : 'text-sm'} text-muted-foreground`}>Loading...</p>
-              </div>
-            ) : (
-              <iframe
-                ref={iframeRef}
-                src={url}
-                title="Testing Sandbox"
-                className="w-full h-full border-0"
-                sandbox={sandboxMode === 'secure'
-                  ? "allow-same-origin allow-scripts allow-forms"
-                  : "allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
-                }
-                referrerPolicy="no-referrer"
-                loading="lazy"
-              />
-            )}
-
-            {isRecording && (
-              <div className={`absolute top-2 right-2 bg-red-500 text-white ${isNarrowViewport ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs'} rounded-full flex items-center`}>
-                <span className="animate-pulse mr-1">●</span>
-                {isNarrowViewport ? `${Math.floor(recordingTime / 60)}:${(recordingTime % 60).toString().padStart(2, '0')}` : `Recording: ${Math.floor(recordingTime / 60)}:${(recordingTime % 60).toString().padStart(2, '0')}`}
-              </div>
-            )}
-          </div>
-
-          <div className={cn(
-            "flex justify-between items-center mt-4",
-            isNarrowViewport && "flex-col gap-2"
-          )}>
-            <div className="text-xs text-muted-foreground">
-              {viewportSize.width} × {viewportSize.height}
-              {device !== 'desktop' && (
-                <span className="ml-2">{devicePresets[device].name}</span>
-              )}
-            </div>
-
-            <div className={cn(
-              "flex gap-2",
-              isNarrowViewport && "flex-wrap justify-center w-full"
-            )}>
-              <Button
-                variant={isRecording ? "destructive" : "outline"}
-                size="sm"
-                onClick={toggleRecording}
-                className={isNarrowViewport ? "flex-1" : ""}
-              >
-                {isRecording ? (
-                  <>
-                    <Pause className="h-4 w-4 mr-1" />
-                    {isNarrowViewport ? "Stop" : "Stop Recording"}
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4 mr-1" />
-                    {isNarrowViewport ? "Record" : "Record Session"}
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={takeScreenshot}
-                className={isNarrowViewport ? "flex-1" : ""}
-              >
-                <Camera className="h-4 w-4 mr-1" />
-                {isNarrowViewport ? "" : "Screenshot"}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onBugReport}
-                className={isNarrowViewport ? "flex-1" : ""}
-              >
-                <Bug className="h-4 w-4 mr-1" />
-                {isNarrowViewport ? "" : "Report Bug"}
-              </Button>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="console" className="flex-1 p-4">
-          <ScrollArea className="h-full border rounded-md bg-black text-white font-mono p-2">
-            {consoleLogs.map((log, index) => (
-              <div key={index} className={cn(
-                "py-2 px-3 text-xs border-b border-gray-800 break-words",
-                log.type === 'error' && "text-red-400",
-                log.type === 'warning' && "text-yellow-400",
-                log.type === 'info' && "text-blue-400",
-                log.type === 'debug' && "text-gray-400"
-              )}>
-                <div className="flex items-start">
-                  <span className="text-gray-500 mr-2 flex-shrink-0">{log.timestamp}</span>
-                  {log.source && <span className="text-gray-400 mr-1 flex-shrink-0">[{log.source}]</span>}
-                  <span className="break-words">{log.message}</span>
-                </div>
-              </div>
-            ))}
-            {consoleLogs.length === 0 && (
-              <div className="py-4 text-center text-gray-500 text-sm">
-                No console output yet
-              </div>
-            )}
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="network" className="flex-1 p-4">
-          <ScrollArea className="h-full border rounded-md">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left p-2">Method</th>
-                  <th className="text-left p-2">URL</th>
-                  <th className="text-left p-2">Status</th>
-                  <th className="text-left p-2">Time</th>
-                  <th className="text-left p-2">Size</th>
-                  <th className="text-left p-2">Type</th>
-                </tr>
-              </thead>
-              <tbody>
-                {networkRequests.map((request, index) => (
-                  <tr key={request.id || index} className="border-b">
-                    <td className="p-2 font-medium">{request.method}</td>
-                    <td className="p-2 truncate max-w-[200px]">{request.url}</td>
-                    <td className={cn(
-                      "p-2",
-                      request.status >= 200 && request.status < 300 && "text-green-600",
-                      request.status >= 400 && "text-red-600"
-                    )}>
-                      {request.status}
-                    </td>
-                    <td className="p-2">{request.time}</td>
-                    <td className="p-2">{request.size}</td>
-                    <td className="p-2">{request.type}</td>
-                  </tr>
-                ))}
-                {networkRequests.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                      No network requests captured yet
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="elements" className="flex-1 p-4">
-          <ScrollArea className="h-full border rounded-md p-2">
-            <div className="font-mono text-sm">
-              {elements.map((element, index) => (
-                <div key={index} className="py-1">
-                  <div className="flex items-start">
-                    <Code className="h-4 w-4 mr-1 mt-0.5 text-muted-foreground" />
-                    <div>
-                      <span className="text-blue-600">&lt;{element.tag}</span>
-                      {element.id && <span className="text-purple-600"> id="{element.id}"</span>}
-                      {element.classes.length > 0 && (
-                        <span className="text-purple-600"> class="{element.classes.join(' ')}"</span>
-                      )}
-                      {Object.entries(element.attributes || {}).map(([key, value]) => (
-                        <span key={key} className="text-purple-600"> {key}="{value}"</span>
-                      ))}
-                      <span className="text-blue-600">&gt;</span>
-                      <span className="text-muted-foreground ml-2">// {element.children} children</span>
-                      {element.path && (
-                        <span className="text-gray-500 ml-2 text-xs">{element.path}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {elements.length === 0 && (
-                <div className="py-4 text-center text-muted-foreground">
-                  No DOM elements captured yet
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="tests" className="flex-1 p-4">
-          <div className="mb-4 flex justify-between items-center">
-            <h3 className="text-lg font-medium">Challenge Tests</h3>
-            <Button
-              onClick={runTests}
-              disabled={isRunningTests || challengeTests.length === 0}
-              variant="outline"
-              size="sm"
+            <TabsTrigger 
+              value="console"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-md transition-all duration-200"
             >
-              {isRunningTests ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Running Tests...
-                </>
-              ) : (
-                <>
-                  <Play className="h-4 w-4 mr-2" />
-                  Run Tests
-                </>
-              )}
-            </Button>
-          </div>
+              <Terminal className="h-4 w-4 mr-2" />
+              Console
+            </TabsTrigger>
+            <TabsTrigger 
+              value="network"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-md transition-all duration-200"
+            >
+              <Activity className="h-4 w-4 mr-2" />
+              Network
+            </TabsTrigger>
+            <TabsTrigger 
+              value="tests"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-md transition-all duration-200"
+            >
+              <FlaskConical className="h-4 w-4 mr-2" />
+              Tests
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-          {/* Test Progress Bar */}
-          {isRunningTests && (
-            <div className="mb-4">
-              <div className="flex justify-between text-xs mb-1">
-                <span>Running tests...</span>
-                <span>{Math.round(testProgress)}%</span>
-              </div>
-              <Progress value={testProgress} className="h-2" />
-            </div>
-          )}
-
-          {/* Test Success Animation */}
-          <AnimatePresence>
-            {showTestSuccess && (
+        {/* Application Preview */}
+        <TabsContent value="application" className="flex-1 p-4 m-0">
+          <div className="h-full bg-gradient-to-br from-muted/20 to-background/50 rounded-xl border border-border/50 p-4 backdrop-blur-sm">
+            <div className="h-full flex items-center justify-center relative">
               <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="mb-4 bg-green-50 border border-green-200 rounded-md p-3 flex items-center"
+                key={device}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="relative shadow-2xl rounded-lg overflow-hidden border border-border/50 bg-background"
+                style={{
+                  width: Math.min(viewportSize.width, 800),
+                  height: Math.min(viewportSize.height, 600),
+                  aspectRatio: `${viewportSize.width}/${viewportSize.height}`
+                }}
               >
-                <motion.div
-                  initial={{ scale: 0.5, rotate: -10 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 10 }}
-                  className="mr-3 bg-green-100 p-2 rounded-full"
-                >
-                  <CheckCircle2 className="h-6 w-6 text-green-600" />
-                </motion.div>
-                <div>
-                  <motion.h4
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="font-medium text-green-800"
-                  >
-                    All Tests Passed!
-                  </motion.h4>
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="text-sm text-green-600"
-                  >
-                    Great job! You've successfully completed all the tests.
-                  </motion.p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <ScrollArea className="h-[calc(100%-3rem)] border rounded-md">
-            <div className="p-4 space-y-4">
-              {challengeTests.map((test, index) => {
-                const result = testResults[test.id];
-                const isCurrentTest = isRunningTests && index === currentTestIndex;
-
-                return (
+                <iframe
+                  ref={iframeRef}
+                  src={url}
+                  className="w-full h-full border-none"
+                  sandbox={sandboxMode === 'secure' ? "allow-scripts allow-same-origin allow-forms" : undefined}
+                  title="Testing Environment"
+                />
+                {isLoading && (
                   <motion.div
-                    key={test.id}
-                    className={cn(
-                      "border rounded-md p-4 overflow-hidden",
-                      result?.passed && "border-green-200 bg-green-50",
-                      result?.passed === false && "border-red-200 bg-red-50",
-                      isCurrentTest && "border-blue-300 shadow-sm"
-                    )}
-                    animate={isCurrentTest ? {
-                      scale: [1, 1.02, 1],
-                      transition: { repeat: Infinity, duration: 1.5 }
-                    } : {}}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute inset-0 bg-background/80 flex items-center justify-center backdrop-blur-sm"
                   >
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center flex-wrap gap-2">
-                        {result?.passed === true && (
-                          <motion.div
-                            initial={{ scale: 0.5, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring" }}
-                            className="flex-shrink-0"
-                          >
-                            <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
-                          </motion.div>
-                        )}
-                        {result?.passed === false && (
-                          <motion.div
-                            initial={{ scale: 0.5, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring" }}
-                            className="flex-shrink-0"
-                          >
-                            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-                          </motion.div>
-                        )}
-                        {isCurrentTest && !result && (
-                          <RefreshCw className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 animate-spin" />
-                        )}
-                        <h4 className="font-medium break-words">{test.name}</h4>
-                      </div>
-                      {result && (
-                        <Badge
-                          className={cn(
-                            "flex-shrink-0 ml-2",
-                            result.passed
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          )}
-                        >
-                          {result.passed ? "Passed" : "Failed"}
-                        </Badge>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <RefreshCw className="h-6 w-6 animate-spin text-primary" />
+                      <span className="text-sm font-medium">Loading...</span>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-3 break-words leading-relaxed">{test.description}</p>
-                    {result && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className={cn(
-                          "text-sm p-3 rounded overflow-hidden",
-                          result.passed ? "bg-green-100" : "bg-red-100"
-                        )}
-                      >
-                        <div className="break-words">{result.message}</div>
-                        {result.details && (
-                          <div className="mt-3 text-xs font-mono whitespace-pre-wrap bg-black/5 p-2 rounded">
-                            {result.details}
-                          </div>
-                        )}
-                      </motion.div>
+                  </motion.div>
+                )}
+              </motion.div>
+              
+              {/* Device Info Badge */}
+              <div className="absolute top-4 right-4">
+                <Badge className="bg-background/80 border border-border/50 backdrop-blur-sm">
+                  {(() => {
+                    const IconComponent = devicePresets[device].icon;
+                    return <IconComponent className="h-3 w-3 mr-1" />;
+                  })()}
+                  {viewportSize.name}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Enhanced Console */}
+        <TabsContent value="console" className="flex-1 p-4 m-0">
+          <div className="h-full bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl border border-border/50 overflow-hidden">
+            <div className="bg-slate-800/50 px-4 py-2 border-b border-slate-600/50 flex items-center">
+              <Terminal className="h-4 w-4 mr-2 text-slate-300" />
+              <span className="text-sm font-medium text-slate-200">Console Output</span>
+              <Badge className="ml-auto bg-slate-700 text-slate-200 border-slate-600">
+                {consoleLogs.length} logs
+              </Badge>
+            </div>
+            <ScrollArea className="h-[calc(100%-3rem)]">
+              <div className="p-4 space-y-2 font-mono text-sm">
+                {consoleLogs.map((log, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                    className={cn(
+                      "flex items-start gap-3 p-3 rounded-lg border transition-all duration-200 hover:scale-[1.01]",
+                      consoleLogStyles[log.type]
+                    )}
+                  >
+                    <span className="text-xs text-muted-foreground font-medium min-w-[60px]">
+                      {log.timestamp}
+                    </span>
+                    <Badge className="text-xs uppercase font-semibold">
+                      {log.type}
+                    </Badge>
+                    <span className="flex-1 break-words">{log.message}</span>
+                    {log.source && (
+                      <span className="text-xs text-muted-foreground">
+                        {log.source}
+                      </span>
                     )}
                   </motion.div>
-                );
-              })}
-              {challengeTests.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  No tests available for this challenge
+                ))}
+                {consoleLogs.length === 0 && (
+                  <div className="text-center py-8 text-slate-400">
+                    No console output yet
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </TabsContent>
+
+        {/* Enhanced Network Panel */}
+        <TabsContent value="network" className="flex-1 p-4 m-0">
+          <div className="h-full bg-gradient-to-br from-muted/20 to-background/50 rounded-xl border border-border/50 overflow-hidden">
+            <div className="bg-background/80 px-4 py-3 border-b border-border/50 flex items-center backdrop-blur-sm">
+              <Activity className="h-4 w-4 mr-2 text-primary" />
+              <span className="text-sm font-medium">Network Requests</span>
+              <Badge className="ml-auto bg-primary/10 text-primary border-primary/20">
+                {networkRequests.length} requests
+              </Badge>
+            </div>
+            <ScrollArea className="h-[calc(100%-3.5rem)]">
+              <div className="p-4 space-y-3">
+                {networkRequests.map((request, index) => (
+                  <motion.div
+                    key={request.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                    className="bg-background/80 p-4 rounded-lg border border-border/50 hover:border-border transition-all duration-200 hover:shadow-md"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <Badge className="bg-slate-100 text-slate-700 border-slate-200 font-mono text-xs">
+                          {request.method}
+                        </Badge>
+                        <Badge className={cn("text-xs font-medium", getStatusBadgeStyle(request.status))}>
+                          {request.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Zap className="h-3 w-3" />
+                        {request.time}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="font-mono text-sm break-all">{request.url}</div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{request.type}</span>
+                        <span>{request.size}</span>
+                        <span>by {request.initiator}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+                {networkRequests.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CircuitBoard className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                    <p>No network requests captured yet</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </TabsContent>
+
+        {/* Enhanced Tests Panel */}
+        <TabsContent value="tests" className="flex-1 p-4 m-0">
+          <div className="h-full bg-gradient-to-br from-muted/20 to-background/50 rounded-xl border border-border/50 overflow-hidden">
+            {/* Test Header */}
+            <div className="bg-background/80 px-4 py-3 border-b border-border/50 backdrop-blur-sm">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <FlaskConical className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">Challenge Tests</h3>
+                  <Badge className="bg-primary/10 text-primary border-primary/20">
+                    {challengeTests.length} tests
+                  </Badge>
                 </div>
+                <Button
+                  onClick={runTests}
+                  disabled={isRunningTests || challengeTests.length === 0}
+                  className={cn(
+                    "transition-all duration-300 hover:scale-105",
+                    isRunningTests
+                      ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                      : "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary"
+                  )}
+                  size="sm"
+                >
+                  {isRunningTests ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Running Tests...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4 mr-2" />
+                      Run All Tests
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Test Progress Bar */}
+              {isRunningTests && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4"
+                >
+                  <div className="flex justify-between text-xs mb-2">
+                    <span className="font-medium">Running tests...</span>
+                    <span className="font-mono">{Math.round(testProgress)}%</span>
+                  </div>
+                  <Progress 
+                    value={testProgress} 
+                    className="h-2 bg-muted/50"
+                  />
+                </motion.div>
               )}
             </div>
-          </ScrollArea>
+
+            {/* Test Success Animation */}
+            <AnimatePresence>
+              {showTestSuccess && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="mx-4 mt-4 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 flex items-center"
+                >
+                  <motion.div
+                    initial={{ scale: 0.5, rotate: -10 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 10 }}
+                    className="mr-4 bg-gradient-to-br from-emerald-500 to-green-600 p-3 rounded-full shadow-lg shadow-emerald-500/25"
+                  >
+                    <CheckCircle2 className="h-6 w-6 text-white" />
+                  </motion.div>
+                  <div>
+                    <motion.h4
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="font-semibold text-emerald-800 dark:text-emerald-200 flex items-center gap-2"
+                    >
+                      <Star className="h-4 w-4" />
+                      All Tests Passed!
+                    </motion.h4>
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="text-sm text-emerald-600 dark:text-emerald-400 mt-1"
+                    >
+                      Excellent work! You've successfully completed all the tests.
+                    </motion.p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Tests List */}
+            <ScrollArea className="h-[calc(100%-6rem)]">
+              <div className="p-4 space-y-4">
+                {challengeTests.map((test, index) => {
+                  const result = testResults[test.id];
+                  const isCurrentTest = isRunningTests && index === currentTestIndex;
+
+                  return (
+                    <motion.div
+                      key={test.id}
+                      className={cn(
+                        "bg-background/80 border rounded-xl p-4 transition-all duration-300 hover:shadow-md",
+                        result?.passed && "border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/50 to-green-50/30 dark:from-emerald-950/20 dark:to-green-950/10",
+                        result?.passed === false && "border-red-200 dark:border-red-800 bg-gradient-to-br from-red-50/50 to-rose-50/30 dark:from-red-950/20 dark:to-rose-950/10",
+                        isCurrentTest && "border-primary/50 shadow-lg shadow-primary/10"
+                      )}
+                      animate={isCurrentTest ? {
+                        scale: [1, 1.02, 1],
+                        transition: { repeat: Infinity, duration: 1.5 }
+                      } : {}}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-3">
+                          {result?.passed === true && (
+                            <motion.div
+                              initial={{ scale: 0.5, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ type: "spring" }}
+                              className="bg-gradient-to-br from-emerald-500 to-green-600 p-1.5 rounded-full shadow-lg shadow-emerald-500/25"
+                            >
+                              <CheckCircle2 className="h-4 w-4 text-white" />
+                            </motion.div>
+                          )}
+                          {result?.passed === false && (
+                            <motion.div
+                              initial={{ scale: 0.5, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ type: "spring" }}
+                              className="bg-gradient-to-br from-red-500 to-rose-600 p-1.5 rounded-full shadow-lg shadow-red-500/25"
+                            >
+                              <AlertCircle className="h-4 w-4 text-white" />
+                            </motion.div>
+                          )}
+                          {isCurrentTest && !result && (
+                            <div className="bg-gradient-to-br from-primary to-primary/80 p-1.5 rounded-full">
+                              <RefreshCw className="h-4 w-4 text-white animate-spin" />
+                            </div>
+                          )}
+                          <div>
+                            <h4 className="font-medium">{test.name}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">{test.description}</p>
+                          </div>
+                        </div>
+                        {result && (
+                          <Badge
+                            className={cn(
+                              "transition-all duration-300",
+                              result.passed
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
+                                : "bg-red-100 text-red-800 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800"
+                            )}
+                          >
+                            {result.passed ? "Passed" : "Failed"}
+                          </Badge>
+                        )}
+                      </div>
+                      {result && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          className={cn(
+                            "text-sm p-3 rounded-lg border mt-3",
+                            result.passed 
+                              ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800" 
+                              : "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800"
+                          )}
+                        >
+                          <div className="break-words">{result.message}</div>
+                          {result.details && (
+                            <div className="mt-3 text-xs font-mono whitespace-pre-wrap bg-background/50 p-3 rounded border border-border/50">
+                              {result.details}
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+                {challengeTests.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <FlaskConical className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                    <h3 className="text-lg font-medium mb-2">No Tests Available</h3>
+                    <p className="text-sm">Tests will appear here when available for this challenge.</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

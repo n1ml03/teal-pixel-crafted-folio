@@ -58,7 +58,7 @@ export const Navigation = ({ className }: NavigationProps) => {
   // Track scroll position for shadow effect
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
+      setScrolled(window.scrollY > 20);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -74,33 +74,31 @@ export const Navigation = ({ className }: NavigationProps) => {
 
   const navItems: NavItem[] = [
     {
-      path: '/home',
+      path: '/',
       label: 'Home',
-      icon: <Home className="h-4 w-4 mr-2" />,
+      icon: <Home className="h-4 w-4 mr-1" />,
       tooltip: 'View portfolio website',
       external: true
     },
     {
       path: '/challenges',
       label: 'Challenges',
-      icon: <TestTube className="h-4 w-4 mr-2" />,
+      icon: <TestTube className="h-4 w-4 mr-1" />,
       tooltip: 'Browse and attempt testing challenges'
     },
     {
       path: '/leaderboard',
       label: 'Leaderboard',
-      icon: <Trophy className="h-4 w-4 mr-2" />,
+      icon: <Trophy className="h-4 w-4 mr-1" />,
       tooltip: 'See how you rank against other testers'
     },
     {
       path: '/sandbox',
       label: 'Sandbox',
-      icon: <Layers className="h-4 w-4 mr-2" />,
+      icon: <Layers className="h-4 w-4 mr-1" />,
       tooltip: 'Practice in an open testing environment'
     }
   ];
-
-
 
   // Mark all notifications as read
   const markAllAsRead = () => {
@@ -159,13 +157,14 @@ export const Navigation = ({ className }: NavigationProps) => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          {navItems.map((item) => (
+          {navItems.map((item, index) => (
             <MotionButton
               key={item.path}
               onClick={() => item.external ? navigate(item.path) : navigate(`/playground${item.path}`)}
-              className={`flex items-center text-gray-700 hover:text-teal-500 transition-all duration-300 text-sm font-medium ${
+              className={cn(
+                "flex items-center text-gray-700 hover:text-teal-500 transition-all duration-300 text-sm font-medium",
                 isActive(item.path, item.external) ? 'text-teal-500' : ''
-              }`}
+              )}
               whileHover={{ y: -2, color: "rgb(20, 184, 166)" }}
               whileTap={{ scale: 0.95 }}
               variant="ghost"
@@ -175,7 +174,6 @@ export const Navigation = ({ className }: NavigationProps) => {
             </MotionButton>
           ))}
 
-          {/* Contact button */}
           <MotionButton
             className="bg-black hover:bg-gray-800 rounded-full px-5 py-2 text-sm font-medium text-white flex items-center"
             whileHover={{ scale: 1.03 }}
@@ -269,31 +267,14 @@ export const Navigation = ({ className }: NavigationProps) => {
         </div>
 
         {/* Mobile menu button */}
-        <div className="md:hidden">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-            className="h-9 w-9"
-          >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={mobileMenuOpen ? 'close' : 'menu'}
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: 90, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </Button>
-        </div>
+        <motion.button
+          className="md:hidden text-gray-700 bg-white/80 p-2 rounded-full shadow-sm"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.95)" }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </motion.button>
       </div>
 
       {/* Mobile Navigation */}
@@ -317,9 +298,10 @@ export const Navigation = ({ className }: NavigationProps) => {
                   }
                   setMobileMenuOpen(false);
                 }}
-                className={`flex items-center text-gray-700 hover:text-teal-500 transition-colors py-2 border-b border-gray-100 px-4 rounded-lg hover:bg-gray-50 w-full justify-start ${
+                className={cn(
+                  "flex items-center text-gray-700 hover:text-teal-500 transition-colors py-2 border-b border-gray-100 px-4 rounded-lg hover:bg-gray-50 w-full justify-start",
                   isActive(item.path, item.external) ? 'text-teal-500 bg-gray-50' : ''
-                }`}
+                )}
                 whileHover={{ x: 5, backgroundColor: "rgb(249, 250, 251)" }}
                 whileTap={{ scale: 0.98 }}
                 variant="ghost"
@@ -356,14 +338,14 @@ export const Navigation = ({ className }: NavigationProps) => {
               </Button>
 
               <MotionButton
-                className="bg-black hover:bg-gray-800 rounded-full px-5 py-2 text-sm font-medium text-white flex items-center"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                transitionType="spring"
+                className="bg-black hover:bg-gray-800 rounded-full px-5 py-2 text-white flex items-center"
                 onClick={() => {
                   navigate('/playground/help');
                   setMobileMenuOpen(false);
                 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transitionType="spring"
               >
                 <MessageSquare className="w-4 h-4 mr-1.5" />
                 Get Help

@@ -24,6 +24,7 @@ const Resources = lazy(() => import("./pages/home/Resources.tsx"));
 const Projects = lazy(() => import("./pages/home/Projects.tsx"));
 const ProjectDetail = lazy(() => import("./pages/home/ProjectDetail.tsx"));
 const ContactForm = lazy(() => import("./pages/home/ContactForm.tsx"));
+const Services = lazy(() => import("./pages/home/Services.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // URL Shortener pages
@@ -62,6 +63,7 @@ const router = createBrowserRouter(
       <Route path="/resources" element={<Resources />} />
       <Route path="/projects" element={<Projects />} />
       <Route path="/projects/:slug" element={<ProjectDetail />} />
+      <Route path="/services" element={<Services />} />
       <Route path="/contact-form" element={<ContactForm />} />
 
       {/* URL Shortener Routes */}

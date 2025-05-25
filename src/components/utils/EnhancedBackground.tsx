@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { throttle } from '@/lib/scroll-optimization';
 import { useMediaQuery } from '@/lib/performance-hooks';
 
 interface EnhancedBackgroundProps {

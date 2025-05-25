@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { helpContent, faqs } from '../../data/help-content';
 import { debounce } from 'lodash';
@@ -468,11 +467,8 @@ const Help = () => {
   }, [handleSearchSubmit, recentSearches.length, setSearchQuery, showRecentSearches, setShowRecentSearches]);
 
   return (
-    <div className="min-h-screen relative">
-      {/* Enhanced background with gradient and animated elements */}
-      <EnhancedBackground optimizeForLowPerformance={true} />
-
-      <div className={`container flex-1 ${isMobile ? 'py-4 pt-20 px-4' : 'py-6 pt-24'} relative z-10`}>
+    <div className="relative">
+      <main className="container py-6 pt-24 relative z-10" style={{ contentVisibility: 'auto', containIntrinsicSize: '0 800px' }}>
         {/* Hero Section - using memoized component */}
         <HeroSection
           title="Help & Support Center"
@@ -1018,7 +1014,7 @@ const Help = () => {
           )}
 
         </div>
-      </div>
+      </main>
     </div>
   );
 };
