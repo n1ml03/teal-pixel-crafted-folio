@@ -169,8 +169,8 @@ const Footer = () => {
               </div>
             </motion.div>
 
-                         {/* Navigation Links */}
-             <motion.div 
+              {/* Navigation Links */}
+            <motion.div 
                className="lg:col-span-1"
               initial={!prefersReducedMotion ? { opacity: 0, y: 20 } : { opacity: 1 }}
               whileInView={{ opacity: 1, y: 0 }}
