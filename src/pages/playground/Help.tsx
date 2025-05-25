@@ -798,7 +798,9 @@ const Help = () => {
                                   </div>
                                   <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-blue-900`}>{item.title}</h3>
                                 </div>
-                                <div className={`${isMobile ? 'text-sm leading-relaxed text-gray-800 pl-8' : 'text-base leading-relaxed text-gray-800 pl-10'} prose prose-blue max-w-none prose-headings:text-blue-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-blue-900 prose-code:text-blue-800 prose-code:bg-blue-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none`} dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
+                                <div className={`${isMobile ? 'text-sm leading-relaxed text-gray-800 pl-8' : 'text-base leading-relaxed text-gray-800 pl-10'} prose prose-blue max-w-none prose-headings:text-blue-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-blue-900 prose-code:text-blue-800 prose-code:bg-blue-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none`}>
+                                  <div className="whitespace-pre-wrap">{item.content.replace(/<[^>]*>/g, '')}</div>
+                                </div>
                               </div>
                             ))}
                         </div>
@@ -851,7 +853,9 @@ const Help = () => {
                                   </div>
                                   <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-teal-900`}>{item.title}</h3>
                                 </div>
-                                <div className={`${isMobile ? 'text-sm leading-relaxed text-gray-800 pl-8' : 'text-base leading-relaxed text-gray-800 pl-10'} prose prose-teal max-w-none prose-headings:text-teal-900 prose-a:text-teal-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-teal-900 prose-code:text-teal-800 prose-code:bg-teal-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-teal-50 prose-pre:border prose-pre:border-teal-200/50 prose-pre:rounded-lg`} dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(item.content, searchQuery) : { __html: item.content }} />
+                                <div className={`${isMobile ? 'text-sm leading-relaxed text-gray-800 pl-8' : 'text-base leading-relaxed text-gray-800 pl-10'} prose prose-teal max-w-none prose-headings:text-teal-900 prose-a:text-teal-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-teal-900 prose-code:text-teal-800 prose-code:bg-teal-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-teal-50 prose-pre:border prose-pre:border-teal-200/50 prose-pre:rounded-lg`}>
+                                  <div className="whitespace-pre-wrap">{item.content.replace(/<[^>]*>/g, '')}</div>
+                                </div>
                               </div>
                             ))}
                         </div>
@@ -988,11 +992,13 @@ const Help = () => {
                                       {faq.category === 'challenges' && <Trophy className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-amber-600`} />}
                                       {faq.category === 'technical' && <Zap className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-amber-600`} />}
                                     </div>
-                                    <span className={`${isMobile ? 'text-base' : 'text-lg'}`} dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(faq.question, searchQuery) : { __html: faq.question }} />
+                                    <span className={`${isMobile ? 'text-base' : 'text-lg'}`}>{faq.question}</span>
                                   </div>
                                 </AccordionTrigger>
                                 <AccordionContent className={`${isMobile ? 'px-2 pb-4 pt-2' : 'px-4 pb-6 pt-3'}`}>
-                                  <div className={`${isMobile ? 'text-sm leading-relaxed text-gray-800 pl-8 bg-amber-50/30 p-4 rounded-lg' : 'text-base leading-relaxed text-gray-800 pl-10 bg-amber-50/30 p-6 rounded-lg'} prose prose-amber max-w-none prose-headings:text-amber-900 prose-a:text-amber-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-amber-900 prose-code:text-amber-800 prose-code:bg-amber-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-ol:pl-1 prose-ul:pl-1 prose-li:mb-2`} dangerouslySetInnerHTML={searchQuery.trim() ? highlightSearchTerm(faq.answer, searchQuery) : { __html: faq.answer }} />
+                                  <div className={`${isMobile ? 'text-sm leading-relaxed text-gray-800 pl-8 bg-amber-50/30 p-4 rounded-lg' : 'text-base leading-relaxed text-gray-800 pl-10 bg-amber-50/30 p-6 rounded-lg'} prose prose-amber max-w-none prose-headings:text-amber-900 prose-a:text-amber-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-amber-900 prose-code:text-amber-800 prose-code:bg-amber-100/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-ol:pl-1 prose-ul:pl-1 prose-li:mb-2`}>
+                                    <div className="whitespace-pre-wrap">{faq.answer.replace(/<[^>]*>/g, '')}</div>
+                                  </div>
                                 </AccordionContent>
                               </AccordionItem>
                             ))}

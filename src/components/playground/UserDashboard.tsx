@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
-import { softSpringTransition, quickSpringTransition } from '@/lib/motion';
+import { softSpringTransition } from '@/lib/motion';
 import {
   CheckCircle,
   Award,
@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth-utils';
 import { UserProgressService } from '@/services/UserProgressService';
 import { UserActivity, UserAchievement, Achievement, ChallengeProgress } from '@/types/playground';
 import { formatDistanceToNow } from 'date-fns';
@@ -67,26 +67,6 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
       transition: {
         ...softSpringTransition,
         duration: 0.5
-      }
-    }
-  };
-
-  // Animation variants for tab content
-  const tabContentVariants = {
-    hidden: { opacity: 0, x: 10 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: {
-        ...quickSpringTransition,
-        duration: 0.3
-      }
-    },
-    exit: {
-      opacity: 0,
-      x: -10,
-      transition: {
-        duration: 0.2
       }
     }
   };
@@ -197,16 +177,16 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
   };
 
   // Format activity message
-  const formatActivityMessage = (activity: UserActivity) => {
+  const formatActivityMessage = (activity: UserActivity): string => {
     switch (activity.type) {
       case 'challenge_started':
         return `Started a new challenge`;
       case 'challenge_completed':
-        return `Completed a challenge and earned ${activity.details.points || 0} points`;
+        return `Completed a challenge and earned ${(activity.details.points as number) || 0} points`;
       case 'achievement_unlocked':
-        return `Unlocked the "${activity.details.achievementId}" achievement`;
+        return `Unlocked the "${activity.details.achievementId as string}" achievement`;
       case 'level_up':
-        return `Leveled up to level ${activity.details.level}`;
+        return `Leveled up to level ${activity.details.level as number}`;
       case 'bug_reported':
         return `Reported a bug`;
       case 'test_passed':
@@ -214,11 +194,32 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
       case 'test_failed':
         return `Failed a test`;
       default:
-        return activity.details.message || 'Activity recorded';
+        return (activity.details.message as string) || 'Activity recorded';
     }
   };
 
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <div className={`${className} flex items-center justify-center min-h-[400px]`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   // User will always be available with localStorage implementation
+  if (!user) {
+    return (
+      <div className={`${className} flex items-center justify-center min-h-[400px]`}>
+        <div className="text-center">
+          <p className="text-muted-foreground">Please log in to view your dashboard.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={className}>
@@ -836,7 +837,7 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                               animate={{ opacity: 1 }}
                               transition={{ delay: prefersReducedMotion ? 0 : 0.2 + (index * 0.05) }}
                             >
-                              Challenge #{activity.details.challengeId}
+                              Challenge #{activity.details.challengeId as string}
                             </motion.p>
                           )}
 
@@ -847,7 +848,7 @@ export const UserDashboard = ({ className }: UserDashboardProps) => {
                               animate={{ opacity: 1 }}
                               transition={{ delay: prefersReducedMotion ? 0 : 0.2 + (index * 0.05) }}
                             >
-                              Achievement: {activity.details.achievementId}
+                              Achievement: {activity.details.achievementId as string}
                             </motion.p>
                           )}
                         </div>

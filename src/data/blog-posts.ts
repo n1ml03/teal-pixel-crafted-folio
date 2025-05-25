@@ -182,9 +182,9 @@ Ensure all interactive elements are keyboard accessible:
 \`\`\`jsx
 function AccessibleButton() {
   const [isActive, setIsActive] = useState(false);
-  
+
   return (
-    <button 
+    <button
       className={isActive ? 'active' : ''}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -206,7 +206,7 @@ Use ARIA attributes when necessary to enhance accessibility:
 \`\`\`jsx
 function ExpandableSection({ title, children }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   return (
     <div>
       <button
@@ -216,7 +216,7 @@ function ExpandableSection({ title, children }) {
       >
         {title}
       </button>
-      <div 
+      <div
         id="content-panel"
         aria-hidden={!isExpanded}
         style={{ display: isExpanded ? 'block' : 'none' }}
@@ -319,12 +319,12 @@ async function runLighthouse() {
   const browser = await puppeteer.launch({headless: true});
   const page = await browser.newPage();
   await page.goto('https://example.com');
-  
+
   const report = await lighthouse(page, {
     formFactor: 'desktop',
     screenEmulation: { disabled: true },
   });
-  
+
   console.log('Performance score:', report.lhr.categories.performance.score * 100);
   await browser.close();
 }
@@ -474,7 +474,7 @@ public class UserApiTests {
 
     @Test
     public void createUser_shouldReturnCreatedUser() {
-        String requestBody = "{ \"name\": \"Test User\", \"username\": \"testuser\", \"email\": \"test@example.com\" }";
+        String requestBody = "{ " + '"' + "name" + '"' + ": " + '"' + "Test User" + '"' + ", " + '"' + "username" + '"' + ": " + '"' + "testuser" + '"' + ", " + '"' + "email" + '"' + ": " + '"' + "test@example.com" + '"' + " }";
 
         given().
             contentType(ContentType.JSON).
@@ -599,7 +599,7 @@ fun testLoginButton_displaysDashboard() {
     onView(withId(R.id.username_input)).perform(typeText("user"));
     onView(withId(R.id.password_input)).perform(typeText("pass"));
     onView(withId(R.id.login_button)).perform(click());
-    
+
     onView(withId(R.id.dashboard_greeting)).check(matches(withText("Welcome!")));
 }
 \`\`\`
@@ -623,7 +623,7 @@ func testLoginFlow() throws {
     passwordField.typeText("password123")
 
     app.buttons["loginButton"].tap()
-    
+
     XCTAssertTrue(app.staticTexts["welcomeMessage"].exists)
 }
 \`\`\`

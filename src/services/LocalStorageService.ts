@@ -32,14 +32,24 @@ const createGuestUser = (): User => {
 
 // LocalStorageService class
 export class LocalStorageService {
-  // Get current user
+  // Get current user with validation
   static getCurrentUser(): User {
     try {
       const userData = localStorage.getItem(USER_KEY);
       if (userData) {
-        return JSON.parse(userData);
+        const parsedUser = JSON.parse(userData);
+
+        // Validate user data structure to prevent tampering
+        if (this.isValidUserData(parsedUser)) {
+          return parsedUser;
+        } else {
+          console.warn('Invalid user data detected, creating new guest user');
+          const guestUser = createGuestUser();
+          localStorage.setItem(USER_KEY, JSON.stringify(guestUser));
+          return guestUser;
+        }
       }
-      
+
       // Create a new guest user if none exists
       const guestUser = createGuestUser();
       localStorage.setItem(USER_KEY, JSON.stringify(guestUser));
@@ -50,6 +60,32 @@ export class LocalStorageService {
       localStorage.setItem(USER_KEY, JSON.stringify(guestUser));
       return guestUser;
     }
+  }
+
+  // Validate user data structure
+  private static isValidUserData(data: unknown): data is User {
+    return (
+      data &&
+      typeof data === 'object' &&
+      data !== null &&
+      'id' in data &&
+      'name' in data &&
+      'email' in data &&
+      'points' in data &&
+      'level' in data &&
+      'badges' in data &&
+      typeof (data as Record<string, unknown>).id === 'string' &&
+      typeof (data as Record<string, unknown>).name === 'string' &&
+      typeof (data as Record<string, unknown>).email === 'string' &&
+      typeof (data as Record<string, unknown>).points === 'number' &&
+      typeof (data as Record<string, unknown>).level === 'number' &&
+      Array.isArray((data as Record<string, unknown>).badges) &&
+      ((data as Record<string, unknown>).badges as unknown[]).every((badge: unknown) => typeof badge === 'string') &&
+      (data as Record<string, unknown>).points >= 0 &&
+      (data as Record<string, unknown>).level >= 1 &&
+      (data as Record<string, unknown>).points <= 1000000 && // Reasonable upper limit
+      (data as Record<string, unknown>).level <= 100 // Reasonable upper limit
+    );
   }
 
   // Update user profile
@@ -68,24 +104,34 @@ export class LocalStorageService {
     }
   }
 
-  // Add points to user
+  // Add points to user with validation
   static addPoints(points: number): User {
     try {
+      // Validate points input
+      if (typeof points !== 'number' || points < 0 || points > 10000) {
+        throw new Error('Invalid points value. Points must be a positive number less than 10000.');
+      }
+
       const user = this.getCurrentUser();
-      
-      // Add points
-      const newPoints = user.points + points;
+
+      // Add points with overflow protection
+      const newPoints = Math.min(user.points + points, 1000000);
 
       // Check if user should level up (simple formula: level = sqrt(points / 100))
-      const newLevel = Math.floor(Math.sqrt(newPoints / 100)) + 1;
-      
+      const newLevel = Math.min(Math.floor(Math.sqrt(newPoints / 100)) + 1, 100);
+
       // Update user
       const updatedUser = {
         ...user,
         points: newPoints,
         level: newLevel
       };
-      
+
+      // Validate the updated user before saving
+      if (!this.isValidUserData(updatedUser)) {
+        throw new Error('Invalid user data after update');
+      }
+
       localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
       return updatedUser;
     } catch (error) {
@@ -98,18 +144,18 @@ export class LocalStorageService {
   static addBadge(badge: string): User {
     try {
       const user = this.getCurrentUser();
-      
+
       // Check if user already has this badge
       if (user.badges.includes(badge)) {
         return user;
       }
-      
+
       // Add badge
       const updatedUser = {
         ...user,
         badges: [...user.badges, badge]
       };
-      
+
       localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
       return updatedUser;
     } catch (error) {
@@ -119,7 +165,7 @@ export class LocalStorageService {
   }
 
   // Save user progress
-  static saveUserProgress(key: string, data: any): void {
+  static saveUserProgress(key: string, data: unknown): void {
     try {
       localStorage.setItem(key, JSON.stringify(data));
     } catch (error) {
@@ -128,7 +174,7 @@ export class LocalStorageService {
   }
 
   // Get user progress
-  static getUserProgress(key: string): any {
+  static getUserProgress(key: string): unknown {
     try {
       const data = localStorage.getItem(key);
       return data ? JSON.parse(data) : null;

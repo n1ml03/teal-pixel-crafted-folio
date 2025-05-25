@@ -22,7 +22,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import ChallengeCard from '@/components/playground/ChallengeCard';
 import { MotionButton } from "@/components/ui/motion-button";
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth-utils';
 import { UserProgressService } from '@/services/UserProgressService';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import { useIsMobile } from '@/hooks/use-mobile';

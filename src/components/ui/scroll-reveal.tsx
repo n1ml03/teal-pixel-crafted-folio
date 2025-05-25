@@ -32,14 +32,15 @@ export const ScrollReveal = ({
   const [hasAnimated, setHasAnimated] = useState(false);
   const [isInView, setIsInView] = useState(false);
 
-  // Default animation variants - reduced y movement to minimize layout shifts
-  const defaultVariants = {
-    hidden: { opacity: 0, y: 10 }, // Reduced from 20 to 10 to minimize layout shifts
-    visible: { opacity: 1, y: 0 }
-  };
-
   // Use provided variants or default ones
-  const animationVariants = useMemo(() => variants || defaultVariants, [variants]);
+  const animationVariants = useMemo(() => {
+    // Default animation variants - reduced y movement to minimize layout shifts
+    const defaultVariants = {
+      hidden: { opacity: 0, y: 10 }, // Reduced from 20 to 10 to minimize layout shifts
+      visible: { opacity: 1, y: 0 }
+    };
+    return variants || defaultVariants;
+  }, [variants]);
 
   // Check for reduced motion preference
   const prefersReducedMotion = useMemo(() => {

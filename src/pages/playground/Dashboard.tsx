@@ -2,7 +2,7 @@ import { Loader2 } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import UserDashboard from '@/components/playground/UserDashboard';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth-utils';
 import { useState, useEffect } from 'react';
 import { softSpringTransition } from '@/lib/motion';
 

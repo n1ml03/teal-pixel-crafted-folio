@@ -1,7 +1,7 @@
 /**
  * Utilities for optimizing component rendering and reducing unnecessary re-renders
  */
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 
 /**
  * Custom hook to detect unnecessary re-renders in development mode
@@ -11,17 +11,16 @@ import { useRef, useEffect, useState, useCallback } from 'react';
  */
 export function useRenderOptimizer(
   componentName: string,
-  props: Record<string, any>,
-  dependencies: any[] = []
+  props: Record<string, unknown>,
+  dependencies: unknown[] = []
 ): void {
-  // Only run in development mode
-  if (process.env.NODE_ENV !== 'development') return;
-
   const renderCount = useRef(0);
-  const prevProps = useRef<Record<string, any>>({});
-  const prevDeps = useRef<any[]>([]);
+  const prevProps = useRef<Record<string, unknown>>({});
+  const prevDeps = useRef<unknown[]>([]);
 
   useEffect(() => {
+    // Only run in development mode
+    if (process.env.NODE_ENV !== 'development') return;
     renderCount.current += 1;
 
     // Check which props changed
@@ -43,7 +42,7 @@ export function useRenderOptimizer(
     // Log render information
     if (renderCount.current > 1) {
       console.group(`%c${componentName} re-rendered (${renderCount.current})`, 'color: orange');
-      
+
       if (changedProps.length > 0) {
         console.log('Changed props:', changedProps.join(', '));
         changedProps.forEach(prop => {
@@ -135,9 +134,9 @@ export function useThrottle<T>(value: T, limit: number): T {
  */
 export function useMemoizedCalculation<T>(
   fn: () => T,
-  dependencies: any[]
+  dependencies: unknown[]
 ): T {
-  const ref = useRef<{ deps: any[]; result: T }>({
+  const ref = useRef<{ deps: unknown[]; result: T }>({
     deps: [],
     result: null as unknown as T
   });
@@ -168,6 +167,9 @@ export function useLazyLoad(
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Memoize options to prevent unnecessary re-creation of observer
+  const memoizedOptions = useMemo(() => options, [options]);
+
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
@@ -177,14 +179,14 @@ export function useLazyLoad(
         setIsVisible(true);
         observer.disconnect();
       }
-    }, options);
+    }, memoizedOptions);
 
     observer.observe(element);
 
     return () => {
       observer.disconnect();
     };
-  }, [options]);
+  }, [memoizedOptions]);
 
   return [ref, isVisible];
 }
@@ -209,7 +211,7 @@ export function useIdleCallback(
   // Create a function to request idle callback
   const requestIdleCallback = useCallback(() => {
     if ('requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(() => callbackRef.current(), { timeout });
+      (window as Window & { requestIdleCallback: (callback: () => void, options?: { timeout: number }) => void }).requestIdleCallback(() => callbackRef.current(), { timeout });
     } else {
       // Fallback for browsers that don't support requestIdleCallback
       setTimeout(() => callbackRef.current(), timeout);

@@ -38,7 +38,7 @@ const Hero = () => {
     // This is a basic heuristic and can be improved
     const detectLowPerformanceDevice = () => {
       // Check if navigator.deviceMemory is available (Chrome, Edge, Opera)
-      const lowMemory = 'deviceMemory' in navigator && (navigator as any).deviceMemory < 4;
+      const lowMemory = 'deviceMemory' in navigator && (navigator as Navigator & { deviceMemory?: number }).deviceMemory && (navigator as Navigator & { deviceMemory?: number }).deviceMemory! < 4;
 
       // Check processor cores if available
       const lowCores = navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4;

@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.tsx';
 import { ShortenedURL } from '@/types/shorten.ts';
-import { toast } from '@/components/ui/sonner.tsx';
+import { toast } from 'sonner';
 import { Check, Copy, QrCode, Link, Calendar, ExternalLink, Download, Share2, Lock, Shield } from 'lucide-react';
 import * as QRCodeLib from 'qrcode.react';
 import { format } from 'date-fns';

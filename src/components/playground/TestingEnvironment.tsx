@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from '@/hooks/use-mobile.tsx';
 import { Progress } from "@/components/ui/progress";
@@ -73,7 +73,14 @@ interface ChallengeTest {
   id: string;
   name: string;
   description: string;
-  testFunction: (env: any) => Promise<TestResult>;
+  testFunction: (env: {
+    iframe: HTMLIFrameElement | null;
+    url: string;
+    device: DeviceType;
+    consoleLogs: ConsoleLog[];
+    networkRequests: NetworkRequest[];
+    elements: DOMElement[];
+  }) => Promise<TestResult>;
 }
 
 type DeviceType = 'desktop' | 'tablet' | 'mobile';
@@ -147,26 +154,21 @@ export const TestingEnvironment = ({
     return now.toLocaleTimeString('en-US', { hour12: false });
   }
 
-  // Initialize the sandbox
-  useEffect(() => {
-    if (initialUrl && initialUrl !== 'about:blank') {
-      setInputUrl(initialUrl);
-      loadUrl(initialUrl);
-    }
-
-    // Set up message listener for iframe communication
-    window.addEventListener('message', handleIframeMessage);
-
-    return () => {
-      window.removeEventListener('message', handleIframeMessage);
-      if (recordingInterval) {
-        clearInterval(recordingInterval);
+  // Add console log
+  const addConsoleLog = useCallback((type: ConsoleLog['type'], message: string, source?: string) => {
+    setConsoleLogs(prev => [
+      ...prev,
+      {
+        type,
+        message,
+        timestamp: getCurrentTimestamp(),
+        source
       }
-    };
-  }, [initialUrl]);
+    ]);
+  }, []);
 
   // Handle messages from the iframe
-  const handleIframeMessage = (event: MessageEvent) => {
+  const handleIframeMessage = useCallback((event: MessageEvent) => {
     const { type, data } = event.data || {};
 
     if (!type) return;
@@ -191,20 +193,7 @@ export const TestingEnvironment = ({
         }));
         break;
     }
-  };
-
-  // Add console log
-  const addConsoleLog = (type: ConsoleLog['type'], message: string, source?: string) => {
-    setConsoleLogs(prev => [
-      ...prev,
-      {
-        type,
-        message,
-        timestamp: getCurrentTimestamp(),
-        source
-      }
-    ]);
-  };
+  }, [onTestResult, addConsoleLog]);
 
   // Add network request
   const addNetworkRequest = (request: NetworkRequest) => {
@@ -212,7 +201,7 @@ export const TestingEnvironment = ({
   };
 
   // Load URL in iframe
-  const loadUrl = (urlToLoad: string) => {
+  const loadUrl = useCallback((urlToLoad: string) => {
     setIsLoading(true);
 
     // Add protocol if missing
@@ -246,7 +235,7 @@ export const TestingEnvironment = ({
       setIsLoading(false);
       addConsoleLog('info', `Page loaded: ${urlToLoad}`);
     }, 1000);
-  };
+  }, [onUrlChange, addConsoleLog]);
 
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -336,7 +325,7 @@ export const TestingEnvironment = ({
   const [currentTestIndex, setCurrentTestIndex] = useState(0);
 
   // Run tests with visual feedback
-  const runTests = async () => {
+  const runTests = useCallback(async () => {
     if (challengeTests.length === 0) {
       toast.info("No tests available for this challenge");
       return;
@@ -358,83 +347,147 @@ export const TestingEnvironment = ({
       elements
     };
 
-    // Run each test with visual progress
-    let passedCount = 0;
+    // Track timeouts for cleanup
+    const timeouts: NodeJS.Timeout[] = [];
+    let isCancelled = false;
 
-    for (let i = 0; i < challengeTests.length; i++) {
-      const test = challengeTests[i];
-      setCurrentTestIndex(i);
+    try {
+      // Run each test with visual progress
+      let passedCount = 0;
 
-      // Update progress animation
-      setTestProgress(Math.round((i / challengeTests.length) * 100));
+      for (let i = 0; i < challengeTests.length; i++) {
+        if (isCancelled) break;
 
-      // Add a small delay for visual effect
-      await new Promise(resolve => setTimeout(resolve, 500));
+        const test = challengeTests[i];
+        setCurrentTestIndex(i);
 
-      try {
-        addConsoleLog('info', `Running test: ${test.name}`);
-        const result = await test.testFunction(testEnv);
+        // Update progress animation
+        setTestProgress(Math.round((i / challengeTests.length) * 100));
 
-        setTestResults(prev => ({
-          ...prev,
-          [test.id]: result
-        }));
+        // Add a small delay for visual effect with cleanup tracking
+        await new Promise<void>(resolve => {
+          const timeout = setTimeout(resolve, 500);
+          timeouts.push(timeout);
+        });
 
-        if (result.passed) {
-          passedCount++;
-        }
+        if (isCancelled) break;
 
-        addConsoleLog(
-          result.passed ? 'info' : 'error',
-          `Test ${result.passed ? 'passed' : 'failed'}: ${result.message}`
-        );
+        try {
+          addConsoleLog('info', `Running test: ${test.name}`);
+          const result = await test.testFunction(testEnv);
 
-        // Add a small delay between tests
-        await new Promise(resolve => setTimeout(resolve, 300));
-      } catch (error) {
-        console.error(`Error running test ${test.id}:`, error);
-        setTestResults(prev => ({
-          ...prev,
-          [test.id]: {
-            passed: false,
-            message: `Test error: ${error instanceof Error ? error.message : 'Unknown error'}`
+          if (isCancelled) break;
+
+          setTestResults(prev => ({
+            ...prev,
+            [test.id]: result
+          }));
+
+          if (result.passed) {
+            passedCount++;
           }
-        }));
 
-        addConsoleLog('error', `Test error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    }
+          addConsoleLog(
+            result.passed ? 'info' : 'error',
+            `Test ${result.passed ? 'passed' : 'failed'}: ${result.message}`
+          );
 
-    // Complete the progress bar
-    setTestProgress(100);
-
-    // Show success animation if all tests passed
-    if (passedCount === challengeTests.length) {
-      setShowTestSuccess(true);
-
-      // Show notification if available
-      try {
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('Tests Completed!', {
-            body: 'All tests passed successfully!'
+          // Add a small delay between tests with cleanup tracking
+          await new Promise<void>(resolve => {
+            const timeout = setTimeout(resolve, 300);
+            timeouts.push(timeout);
           });
+        } catch (error) {
+          if (isCancelled) break;
+
+          console.error(`Error running test ${test.id}:`, error);
+          setTestResults(prev => ({
+            ...prev,
+            [test.id]: {
+              passed: false,
+              message: `Test error: ${error instanceof Error ? error.message : 'Unknown error'}`
+            }
+          }));
+
+          addConsoleLog('error', `Test error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-      } catch (error) {
-        console.warn('Notification failed:', error);
       }
+
+      if (isCancelled) return;
+
+      // Complete the progress bar
+      setTestProgress(100);
+
+      // Show success animation if all tests passed
+      if (passedCount === challengeTests.length) {
+        setShowTestSuccess(true);
+
+        // Show notification if available
+        try {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Tests Completed!', {
+              body: 'All tests passed successfully!'
+            });
+          }
+        } catch (error) {
+          console.warn('Notification failed:', error);
+        }
+      }
+
+      // Wait for animations to complete with cleanup tracking
+      await new Promise<void>(resolve => {
+        const timeout = setTimeout(resolve, 1000);
+        timeouts.push(timeout);
+      });
+
+      if (isCancelled) return;
+
+      setIsRunningTests(false);
+      addConsoleLog('info', 'All tests completed');
+
+      // Hide success animation after a delay with cleanup tracking
+      const hideTimeout = setTimeout(() => {
+        if (!isCancelled) {
+          setShowTestSuccess(false);
+        }
+      }, 3000);
+      timeouts.push(hideTimeout);
+
+    } catch (error) {
+      console.error('Error in runTests:', error);
+      setIsRunningTests(false);
     }
 
-    // Wait for animations to complete
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Cleanup function
+    return () => {
+      isCancelled = true;
+      timeouts.forEach(timeout => clearTimeout(timeout));
+    };
+  }, [challengeTests, url, device, consoleLogs, networkRequests, elements, addConsoleLog]);
 
-    setIsRunningTests(false);
-    addConsoleLog('info', 'All tests completed');
+  // Initialize the sandbox
+  useEffect(() => {
+    if (initialUrl && initialUrl !== 'about:blank') {
+      setInputUrl(initialUrl);
+      loadUrl(initialUrl);
+    }
 
-    // Hide success animation after a delay
-    setTimeout(() => {
-      setShowTestSuccess(false);
-    }, 3000);
-  };
+    // Set up message listener for iframe communication
+    window.addEventListener('message', handleIframeMessage);
+
+    return () => {
+      window.removeEventListener('message', handleIframeMessage);
+    };
+  }, [initialUrl, handleIframeMessage, loadUrl]);
+
+  // Separate effect for recording interval cleanup
+  useEffect(() => {
+    return () => {
+      if (recordingInterval) {
+        clearInterval(recordingInterval);
+      }
+    };
+  }, [recordingInterval]);
 
   // Determine if we're in a narrow viewport
   const isNarrowViewport = useIsMobile();

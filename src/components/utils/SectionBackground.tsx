@@ -56,11 +56,12 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
         }
       );
 
-      observer.observe(sectionRef.current);
+      const currentRef = sectionRef.current;
+      observer.observe(currentRef);
 
       return () => {
-        if (sectionRef.current) {
-          observer.unobserve(sectionRef.current);
+        if (currentRef) {
+          observer.unobserve(currentRef);
         }
       };
     } else {

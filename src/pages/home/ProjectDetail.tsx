@@ -26,7 +26,7 @@ import {
   Code,
   ArrowRight
 } from 'lucide-react';
-import { toast } from "@/components/ui/sonner.tsx";
+import { toast } from "sonner";
 
 const ProjectDetail = () => {
   const { slug } = useParams<{ slug: string }>();

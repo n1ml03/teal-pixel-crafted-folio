@@ -206,12 +206,20 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
   const COLORS = ['#f59e0b', '#fbbf24', '#d97706', '#b45309', '#92400e', '#78350f', '#fdba74'];
 
   // Custom tooltip for charts
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: {
+    active?: boolean;
+    payload?: Array<{
+      name: string;
+      value: number;
+      color: string;
+    }>;
+    label?: string;
+  }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-2 border rounded shadow-sm text-xs">
           <p className="font-medium">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index: number) => (
             <p key={`tooltip-${index}`} style={{ color: entry.color }}>
               {entry.name}: {entry.value}
             </p>

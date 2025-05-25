@@ -8,7 +8,7 @@
  * @param limit The time limit in milliseconds
  * @returns A throttled function
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -16,12 +16,12 @@ export function throttle<T extends (...args: any[]) => any>(
   let lastFunc: ReturnType<typeof setTimeout>;
   let lastRan: number;
 
-  return function(this: any, ...args: Parameters<T>): void {
+  return function(this: unknown, ...args: Parameters<T>): void {
     if (!inThrottle) {
       func.apply(this, args);
       lastRan = Date.now();
       inThrottle = true;
-      
+
       setTimeout(() => {
         inThrottle = false;
       }, limit);
@@ -46,16 +46,16 @@ export function createOptimizedScrollHandler(
   callback: (scrollY: number) => void
 ): () => void {
   let ticking = false;
-  
+
   return () => {
     const scrollY = window.scrollY;
-    
+
     if (!ticking) {
       window.requestAnimationFrame(() => {
         callback(scrollY);
         ticking = false;
       });
-      
+
       ticking = true;
     }
   };
@@ -73,9 +73,9 @@ export function usePassiveScroll(
 ): void {
   React.useEffect(() => {
     const throttledCallback = throttle(callback, 16); // ~60fps
-    
+
     element.addEventListener('scroll', throttledCallback, { passive: true });
-    
+
     return () => {
       element.removeEventListener('scroll', throttledCallback);
     };
@@ -93,7 +93,7 @@ export function optimizeForAnimation(
 ): void {
   const elements = document.querySelectorAll(selector);
   const willChangeValue = properties.join(', ');
-  
+
   elements.forEach(element => {
     if (element instanceof HTMLElement) {
       element.style.willChange = willChangeValue;
@@ -107,7 +107,7 @@ export function optimizeForAnimation(
  */
 export function cleanupAnimationOptimization(selector: string): void {
   const elements = document.querySelectorAll(selector);
-  
+
   elements.forEach(element => {
     if (element instanceof HTMLElement) {
       element.style.willChange = 'auto';

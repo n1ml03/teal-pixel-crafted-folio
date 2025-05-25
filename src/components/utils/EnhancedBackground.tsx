@@ -28,7 +28,7 @@ const AnimatedBlob = React.memo(({
   isReducedMotion = false
 }: {
   className: string;
-  motionValue: any;
+  motionValue: import('framer-motion').MotionValue<number>;
   isReducedMotion?: boolean;
 }) => {
   if (isReducedMotion) {
@@ -51,7 +51,7 @@ const EnhancedBackground: React.FC<EnhancedBackgroundProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
-  
+
   // If low performance or mobile, use simple background
   const shouldUseSimple = optimizeForLowPerformance || isMobile || reducedAnimations;
 

@@ -24,7 +24,7 @@ import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
 import '@/styles/markdown.css';
 import { Separator } from '@/components/ui/separator.tsx';
-import { toast } from "@/components/ui/sonner.tsx";
+import { toast } from "sonner";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -144,11 +144,6 @@ const BlogPost = () => {
   // Handle share dialog state
   const handleShareDialogChange = (open: boolean) => {
     setShowShareDialog(open);
-  };
-
-  // Handle printing article
-  const handlePrintArticle = () => {
-    window.print();
   };
 
   if (!post) {

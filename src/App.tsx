@@ -31,7 +31,7 @@ const URLShortenerPage = lazy(() => import("./pages/shorten/URLShortenerPage.tsx
 const URLRedirect = lazy(() => import("./components/shorten/URLRedirect.tsx"));
 
 // Testing Playground pages
-const PlaygroundRoutes = lazy(() => import("./pages/playground"));
+const PlaygroundRoutes = lazy(() => import("./pages/playground/Playground"));
 import { AuthProvider } from "./contexts/AuthContext";
 
 // Loading fallback with fixed dimensions to prevent layout shifts

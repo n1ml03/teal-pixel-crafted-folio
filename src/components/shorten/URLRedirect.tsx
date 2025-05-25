@@ -4,10 +4,11 @@ import { URLShortenerService } from '@/services/URLShortenerService.ts';
 import { URLSanitizerService } from '@/services/URLSanitizerService.ts';
 import { RateLimiterService } from '@/services/RateLimiterService.ts';
 import { SecureHeadersService } from '@/services/SecureHeadersService.ts';
+import { ShortenedURL, UTMParams } from '@/types/shorten.ts';
 import { MotionButton } from '@/components/ui/motion-button.tsx';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card.tsx';
 import { ExternalLink, AlertTriangle, ArrowLeft, Shield, Clock, Globe, AlertCircle, Check } from 'lucide-react';
-import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip.tsx';
 import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
 import { ScrollReveal } from '@/components/ui/scroll-reveal.tsx';
@@ -37,7 +38,7 @@ const URLRedirect: React.FC = () => {
   const [originalURL, setOriginalURL] = useState<string | null>(null);
   const [sanitizedURL, setSanitizedURL] = useState<{ hostname: string; pathname: string; fullUrl: string } | null>(null);
   const [countdown, setCountdown] = useState(5);
-  const [shortenedURL, setShortenedURL] = useState<any>(null);
+  const [shortenedURL, setShortenedURL] = useState<ShortenedURL | null>(null);
   const [needsPassword, setNeedsPassword] = useState(false);
   const [passwordVerified, setPasswordVerified] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
@@ -142,7 +143,7 @@ const URLRedirect: React.FC = () => {
       if (redirectConfirmed || !showWarning) {
         // Extract UTM parameters from the current URL if they exist
         const currentUrlParams = new URLSearchParams(window.location.search);
-        const extractedUtmParams: Record<string, string> = {};
+        const extractedUtmParams: UTMParams = {};
 
         // Check for UTM parameters in the current URL
         ['source', 'medium', 'campaign', 'term', 'content'].forEach(param => {
@@ -197,11 +198,22 @@ const URLRedirect: React.FC = () => {
       console.error('Error redirecting:', error);
       setError('An error occurred while processing this URL');
     }
-  }, [shortCode, passwordVerified, redirectConfirmed]);
+  }, [shortCode, passwordVerified, redirectConfirmed, showWarning]);
 
   const handleManualRedirect = () => {
     if (originalURL && (redirectConfirmed || !showWarning)) {
-      window.location.href = originalURL;
+      // Additional security check before redirect
+      try {
+        const url = new URL(originalURL);
+        // Only allow http and https protocols
+        if (url.protocol === 'http:' || url.protocol === 'https:') {
+          window.location.href = originalURL;
+        } else {
+          setError('Invalid URL protocol. Only HTTP and HTTPS are allowed.');
+        }
+      } catch (error) {
+        setError('Invalid URL format.');
+      }
     }
   };
 

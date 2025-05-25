@@ -18,7 +18,7 @@ import { URLShortenerService } from '@/services/URLShortenerService.ts';
 import { URLSanitizerService } from '@/services/URLSanitizerService.ts';
 import { RateLimiterService } from '@/services/RateLimiterService.ts';
 import { CSRFProtectionService } from '@/services/CSRFProtectionService.ts';
-import { toast } from '@/components/ui/sonner.tsx';
+import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
 
 // Form schema
@@ -81,6 +81,7 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
   const [suspiciousURL, setSuspiciousURL] = useState('');
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [rateLimitRemaining, setRateLimitRemaining] = useState(5);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Generate CSRF token on component mount
   useEffect(() => {
@@ -226,6 +227,12 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
   const handleSubmit = async (values: FormValues) => {
     try {
       setIsLoading(true);
+      setIsRateLimited(false);
+
+      // Additional client-side validation
+      if (!values.url || values.url.trim().length === 0) {
+        throw new Error('URL is required');
+      }
 
       // Check rate limiting
       const rateLimit = RateLimiterService.checkLimit('url-shortener', {
@@ -244,13 +251,23 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
       }
 
       // Validate CSRF token
-      if (!CSRFProtectionService.validateToken('url-shortener-form', csrfToken)) {
+      if (!csrfToken || !CSRFProtectionService.validateToken('url-shortener-form', csrfToken)) {
         throw new Error('Security validation failed. Please refresh the page and try again.');
       }
 
       // Sanitize URL
       const sanitizedURL = URLSanitizerService.sanitizeURL(values.url.trim());
       if (!sanitizedURL) {
+        throw new Error('Invalid URL format. Please enter a valid URL including http:// or https://');
+      }
+
+      // Additional URL validation
+      try {
+        const urlObj = new URL(sanitizedURL);
+        if (!['http:', 'https:'].includes(urlObj.protocol)) {
+          throw new Error('Only HTTP and HTTPS URLs are allowed');
+        }
+      } catch (urlError) {
         throw new Error('Invalid URL format. Please enter a valid URL including http:// or https://');
       }
 
@@ -268,7 +285,7 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
         return;
       }
 
-      // Prepare options
+      // Prepare options with additional validation
       const options = prepareURLOptions(values);
 
       // Create shortened URL
@@ -549,9 +566,7 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
                 <FormField
                   control={form.control}
                   name="password"
-                  render={({ field }) => {
-                    const [showPassword, setShowPassword] = useState(false);
-                    return (
+                  render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs sm:text-sm">Password</FormLabel>
                         <div className="relative">
@@ -582,8 +597,7 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
                         </p>
                         <FormMessage className="text-xs" />
                       </FormItem>
-                    );
-                  }}
+                  )}
                 />
               </div>
             )}

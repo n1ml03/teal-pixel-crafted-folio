@@ -29,9 +29,6 @@ const Projects = () => {
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
 
   // Get all unique tags from projects
-  const allTags = Array.from(
-    new Set(projects.flatMap(project => project.tags))
-  ).sort();
 
   // Filter projects based on search query, category, and tags
   useEffect(() => {
@@ -65,13 +62,6 @@ const Projects = () => {
   }, [searchQuery, selectedCategory, selectedTags]);
 
   // Toggle tag selection
-  const toggleTag = (tag: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tag)
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
-    );
-  };
 
   // Reset all filters
   const resetFilters = () => {

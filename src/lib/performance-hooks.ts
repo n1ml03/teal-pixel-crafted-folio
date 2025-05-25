@@ -3,23 +3,23 @@
  * Only keeping essential hooks that are actually used
  */
 
-import { 
-  useRef, 
-  useEffect, 
-  useState, 
-  useCallback, 
-  useMemo, 
-  RefObject 
+import {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  RefObject
 } from 'react';
 
 // Re-export commonly used optimization patterns
-export { 
-  useDebounce, 
-  useThrottle, 
-  useMemoizedCalculation, 
-  useLazyLoad, 
+export {
+  useDebounce,
+  useThrottle,
+  useMemoizedCalculation,
+  useLazyLoad,
   useIdleCallback,
-  useRenderOptimizer 
+  useRenderOptimizer
 } from './render-optimization';
 
 /**
@@ -51,7 +51,8 @@ export function useStableMemo<T>(
   factory: () => T,
   deps: React.DependencyList
 ): T {
-  return useMemo(factory, deps);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => factory(), [factory, ...deps]);
 }
 
 /**
@@ -74,7 +75,7 @@ export function useIntersectionObserver(
 
     observer.observe(element);
     return () => observer.disconnect();
-  }, [JSON.stringify(options)]);
+  }, [options]);
 
   return [elementRef, isIntersecting];
 }
@@ -101,18 +102,21 @@ export function useMediaQuery(query: string): boolean {
 }
 
 /**
- * Simple window event listener
+ * Simple window event listener with stable handler
  */
 export function useWindowEvent<T extends keyof WindowEventMap>(
   event: T,
   handler: (event: WindowEventMap[T]) => void
 ): void {
+  // Use useCallback to stabilize the handler reference
+  const stableHandler = useCallback(handler, [handler]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    window.addEventListener(event, handler, { passive: true });
-    return () => window.removeEventListener(event, handler);
-  }, [event, handler]);
+    window.addEventListener(event, stableHandler, { passive: true });
+    return () => window.removeEventListener(event, stableHandler);
+  }, [event, stableHandler]);
 }
 
 /**
@@ -147,4 +151,4 @@ export function usePerformanceMetrics() {
   }, []);
 
   return metrics;
-} 
+}

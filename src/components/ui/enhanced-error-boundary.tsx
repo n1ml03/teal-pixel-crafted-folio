@@ -42,7 +42,7 @@ class EnhancedErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error details
     console.error('Enhanced Error Boundary caught an error:', error, errorInfo);
-    
+
     this.setState({
       error,
       errorInfo
@@ -68,7 +68,7 @@ class EnhancedErrorBoundary extends Component<Props, State> {
     try {
       // Example: Send to analytics
       if (typeof window !== 'undefined' && 'gtag' in window) {
-        (window as any).gtag('event', 'exception', {
+        (window as Window & { gtag?: (...args: unknown[]) => void }).gtag?.('event', 'exception', {
           description: error.message,
           fatal: false,
           error_boundary: true
@@ -121,7 +121,7 @@ class EnhancedErrorBoundary extends Component<Props, State> {
       'NetworkError'
     ];
 
-    return retryableErrors.some(errorType => 
+    return retryableErrors.some(errorType =>
       error.message.includes(errorType) || error.name.includes(errorType)
     );
   };
@@ -188,11 +188,11 @@ class EnhancedErrorBoundary extends Component<Props, State> {
           className="text-center max-w-md mx-auto"
         >
           <motion.div
-            animate={{ 
+            animate={{
               rotate: [0, 10, -10, 0],
               scale: [1, 1.1, 1]
             }}
-            transition={{ 
+            transition={{
               duration: 2,
               repeat: Infinity,
               repeatType: "reverse"
@@ -207,7 +207,7 @@ class EnhancedErrorBoundary extends Component<Props, State> {
           </h2>
 
           <p className="text-gray-600 mb-6">
-            {isNetworkError 
+            {isNetworkError
               ? 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại.'
               : 'Xin lỗi, có lỗi không mong muốn đã xảy ra. Chúng tôi đã ghi nhận và sẽ khắc phục sớm nhất.'
             }
@@ -287,29 +287,6 @@ class EnhancedErrorBoundary extends Component<Props, State> {
   }
 }
 
-// Hook wrapper for functional components
-export const useErrorHandler = () => {
-  const handleError = (error: Error, errorInfo?: ErrorInfo) => {
-    console.error('Manual error handling:', error);
-    // Could dispatch to global error state or show toast
-  };
 
-  return { handleError };
-};
 
-// HOC wrapper
-export const withErrorBoundary = <P extends object>(
-  Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<Props, 'children'>
-) => {
-  const WrappedComponent = (props: P) => (
-    <EnhancedErrorBoundary {...errorBoundaryProps}>
-      <Component {...props} />
-    </EnhancedErrorBoundary>
-  );
-
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  return WrappedComponent;
-};
-
-export default EnhancedErrorBoundary; 
+export default EnhancedErrorBoundary;

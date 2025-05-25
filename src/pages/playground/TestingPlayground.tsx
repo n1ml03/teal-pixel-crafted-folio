@@ -1,17 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from 'lucide-react';
 import ResizablePanelLayout from '@/components/playground/ResizablePanelLayout';
-import InstructionsPanel from '@/components/playground/InstructionsPanel';
+import InstructionsPanel, { Objective, Hint } from '@/components/playground/InstructionsPanel';
 import TestingEnvironment from '@/components/playground/TestingEnvironment';
 import BugReportingTool, { BugReport } from '@/components/playground/BugReportingTool';
 
 import CompletionAnimation from '@/components/playground/CompletionAnimation';
 import CodeEditor from '@/components/playground/CodeEditor';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth-utils';
 import { UserProgressService } from '@/services/UserProgressService';
 import { ChallengeLoaderService } from '@/services/ChallengeLoaderService';
 
@@ -22,7 +22,15 @@ const TestingPlayground = () => {
   const { challengeId } = useParams<{ challengeId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [challenge, setChallenge] = useState<any>(null);
+  const [challenge, setChallenge] = useState<{
+    id: string;
+    title: string;
+    difficulty: 'beginner' | 'intermediate' | 'advanced';
+    description: string;
+    objectives: Objective[];
+    hints: Hint[];
+    sandboxUrl: string;
+  } | null>(null);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isBugReportOpen, setIsBugReportOpen] = useState(false);
   const [screenshotUrl, setScreenshotUrl] = useState<string | undefined>(undefined);
@@ -58,183 +66,9 @@ if (header.exists()) {
   console.log('❌ Header not found');
 }`);
 
-  // Load challenge progress if user is logged in
-  useEffect(() => {
-    const loadChallengeProgress = async () => {
-      if (!user || !challengeId || !challenge) return;
-
-      try {
-        // Start or resume challenge
-        await UserProgressService.startChallenge(user.id, challengeId);
-
-        // Get challenge progress
-        const progress = await UserProgressService.getChallengeProgress(user.id, challengeId);
-
-        if (progress) {
-          // Update time elapsed
-          setTimeElapsed(progress.timeSpent);
-
-          // Update completed objectives
-          if (progress.completedObjectives.length > 0) {
-            setChallenge(prev => ({
-              ...prev,
-              objectives: prev.objectives.map(obj => ({
-                ...obj,
-                completed: progress.completedObjectives.includes(obj.id)
-              }))
-            }));
-          }
-
-          // Load latest code snapshot if available
-          if (progress.codeSnapshots && progress.codeSnapshots.length > 0) {
-            const latestSnapshot = progress.codeSnapshots[progress.codeSnapshots.length - 1];
-            setTestCode(latestSnapshot.code);
-          }
-
-          // Set last saved time
-          setLastSaved(new Date(progress.lastUpdatedAt));
-        }
-      } catch (error) {
-        console.error('Error loading challenge progress:', error);
-        toast.error("Failed to load your progress for this challenge");
-      }
-    };
-
-    loadChallengeProgress();
-  }, [user, challengeId, challenge]);
-
-  // Set up auto-save interval
-  useEffect(() => {
-    if (user && challengeId) {
-      // Auto-save every 30 seconds
-      autoSaveIntervalRef.current = window.setInterval(() => {
-        handleSave(true);
-      }, 30000);
-    }
-
-    return () => {
-      if (autoSaveIntervalRef.current) {
-        clearInterval(autoSaveIntervalRef.current);
-      }
-    };
-  }, [user, challengeId]);
-
-  // Update time spent
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeElapsed(prev => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  // Timer effect
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeElapsed(prev => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  // Load challenge data based on ID
-  useEffect(() => {
-    const loadChallenge = async () => {
-      if (!challengeId) {
-        setError("Challenge ID is missing");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        // Dynamically load the challenge details
-        const foundChallenge = await ChallengeLoaderService.loadChallengeDetails(challengeId);
-
-        if (!foundChallenge) {
-          setError(`Challenge with ID ${challengeId} not found`);
-          setIsLoading(false);
-          return;
-        }
-
-        // Format the challenge data for the playground
-        const formattedChallenge = {
-          ...foundChallenge,
-          objectives: foundChallenge.objectives.map(obj => ({
-            ...obj,
-            completed: false // Initialize all objectives as not completed
-          })),
-          sandboxUrl: foundChallenge.sandboxUrl || DEFAULT_SANDBOX_URL
-        };
-
-        setChallenge(formattedChallenge);
-        setIsLoading(false);
-        setError(null);
-      } catch (error) {
-        console.error('Error loading challenge:', error);
-        setError('Failed to load challenge data. Please try again.');
-        setIsLoading(false);
-      }
-    };
-
-    loadChallenge();
-  }, [challengeId]);
-
-  const handleObjectiveToggle = (id: string) => {
-    // Find the objective being toggled
-    const objective = challenge.objectives.find(obj => obj.id === id);
-    const isCompleting = objective ? !objective.completed : false;
-
-    setChallenge(prev => ({
-      ...prev,
-      objectives: prev.objectives.map(obj =>
-        obj.id === id ? { ...obj, completed: !obj.completed } : obj
-      )
-    }));
-
-    // Show animation when completing an objective
-    if (isCompleting) {
-      setAnimationMessage(`Completed: ${objective?.description.substring(0, 40)}...`);
-      setShowObjectiveAnimation(true);
-
-      // Fallback to browser notification if available
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Objective Completed!');
-      }
-    }
-
-    // Check if this completes the challenge
-    const updatedObjectives = challenge.objectives.map(obj =>
-      obj.id === id ? { ...obj, completed: !obj.completed } : obj
-    );
-
-    const allCompleted = updatedObjectives.every(obj => obj.completed);
-    if (allCompleted) {
-      // Show challenge completion animation
-      setAnimationMessage("You've mastered all objectives in this challenge!");
-      setShowChallengeAnimation(true);
-
-      // Fallback to browser notification if available
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Challenge Completed!', {
-          body: 'Congratulations! You completed all objectives!'
-        });
-      }
-
-      toast.success("Congratulations! You've completed all objectives!");
-    }
-  };
-
-  const handleReset = () => {
-    setChallenge(prev => ({
-      ...prev,
-      objectives: prev.objectives.map(obj => ({ ...obj, completed: false }))
-    }));
-    setTimeElapsed(0);
-    toast.info("Challenge has been reset");
-  };
-
-  const handleSave = async (isAutoSave = false) => {
-    if (!user || !challengeId) {
+  // Define handleSave callback first
+  const handleSave = useCallback(async (isAutoSave = false) => {
+    if (!user || !challengeId || !challenge) {
       if (!isAutoSave) {
         toast.warning("You need to be logged in to save progress");
       }
@@ -278,7 +112,186 @@ if (header.exists()) {
     } finally {
       setIsSaving(false);
     }
+  }, [user, challengeId, challenge, testCode, timeElapsed]);
+
+  // Load challenge progress if user is logged in
+  useEffect(() => {
+    const loadChallengeProgress = async () => {
+      if (!user || !challengeId || !challenge) return;
+
+      try {
+        // Start or resume challenge
+        await UserProgressService.startChallenge(user.id, challengeId);
+
+        // Get challenge progress
+        const progress = await UserProgressService.getChallengeProgress(user.id, challengeId);
+
+        if (progress) {
+          // Update time elapsed
+          setTimeElapsed(progress.timeSpent);
+
+          // Update completed objectives
+          if (progress.completedObjectives.length > 0) {
+            setChallenge(prev => prev && ({
+              ...prev,
+              objectives: prev.objectives.map(obj => ({
+                ...obj,
+                completed: progress.completedObjectives.includes(obj.id)
+              }))
+            }));
+          }
+
+          // Load latest code snapshot if available
+          if (progress.codeSnapshots && progress.codeSnapshots.length > 0) {
+            const latestSnapshot = progress.codeSnapshots[progress.codeSnapshots.length - 1];
+            setTestCode(latestSnapshot.code);
+          }
+
+          // Set last saved time
+          setLastSaved(new Date(progress.lastUpdatedAt));
+        }
+      } catch (error) {
+        console.error('Error loading challenge progress:', error);
+        toast.error("Failed to load your progress for this challenge");
+      }
+    };
+
+    loadChallengeProgress();
+  }, [user, challengeId, challenge]);
+
+  // Set up auto-save interval
+  useEffect(() => {
+    if (user && challengeId) {
+      // Auto-save every 30 seconds
+      autoSaveIntervalRef.current = window.setInterval(() => {
+        handleSave(true);
+      }, 30000);
+    }
+
+    return () => {
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+      }
+    };
+  }, [user, challengeId, handleSave]);
+
+  // Update time spent (single timer effect)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeElapsed(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Load challenge data based on ID
+  useEffect(() => {
+    const loadChallenge = async () => {
+      if (!challengeId) {
+        setError("Challenge ID is missing");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Dynamically load the challenge details
+        const foundChallenge = await ChallengeLoaderService.loadChallengeDetails(challengeId);
+
+        if (!foundChallenge) {
+          setError(`Challenge with ID ${challengeId} not found`);
+          setIsLoading(false);
+          return;
+        }
+
+        // Format the challenge data for the playground
+        const formattedChallenge = {
+          id: foundChallenge.id,
+          title: foundChallenge.title,
+          difficulty: foundChallenge.difficulty as 'beginner' | 'intermediate' | 'advanced',
+          description: foundChallenge.description,
+          objectives: foundChallenge.objectives.map(obj => ({
+            id: obj.id,
+            description: obj.description,
+            completed: false // Initialize all objectives as not completed
+          })),
+          hints: foundChallenge.hints.map(hint => ({
+            id: hint.id,
+            level: hint.level,
+            content: hint.content
+          })),
+          sandboxUrl: foundChallenge.sandboxUrl || DEFAULT_SANDBOX_URL
+        };
+
+        setChallenge(formattedChallenge);
+        setIsLoading(false);
+        setError(null);
+      } catch (error) {
+        console.error('Error loading challenge:', error);
+        setError('Failed to load challenge data. Please try again.');
+        setIsLoading(false);
+      }
+    };
+
+    loadChallenge();
+  }, [challengeId]);
+
+  const handleObjectiveToggle = (id: string) => {
+    if (!challenge) return;
+
+    // Find the objective being toggled
+    const objective = challenge.objectives.find(obj => obj.id === id);
+    const isCompleting = objective ? !objective.completed : false;
+
+    setChallenge(prev => prev && ({
+      ...prev,
+      objectives: prev.objectives.map(obj =>
+        obj.id === id ? { ...obj, completed: !obj.completed } : obj
+      )
+    }));
+
+    // Show animation when completing an objective
+    if (isCompleting) {
+      setAnimationMessage(`Completed: ${objective?.description.substring(0, 40)}...`);
+      setShowObjectiveAnimation(true);
+
+      // Fallback to browser notification if available
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Objective Completed!');
+      }
+    }
+
+    // Check if this completes the challenge
+    const updatedObjectives = challenge.objectives.map(obj =>
+      obj.id === id ? { ...obj, completed: !obj.completed } : obj
+    );
+
+    const allCompleted = updatedObjectives.every(obj => obj.completed);
+    if (allCompleted) {
+      // Show challenge completion animation
+      setAnimationMessage("You've mastered all objectives in this challenge!");
+      setShowChallengeAnimation(true);
+
+      // Fallback to browser notification if available
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Challenge Completed!', {
+          body: 'Congratulations! You completed all objectives!'
+        });
+      }
+
+      toast.success("Congratulations! You've completed all objectives!");
+    }
   };
+
+  const handleReset = () => {
+    setChallenge(prev => prev && ({
+      ...prev,
+      objectives: prev.objectives.map(obj => ({ ...obj, completed: false }))
+    }));
+    setTimeElapsed(0);
+    toast.info("Challenge has been reset");
+  };
+
+
 
   const handleExit = async () => {
     // Navigate back to dashboard
@@ -299,6 +312,8 @@ if (header.exists()) {
   };
 
   const handleSubmit = async () => {
+    if (!challenge) return;
+
     const completedCount = challenge.objectives.filter(obj => obj.completed).length;
     const totalCount = challenge.objectives.length;
 

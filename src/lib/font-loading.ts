@@ -26,8 +26,10 @@ export function loadFonts(): void {
     fontFamilies.forEach(font => {
       font.weights.forEach(weight => {
         // Create a promise for each font weight
-        const fontPromise = (document as any).fonts.load(`${weight} 1em ${font.family}`);
-        fontPromises.push(fontPromise);
+        const fontPromise = (document as Document & { fonts?: { load: (font: string) => Promise<FontFace[]> } }).fonts?.load(`${weight} 1em ${font.family}`);
+        if (fontPromise) {
+          fontPromises.push(fontPromise);
+        }
       });
     });
 
@@ -59,7 +61,7 @@ export function loadFonts(): void {
  */
 export function preloadFonts(fontUrls: string[]): void {
   console.warn('preloadFonts is deprecated. Use resourceManager from resource-manager.ts instead.');
-  
+
   const resources = fontUrls.map(url => ({
     href: url,
     as: 'font' as const,
@@ -67,6 +69,6 @@ export function preloadFonts(fontUrls: string[]): void {
     crossorigin: 'anonymous' as const,
     fetchpriority: 'high' as const
   }));
-  
+
   resourceManager.preloadMany(resources);
 }

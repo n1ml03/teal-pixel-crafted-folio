@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth-utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { MotionButton } from "@/components/ui/motion-button";
@@ -310,7 +310,11 @@ export const Navigation = ({ className }: NavigationProps) => {
               <MotionButton
                 key={item.path}
                 onClick={() => {
-                  item.external ? navigate(item.path) : navigate(`/playground${item.path}`);
+                  if (item.external) {
+                    navigate(item.path);
+                  } else {
+                    navigate(`/playground${item.path}`);
+                  }
                   setMobileMenuOpen(false);
                 }}
                 className={`flex items-center text-gray-700 hover:text-teal-500 transition-colors py-2 border-b border-gray-100 px-4 rounded-lg hover:bg-gray-50 w-full justify-start ${

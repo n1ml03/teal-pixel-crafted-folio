@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ShortenedURL } from '@/types/shorten.ts';
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
-import { toast } from '@/components/ui/sonner.tsx';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Copy, Trash2, ExternalLink, Search, QrCode, BarChart3 } from 'lucide-react';
 import {

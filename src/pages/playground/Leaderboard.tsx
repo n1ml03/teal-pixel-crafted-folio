@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth-utils';
 import { LeaderboardEntry } from '../../types/playground';
 import { useIsMobile } from '@/hooks/use-mobile';
 

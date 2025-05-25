@@ -12,7 +12,7 @@ import { URLShortenerService } from '@/services/URLShortenerService.ts';
 import { RateLimiterService } from '@/services/RateLimiterService.ts';
 import { CSRFProtectionService } from '@/services/CSRFProtectionService.ts';
 import { ShortenedURL } from '@/types/shorten.ts';
-import { toast } from '@/components/ui/sonner.tsx';
+import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
 
 // Form schema

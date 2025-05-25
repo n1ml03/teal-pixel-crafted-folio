@@ -61,7 +61,7 @@ export interface UserActivity {
   userId: string;
   type: ActivityType;
   timestamp: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
 }
 
 // Achievement interface
@@ -166,7 +166,7 @@ export interface UserActivity {
   userId: string;
   type: ActivityType;
   timestamp: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
 }
 
 // Bug report interface

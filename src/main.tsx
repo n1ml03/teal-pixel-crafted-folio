@@ -47,7 +47,7 @@ setTimeout(() => {
 // No need to manually preload individual resources here
 
 // Ensure the DOM is fully loaded before rendering
-document.addEventListener('DOMContentLoaded', () => {
+const initializeApp = () => {
   // Get the root element
   const rootElement = document.getElementById("root");
 
@@ -59,5 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Create root and render app immediately
   const root = createRoot(rootElement);
   root.render(<App />);
+};
 
-});
+// Check if DOM is already loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeApp, { once: true });
+} else {
+  // DOM is already loaded
+  initializeApp();
+}

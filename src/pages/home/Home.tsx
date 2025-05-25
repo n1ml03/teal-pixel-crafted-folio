@@ -23,7 +23,7 @@ const Home = () => {
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
 
   // Simple device detection
-  const isLowPerformanceDevice = isMobile || ('deviceMemory' in navigator && (navigator as any).deviceMemory < 4);
+  const isLowPerformanceDevice = isMobile || ('deviceMemory' in navigator && (navigator as Navigator & { deviceMemory?: number }).deviceMemory && (navigator as Navigator & { deviceMemory?: number }).deviceMemory! < 4);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 500);
@@ -45,8 +45,8 @@ const Home = () => {
         {/* Skip to content link */}
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 
-                     bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium 
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50
+                     bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium
                      hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           Chuyển đến nội dung chính
@@ -85,7 +85,7 @@ const Home = () => {
           {/* Other sections */}
           {sectionConfigs.map(({ id, Component }) => (
             <div key={id} style={{ contentVisibility: 'auto', containIntrinsicSize: '0 600px' }}>
-              <SectionBackground sectionId={`${id}-section`} variant={id as any} optimizeRendering={true}>
+              <SectionBackground sectionId={`${id}-section`} variant={id as 'services' | 'projects' | 'experience' | 'certifications' | 'contact'} optimizeRendering={true}>
                 <EnhancedErrorBoundary>
                   <Suspense fallback={<SectionLoading itemCount={3} showShimmer={!isLowPerformanceDevice} />}>
                     <Component />
@@ -99,7 +99,7 @@ const Home = () => {
         <EnhancedErrorBoundary fallback={<footer className="py-8 text-center">© 2024 Nam Le</footer>}>
           <Footer />
         </EnhancedErrorBoundary>
-        
+
       </div>
     </EnhancedErrorBoundary>
   );

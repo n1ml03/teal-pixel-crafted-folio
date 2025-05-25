@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Input } from "@/components/ui/input.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { motion } from 'framer-motion';
 import {
   ArrowRight,

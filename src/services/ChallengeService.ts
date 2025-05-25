@@ -23,7 +23,7 @@ export interface ChallengeTest {
   name: string;
   description: string;
   weight: number; // importance of this test in the overall score
-  testFunction: (env: any) => Promise<TestResult>;
+  testFunction: (env: Record<string, unknown>) => Promise<TestResult>;
 }
 
 // Challenge with tests

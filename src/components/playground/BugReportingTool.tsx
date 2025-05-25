@@ -26,7 +26,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface BugReportingToolProps {
@@ -134,7 +134,12 @@ export const BugReportingTool = ({
               value={bugReport.title}
               onChange={(e) => handleChange('title', e.target.value)}
               className={isMobile ? 'h-8 text-sm' : ''}
+              aria-required="true"
+              aria-describedby="bug-title-help"
             />
+            <div id="bug-title-help" className="sr-only">
+              Provide a brief, descriptive title for the bug you're reporting
+            </div>
           </div>
 
           <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-4'}`}>
@@ -142,7 +147,7 @@ export const BugReportingTool = ({
               <Label htmlFor="bug-severity" className={isMobile ? 'text-sm' : ''}>Severity <span className="text-red-500">*</span></Label>
               <Select
                 value={bugReport.severity}
-                onValueChange={(value) => handleChange('severity', value as any)}
+                onValueChange={(value) => handleChange('severity', value as BugReport['severity'])}
               >
                 <SelectTrigger id="bug-severity" className={isMobile ? 'h-8 text-sm' : ''}>
                   <SelectValue placeholder="Select severity" />
@@ -180,7 +185,7 @@ export const BugReportingTool = ({
               <Label htmlFor="bug-type" className={isMobile ? 'text-sm' : ''}>Bug Type <span className="text-red-500">*</span></Label>
               <Select
                 value={bugReport.type}
-                onValueChange={(value) => handleChange('type', value as any)}
+                onValueChange={(value) => handleChange('type', value as BugReport['type'])}
               >
                 <SelectTrigger id="bug-type" className={isMobile ? 'h-8 text-sm' : ''}>
                   <SelectValue placeholder="Select type" />

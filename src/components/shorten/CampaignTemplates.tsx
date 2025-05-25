@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area.tsx';
 import { Textarea } from '@/components/ui/textarea.tsx';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Plus, Edit, Trash2, Copy, Tag, Save, FileText } from 'lucide-react';
-import { toast } from '@/components/ui/sonner.tsx';
+import { toast } from 'sonner';
 
 interface CampaignTemplatesProps {
   onSelectTemplate: (template: UTMParams) => void;

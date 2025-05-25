@@ -20,14 +20,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { MotionButton } from "@/components/ui/motion-button";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import challengesMeta from '@/data/challengesMeta';
 import { ChallengeLoaderService } from '@/services/ChallengeLoaderService';
 import { ChallengeWithTests } from '@/services/ChallengeService';
+import { URLSanitizerService } from '@/services/URLSanitizerService';
 
 // Interface for the extended challenge data needed in ChallengeDetails
 interface ExtendedChallenge extends ChallengeWithTests {
@@ -304,7 +304,9 @@ const ChallengeDetails = () => {
 
                 <p className="text-muted-foreground mb-6">{challenge.description}</p>
 
-                <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: challenge.longDescription }} />
+                <div className="prose max-w-none">
+                  <div className="whitespace-pre-wrap">{challenge.longDescription?.replace(/<[^>]*>/g, '')}</div>
+                </div>
 
                 <div className="mt-8">
                   <h2 className="text-xl font-bold mb-4">Prerequisites</h2>

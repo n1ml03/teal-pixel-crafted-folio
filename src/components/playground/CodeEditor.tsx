@@ -18,7 +18,7 @@ import { tags } from '@lezer/highlight';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Copy, Check, Code, Play, Save, Maximize2, Minimize2, Download, Upload, RefreshCw } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { throttle } from '@/lib/scroll-optimization';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';

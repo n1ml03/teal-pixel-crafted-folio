@@ -48,7 +48,7 @@ export class ExportService {
   // Export URL analytics
   static exportAnalytics(urlId: string, options: ExportOptions): string | Blob {
     const analytics = URLShortenerService.getURLAnalytics(urlId);
-    
+
     switch (options.format) {
       case 'csv':
         return this.exportAnalyticsToCSV(analytics, options);
@@ -121,7 +121,7 @@ export class ExportService {
 
     // Create CSV content
     let csv = headers.join(',') + '\n';
-    
+
     // Add rows for each URL
     urls.forEach(url => {
       const row = [
@@ -136,7 +136,7 @@ export class ExportService {
         url.customAlias ? 'Yes' : 'No',
         url.utmParameters ? 'Yes' : 'No'
       ];
-      
+
       csv += row.join(',') + '\n';
     });
 
@@ -145,44 +145,44 @@ export class ExportService {
 
   private static analyticsToCSV(analytics: URLAnalytics, options: ExportOptions): string {
     let csv = '';
-    
+
     // Add basic analytics
     csv += 'Basic Analytics\n';
     csv += 'Total Clicks,' + analytics.totalClicks + '\n';
-    
+
     if (analytics.totalConversions !== undefined) {
       csv += 'Total Conversions,' + analytics.totalConversions + '\n';
       csv += 'Conversion Rate (%),' + analytics.conversionRate?.toFixed(2) + '\n';
     }
-    
+
     // Add clicks by date
     csv += '\nClicks by Date\n';
     csv += 'Date,Clicks\n';
     Object.entries(analytics.clicksByDate).forEach(([date, clicks]) => {
       csv += `${date},${clicks}\n`;
     });
-    
+
     // Add clicks by referrer
     csv += '\nClicks by Referrer\n';
     csv += 'Referrer,Clicks\n';
     Object.entries(analytics.clicksByReferrer).forEach(([referrer, clicks]) => {
       csv += `${referrer},${clicks}\n`;
     });
-    
+
     // Add clicks by device
     csv += '\nClicks by Device\n';
     csv += 'Device,Clicks\n';
     Object.entries(analytics.clicksByDevice).forEach(([device, clicks]) => {
       csv += `${device},${clicks}\n`;
     });
-    
+
     // Add clicks by country
     csv += '\nClicks by Country\n';
     csv += 'Country,Clicks\n';
     Object.entries(analytics.clicksByCountry).forEach(([country, clicks]) => {
       csv += `${country},${clicks}\n`;
     });
-    
+
     // Add UTM data if available
     if (analytics.clicksByUtmSource && Object.keys(analytics.clicksByUtmSource).length > 0) {
       csv += '\nClicks by UTM Source\n';
@@ -191,7 +191,7 @@ export class ExportService {
         csv += `${source},${clicks}\n`;
       });
     }
-    
+
     return csv;
   }
 
@@ -201,13 +201,13 @@ export class ExportService {
 
   // Helper methods for JSON export
   private static exportURLToJSON(url: ShortenedURL, options: ExportOptions): string {
-    const data: any = { ...url };
-    
+    const data: Record<string, unknown> = { ...url };
+
     // Include analytics if requested
     if (options.includeAnalytics) {
       data.analytics = URLShortenerService.getURLAnalytics(url.id);
     }
-    
+
     return JSON.stringify(data, null, 2);
   }
 

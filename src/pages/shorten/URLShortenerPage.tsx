@@ -14,7 +14,7 @@ import { Link2, History, BarChart3, AlertCircle, Tag, Sparkles } from 'lucide-re
 import Header from '@/components/home/Header.tsx';
 import Footer from '@/components/home/Footer.tsx';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
-import { toast } from "@/components/ui/sonner.tsx";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge.tsx";
 import { ScrollReveal } from "@/components/ui/scroll-reveal.tsx";
 import { MotionButton } from "@/components/ui/motion-button.tsx";
@@ -23,13 +23,21 @@ import { MotionButton } from "@/components/ui/motion-button.tsx";
 const URLAnalytics = lazy(() => {
   // Prefetch the component when idle
   const prefetch = () => import('@/components/shorten/URLAnalytics.tsx');
-  window.requestIdleCallback ? window.requestIdleCallback(prefetch) : setTimeout(prefetch, 1000);
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(prefetch);
+  } else {
+    setTimeout(prefetch, 1000);
+  }
   return prefetch();
 });
 
 const CampaignTemplates = lazy(() => {
   const prefetch = () => import('@/components/shorten/CampaignTemplates.tsx').then(module => ({ default: module.CampaignTemplates }));
-  window.requestIdleCallback ? window.requestIdleCallback(prefetch) : setTimeout(prefetch, 1500);
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(prefetch);
+  } else {
+    setTimeout(prefetch, 1500);
+  }
   return prefetch();
 });
 
@@ -151,7 +159,7 @@ const URLShortenerPage: React.FC = () => {
   return (
     <>
       <Header />
-      
+
       <EnhancedBackground optimizeForLowPerformance={true} />
 
       <main id="main-content" className="pt-20 md:pt-30">

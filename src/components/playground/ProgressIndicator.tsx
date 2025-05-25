@@ -43,14 +43,14 @@ export const ProgressIndicator = ({
   timeElapsed = 0
 }: ProgressIndicatorProps) => {
   const [animatedProgress, setAnimatedProgress] = useState(0);
-  
+
   // Format time elapsed
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
-  
+
   // Animate progress
   useEffect(() => {
     if (animated) {
@@ -59,31 +59,31 @@ export const ProgressIndicator = ({
       const endValue = progress;
       const duration = 1000; // 1 second
       const startTime = Date.now();
-      
+
       const animateProgress = () => {
         const elapsedTime = Date.now() - startTime;
         const progress = Math.min(elapsedTime / duration, 1);
         const easedProgress = easeOutCubic(progress);
-        
+
         const newValue = startValue + (endValue - startValue) * easedProgress;
         setAnimatedProgress(newValue);
-        
+
         if (progress < 1) {
           requestAnimationFrame(animateProgress);
         }
       };
-      
+
       requestAnimationFrame(animateProgress);
     } else {
       setAnimatedProgress(progress);
     }
-  }, [progress, animated]);
-  
+  }, [progress, animated, animatedProgress]);
+
   // Easing function
   const easeOutCubic = (x: number): number => {
     return 1 - Math.pow(1 - x, 3);
   };
-  
+
   // Get size classes
   const getSizeClasses = () => {
     switch (size) {
@@ -111,9 +111,9 @@ export const ProgressIndicator = ({
         };
     }
   };
-  
+
   const sizeClasses = getSizeClasses();
-  
+
   return (
     <div className={cn(
       'w-full',
@@ -136,12 +136,12 @@ export const ProgressIndicator = ({
             </div>
           </div>
         )}
-        <Progress 
-          value={animatedProgress} 
-          className={cn(sizeClasses.line, "w-full")} 
+        <Progress
+          value={animatedProgress}
+          className={cn(sizeClasses.line, "w-full")}
         />
       </div>
-      
+
       {/* Steps */}
       <div className={cn(
         'flex',
@@ -150,9 +150,9 @@ export const ProgressIndicator = ({
         {steps.map((step, index) => {
           const isCompleted = step.completed;
           const isCurrent = step.current || step.id === currentStep;
-          
+
           return (
-            <div 
+            <div
               key={step.id}
               className={cn(
                 'flex',
@@ -165,8 +165,8 @@ export const ProgressIndicator = ({
                 className={cn(
                   'rounded-full flex items-center justify-center',
                   sizeClasses.step,
-                  isCompleted ? 'bg-primary text-primary-foreground' : 
-                    isCurrent ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200' : 
+                  isCompleted ? 'bg-primary text-primary-foreground' :
+                    isCurrent ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200' :
                     'bg-muted text-muted-foreground',
                   onStepClick ? 'cursor-pointer' : ''
                 )}
@@ -190,13 +190,13 @@ export const ProgressIndicator = ({
                   </motion.div>
                 </AnimatePresence>
               </motion.div>
-              
+
               {/* Step label */}
               <div className={cn(
                 sizeClasses.text,
                 orientation === 'vertical' ? 'ml-3' : 'mt-2',
-                isCompleted ? 'text-foreground' : 
-                  isCurrent ? 'text-blue-600 dark:text-blue-400 font-medium' : 
+                isCompleted ? 'text-foreground' :
+                  isCurrent ? 'text-blue-600 dark:text-blue-400 font-medium' :
                   'text-muted-foreground'
               )}>
                 {step.label}
@@ -206,7 +206,7 @@ export const ProgressIndicator = ({
                   </p>
                 )}
               </div>
-              
+
               {/* Connector line for vertical orientation */}
               {orientation === 'vertical' && index < steps.length - 1 && (
                 <div className="absolute left-4 top-8 bottom-0 w-px bg-border h-full transform -translate-x-1/2" />

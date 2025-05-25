@@ -2,14 +2,14 @@ import React, { Suspense, lazy, ComponentType } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface LazyComponentProps {
-  component: () => Promise<{ default: ComponentType<any> }>;
+  component: () => Promise<{ default: ComponentType<Record<string, unknown>> }>;
   fallback?: React.ReactNode;
-  props?: Record<string, any>;
+  props?: Record<string, unknown>;
 }
 
 /**
  * LazyComponent - A wrapper for React.lazy that provides a consistent loading experience
- * 
+ *
  * @param component - A function that returns a dynamic import
  * @param fallback - Optional custom fallback component
  * @param props - Props to pass to the loaded component
@@ -20,7 +20,7 @@ export const LazyComponent = ({
   props = {}
 }: LazyComponentProps) => {
   const LazyLoadedComponent = lazy(component);
-  
+
   return (
     <Suspense fallback={fallback || <DefaultFallback />}>
       <LazyLoadedComponent {...props} />

@@ -309,7 +309,7 @@ export class UserProgressService {
   static async logActivity(
     userId: string,
     type: ActivityType,
-    details: Record<string, any> = {}
+    details: Record<string, string | number | boolean> = {}
   ): Promise<UserActivity> {
     const activity: UserActivity = {
       id: generateId(),
@@ -360,10 +360,11 @@ export class UserProgressService {
       let unlocked = false;
 
       switch (achievement.criteria.type) {
-        case 'challenge_completion':
+        case 'challenge_completion': {
           const completedChallenges = userChallenges.filter(c => c.completedAt);
           unlocked = completedChallenges.length >= (achievement.criteria.count || 1);
           break;
+        }
 
         case 'level':
           unlocked = user.level >= (achievement.criteria.value as number);

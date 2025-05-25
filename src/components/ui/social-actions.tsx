@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   ThumbsUp,
@@ -10,7 +10,7 @@ import {
   Check,
   Loader2
 } from 'lucide-react';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { MotionButton } from "@/components/ui/motion-button";
 import {
   Dialog,
@@ -73,7 +73,7 @@ export const SocialActions: React.FC<SocialActionsProps> = ({
   };
 
   // Get the appropriate localStorage key based on content type
-  const getSavedItemsKey = () => {
+  const getSavedItemsKey = useCallback(() => {
     switch (contentType) {
       case 'article':
         return 'savedArticles';
@@ -84,9 +84,9 @@ export const SocialActions: React.FC<SocialActionsProps> = ({
       default:
         return 'savedItems';
     }
-  };
+  }, [contentType]);
 
-  const getLikedItemsKey = () => {
+  const getLikedItemsKey = useCallback(() => {
     switch (contentType) {
       case 'article':
         return 'likedArticles';
@@ -97,7 +97,7 @@ export const SocialActions: React.FC<SocialActionsProps> = ({
       default:
         return 'likedItems';
     }
-  };
+  }, [contentType]);
 
   // Check if item is saved/liked on component mount
   useEffect(() => {
@@ -109,7 +109,7 @@ export const SocialActions: React.FC<SocialActionsProps> = ({
 
     setIsSaved(savedItems.includes(contentId));
     setIsLiked(likedItems.includes(contentId));
-  }, [contentId, contentType]);
+  }, [contentId, contentType, getLikedItemsKey, getSavedItemsKey]);
 
   // Handle saving item
   const handleSave = (e?: React.MouseEvent) => {

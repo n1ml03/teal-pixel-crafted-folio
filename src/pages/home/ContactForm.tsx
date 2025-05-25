@@ -8,7 +8,7 @@ import { MotionButton } from "@/components/ui/motion-button.tsx";
 import Header from '@/components/home/Header.tsx';
 import Footer from '@/components/home/Footer.tsx';
 import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
-import { toast } from "@/components/ui/sonner.tsx";
+import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
