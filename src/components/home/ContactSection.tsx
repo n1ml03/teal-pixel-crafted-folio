@@ -118,8 +118,8 @@ const ContactSection = () => {
   const quickStats = [
     { icon: Coffee, number: "24h", label: "Response Time", color: "text-amber-300" },
     { icon: Heart, number: "100%", label: "Client Satisfaction", color: "text-red-300" },
-    { icon: Star, number: "15+", label: "Projects Completed", color: "text-yellow-300" },
-    { icon: Zap, number: "3+", label: "Years Experience", color: "text-blue-300" }
+    { icon: Star, number: "5+", label: "Projects Completed", color: "text-yellow-300" },
+    { icon: Zap, number: "1+", label: "Years Experience", color: "text-blue-300" }
   ];
 
   return (

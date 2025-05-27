@@ -382,140 +382,140 @@ Effective performance testing requires the right tools, techniques, and analysis
     readingTime: 12
   },
   // New blog posts start here
-  {
-    id: '4',
-    title: 'API Testing Best Practices with Postman and REST Assured',
-    slug: 'api-testing-best-practices-postman-rest-assured',
-    excerpt: 'Explore best practices for API testing using popular tools like Postman for manual and automated tests, and REST Assured for robust Java-based automation.',
-    content: `
-# API Testing Best Practices with Postman and REST Assured
+//   {
+//     id: '4',
+//     title: 'API Testing Best Practices with Postman and REST Assured',
+//     slug: 'api-testing-best-practices-postman-rest-assured',
+//     excerpt: 'Explore best practices for API testing using popular tools like Postman for manual and automated tests, and REST Assured for robust Java-based automation.',
+//     content: `
+// # API Testing Best Practices with Postman and REST Assured
 
-APIs (Application Programming Interfaces) are the backbone of modern software applications, enabling communication between different software components. Testing APIs thoroughly is crucial for ensuring application reliability, security, and performance. This post covers best practices for API testing using Postman and REST Assured.
+// APIs (Application Programming Interfaces) are the backbone of modern software applications, enabling communication between different software components. Testing APIs thoroughly is crucial for ensuring application reliability, security, and performance. This post covers best practices for API testing using Postman and REST Assured.
 
-## Why API Testing is Crucial
+// ## Why API Testing is Crucial
 
-- **Early Bug Detection**: Identifies issues at the business logic layer before UI is developed.
-- **Faster Releases**: Automated API tests are quicker to run than UI tests, speeding up CI/CD pipelines.
-- **Reduced Testing Costs**: Fixing API-level bugs is generally cheaper than fixing UI-level bugs.
-- **Language and Platform Independent**: Test the core functionality regardless of the client application.
+// - **Early Bug Detection**: Identifies issues at the business logic layer before UI is developed.
+// - **Faster Releases**: Automated API tests are quicker to run than UI tests, speeding up CI/CD pipelines.
+// - **Reduced Testing Costs**: Fixing API-level bugs is generally cheaper than fixing UI-level bugs.
+// - **Language and Platform Independent**: Test the core functionality regardless of the client application.
 
-## Postman: Your Go-To API Platform
+// ## Postman: Your Go-To API Platform
 
-Postman is a versatile platform for API development and testing. It allows for designing, building, testing, and documenting APIs.
+// Postman is a versatile platform for API development and testing. It allows for designing, building, testing, and documenting APIs.
 
-### Key Features for Testing:
-- **Intuitive UI**: Easy to create and send requests (GET, POST, PUT, DELETE, etc.).
-- **Test Scripts**: Write JavaScript-based tests to validate responses (status codes, headers, body data).
-- **Collections**: Organize test suites and run them together.
-- **Environments & Variables**: Manage different test configurations (e.g., dev, staging, prod).
-- **Newman**: Command-line runner for integrating Postman collections into CI/CD pipelines.
+// ### Key Features for Testing:
+// - **Intuitive UI**: Easy to create and send requests (GET, POST, PUT, DELETE, etc.).
+// - **Test Scripts**: Write JavaScript-based tests to validate responses (status codes, headers, body data).
+// - **Collections**: Organize test suites and run them together.
+// - **Environments & Variables**: Manage different test configurations (e.g., dev, staging, prod).
+// - **Newman**: Command-line runner for integrating Postman collections into CI/CD pipelines.
 
-### Example Postman Test Script:
+// ### Example Postman Test Script:
 
-\`\`\`javascript
-// Example test for a GET request
-pm.test("Status code is 200", function () {
-    pm.response.to.have.status(200);
-});
+// \`\`\`javascript
+// // Example test for a GET request
+// pm.test("Status code is 200", function () {
+//     pm.response.to.have.status(200);
+// });
 
-pm.test("Response body contains user data", function () {
-    const jsonData = pm.response.json();
-    pm.expect(jsonData).to.be.an('object');
-    pm.expect(jsonData.id).to.eql(1);
-    pm.expect(jsonData.name).to.eql("Leanne Graham");
-});
+// pm.test("Response body contains user data", function () {
+//     const jsonData = pm.response.json();
+//     pm.expect(jsonData).to.be.an('object');
+//     pm.expect(jsonData.id).to.eql(1);
+//     pm.expect(jsonData.name).to.eql("Leanne Graham");
+// });
 
-pm.test("Content-Type header is present", function () {
-    pm.response.to.have.header("Content-Type");
-    pm.expect(pm.response.headers.get("Content-Type")).to.include("application/json");
-});
-\`\`\`
+// pm.test("Content-Type header is present", function () {
+//     pm.response.to.have.header("Content-Type");
+//     pm.expect(pm.response.headers.get("Content-Type")).to.include("application/json");
+// });
+// \`\`\`
 
-## REST Assured: Java-Based API Test Automation
+// ## REST Assured: Java-Based API Test Automation
 
-REST Assured is a Java library specifically designed for testing RESTful APIs. It provides a BDD-like, fluent API that makes writing tests simple and readable.
+// REST Assured is a Java library specifically designed for testing RESTful APIs. It provides a BDD-like, fluent API that makes writing tests simple and readable.
 
-### Key Advantages:
-- **Java Ecosystem**: Seamless integration with Java projects and testing frameworks like JUnit and TestNG.
-- **Support for BDD Syntax**: Makes tests highly readable (given/when/then).
-- **Easy Validation**: Powerful JSON/XML path validation, schema validation.
-- **Request/Response Specifications**: Reusable templates for requests and expected responses.
+// ### Key Advantages:
+// - **Java Ecosystem**: Seamless integration with Java projects and testing frameworks like JUnit and TestNG.
+// - **Support for BDD Syntax**: Makes tests highly readable (given/when/then).
+// - **Easy Validation**: Powerful JSON/XML path validation, schema validation.
+// - **Request/Response Specifications**: Reusable templates for requests and expected responses.
 
-### Example REST Assured Test (Java with JUnit):
+// ### Example REST Assured Test (Java with JUnit):
 
-\`\`\`java
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
+// \`\`\`java
+// import io.restassured.RestAssured;
+// import io.restassured.http.ContentType;
+// import org.junit.jupiter.api.BeforeAll;
+// import org.junit.jupiter.api.Test;
+// import static io.restassured.RestAssured.*;
+// import static org.hamcrest.Matchers.*;
 
-public class UserApiTests {
+// public class UserApiTests {
 
-    @BeforeAll
-    public static void setup() {
-        RestAssured.baseURI = "https://jsonplaceholder.typicode.com";
-    }
+//     @BeforeAll
+//     public static void setup() {
+//         RestAssured.baseURI = "https://jsonplaceholder.typicode.com";
+//     }
 
-    @Test
-    public void getUser_shouldReturnUserData() {
-        given().
-            pathParam("userId", 1).
-        when().
-            get("/users/{userId}").
-        then().
-            statusCode(200).
-            contentType(ContentType.JSON).
-            body("id", equalTo(1)).
-            body("name", equalTo("Leanne Graham")).
-            body("email", equalTo("Sincere@april.biz"));
-    }
+//     @Test
+//     public void getUser_shouldReturnUserData() {
+//         given().
+//             pathParam("userId", 1).
+//         when().
+//             get("/users/{userId}").
+//         then().
+//             statusCode(200).
+//             contentType(ContentType.JSON).
+//             body("id", equalTo(1)).
+//             body("name", equalTo("Leanne Graham")).
+//             body("email", equalTo("Sincere@april.biz"));
+//     }
 
-    @Test
-    public void createUser_shouldReturnCreatedUser() {
-        String requestBody = "{ " + '"' + "name" + '"' + ": " + '"' + "Test User" + '"' + ", " + '"' + "username" + '"' + ": " + '"' + "testuser" + '"' + ", " + '"' + "email" + '"' + ": " + '"' + "test@example.com" + '"' + " }";
+//     @Test
+//     public void createUser_shouldReturnCreatedUser() {
+//         String requestBody = "{ " + '"' + "name" + '"' + ": " + '"' + "Test User" + '"' + ", " + '"' + "username" + '"' + ": " + '"' + "testuser" + '"' + ", " + '"' + "email" + '"' + ": " + '"' + "test@example.com" + '"' + " }";
 
-        given().
-            contentType(ContentType.JSON).
-            body(requestBody).
-        when().
-            post("/users").
-        then().
-            statusCode(201). // 201 Created
-            body("name", equalTo("Test User")).
-            body("id", notNullValue());
-    }
-}
-\`\`\`
+//         given().
+//             contentType(ContentType.JSON).
+//             body(requestBody).
+//         when().
+//             post("/users").
+//         then().
+//             statusCode(201). // 201 Created
+//             body("name", equalTo("Test User")).
+//             body("id", notNullValue());
+//     }
+// }
+// \`\`\`
 
-## API Testing Best Practices
+// ## API Testing Best Practices
 
-1.  **Define Clear Test Cases**: Cover all API endpoints, methods, positive/negative scenarios, and edge cases.
-2.  **Prioritize Tests**: Focus on critical API functionalities first.
-3.  **Automate Everything Possible**: Especially regression tests for CI/CD.
-4.  **Validate Schemas**: Ensure API responses adhere to the defined contract (e.g., OpenAPI/Swagger).
-5.  **Manage Test Data Effectively**: Use separate, reliable test data. Consider data-driven testing.
-6.  **Test for Security Vulnerabilities**: Include tests for common issues like SQL injection, XSS, improper authentication/authorization.
-7.  **Monitor Performance**: Check response times and behavior under load.
-8.  **Organize Tests Logically**: Group tests by functionality or API resource.
-9.  **Use Environments**: Maintain separate configurations for different testing stages.
-10. **Generate Meaningful Reports**: Ensure test reports are clear and actionable.
+// 1.  **Define Clear Test Cases**: Cover all API endpoints, methods, positive/negative scenarios, and edge cases.
+// 2.  **Prioritize Tests**: Focus on critical API functionalities first.
+// 3.  **Automate Everything Possible**: Especially regression tests for CI/CD.
+// 4.  **Validate Schemas**: Ensure API responses adhere to the defined contract (e.g., OpenAPI/Swagger).
+// 5.  **Manage Test Data Effectively**: Use separate, reliable test data. Consider data-driven testing.
+// 6.  **Test for Security Vulnerabilities**: Include tests for common issues like SQL injection, XSS, improper authentication/authorization.
+// 7.  **Monitor Performance**: Check response times and behavior under load.
+// 8.  **Organize Tests Logically**: Group tests by functionality or API resource.
+// 9.  **Use Environments**: Maintain separate configurations for different testing stages.
+// 10. **Generate Meaningful Reports**: Ensure test reports are clear and actionable.
 
-## Conclusion
+// ## Conclusion
 
-Robust API testing is essential for modern application development. Tools like Postman offer a user-friendly way to start, while libraries like REST Assured provide powerful automation capabilities for Java-based projects. By following best practices, you can build a comprehensive API testing strategy that ensures the quality and reliability of your services.
-    `,
-    coverImage: './images/data-analysis.webp',
-    date: '2023-12-05',
-    author: {
-      name: 'Nam Le',
-    },
-    category: 'Testing & QA',
-    tags: ['API Testing', 'Postman', 'REST Assured', 'Automation', 'Testing', 'Tools & Technologies'],
-    readingTime: 10,
-    featured: true
-  },
+// Robust API testing is essential for modern application development. Tools like Postman offer a user-friendly way to start, while libraries like REST Assured provide powerful automation capabilities for Java-based projects. By following best practices, you can build a comprehensive API testing strategy that ensures the quality and reliability of your services.
+//     `,
+//     coverImage: './images/data-analysis.webp',
+//     date: '2023-12-05',
+//     author: {
+//       name: 'Nam Le',
+//     },
+//     category: 'Testing & QA',
+//     tags: ['API Testing', 'Postman', 'REST Assured', 'Automation', 'Testing', 'Tools & Technologies'],
+//     readingTime: 10,
+//     featured: true
+//   },
   {
     id: '5',
     title: 'Mobile App Testing Strategies and Tools',

@@ -43,9 +43,9 @@ const ValueBanner = () => {
   ];
 
   const achievements = [
-    { icon: Award, number: "15+", label: "Projects", color: "text-yellow-300" },
+    { icon: Award, number: "5+", label: "Projects", color: "text-yellow-300" },
     { icon: Target, number: "100%", label: "Success Rate", color: "text-green-300" },
-    { icon: Zap, number: "3+", label: "Years Exp.", color: "text-blue-300" }
+    { icon: Zap, number: "1+", label: "Years Exp.", color: "text-blue-300" }
   ];
 
   return (

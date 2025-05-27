@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -25,16 +25,100 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
 import ChallengeCard from '@/components/playground/ChallengeCard';
-import { MotionButton } from "@/components/ui/motion-button";
 import { useAuth } from '@/contexts/auth-utils';
 import { UserProgressService } from '@/services/UserProgressService';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMediaQuery } from '@/lib';
-import { motion } from 'framer-motion';
 
 // Import lightweight challenge metadata instead of full challenge data
 import challengesMeta from '@/data/challengesMeta';
 import { ChallengeLoaderService } from '@/services/ChallengeLoaderService';
+
+// Custom hook for debounced value
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+// Lazy loading wrapper component for challenge cards
+const LazyChallenge = memo(({ challenge, isSaved, onSave, onStart, onDetails }: {
+  challenge: any;
+  isSaved: boolean;
+  onSave: () => void;
+  onStart: () => void;
+  onDetails: () => void;
+}) => {
+  const [isInView, setIsInView] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const elementRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasLoaded) {
+          // Use requestAnimationFrame to defer the state update
+          requestAnimationFrame(() => {
+            setIsInView(true);
+            setHasLoaded(true);
+          });
+        }
+      },
+      {
+        threshold: 0.05, // Lower threshold for better performance
+        rootMargin: '100px 0px', // Load cards even earlier for smoother scrolling
+      }
+    );
+
+    const currentElement = elementRef.current;
+    if (currentElement) {
+      observer.observe(currentElement);
+    }
+
+    return () => {
+      if (currentElement) {
+        observer.unobserve(currentElement);
+      }
+    };
+  }, [hasLoaded]);
+
+  return (
+    <div ref={elementRef} style={{ minHeight: hasLoaded ? 'auto' : '300px' }}>
+      {isInView || hasLoaded ? (
+        <ChallengeCard
+          challenge={challenge}
+          isSaved={isSaved}
+          onSave={onSave}
+          onStart={onStart}
+          onDetails={onDetails}
+        />
+      ) : (
+        <div className="bg-white/90 rounded-lg p-6 shadow-sm border border-white/50 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+          <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded w-5/6 mb-4"></div>
+          <div className="flex gap-2 mb-4">
+            <div className="h-6 bg-gray-200 rounded w-16"></div>
+            <div className="h-6 bg-gray-200 rounded w-16"></div>
+          </div>
+          <div className="h-8 bg-gray-200 rounded w-24"></div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+LazyChallenge.displayName = 'LazyChallenge';
 
 // Helper function to calculate level progress percentage
 const calculateLevelProgress = (user: { level: number; points: number }) => {
@@ -45,7 +129,7 @@ const calculateLevelProgress = (user: { level: number; points: number }) => {
   return Math.round((pointsGained / pointsNeeded) * 100);
 };
 
-const Challenges = () => {
+const Challenges = memo(() => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -55,6 +139,9 @@ const Challenges = () => {
   const [filter, setFilter] = useState('all');
   const [isLoadingProgress, setIsLoadingProgress] = useState(false);
   const [userChallenges, setUserChallenges] = useState<{ challengeId: string; progress: number }[]>([]);
+  
+  // Debounce search query to avoid frequent re-filtering
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Load user progress data
   useEffect(() => {
@@ -84,25 +171,25 @@ const Challenges = () => {
     }
   }, [user]);
 
-  const handleSaveChallenge = (id: string) => {
+  const handleSaveChallenge = useCallback((id: string) => {
     setSavedChallenges(prev =>
       prev.includes(id)
         ? prev.filter(cid => cid !== id)
         : [...prev, id]
     );
-  };
+  }, []);
 
-  const handleStartChallenge = async (id: string) => {
+  const handleStartChallenge = useCallback(async (id: string) => {
     // Preload challenge details before navigating
     await ChallengeLoaderService.loadChallengeDetails(id);
     navigate(`/playground/challenge/${id}`);
-  };
+  }, [navigate]);
 
-  const handleDetailsClick = async (id: string) => {
+  const handleDetailsClick = useCallback(async (id: string) => {
     // Preload challenge details before navigating
     await ChallengeLoaderService.loadChallengeDetails(id);
     navigate(`/playground/challenge-details/${id}`);
-  };
+  }, [navigate]);
 
   // Create a map for faster lookup of user progress
   const userProgressMap = useMemo(() => {
@@ -120,36 +207,38 @@ const Challenges = () => {
     }));
   }, [userProgressMap]);
 
-  // Filter challenges based on search query and filter
-  const filteredChallenges = challengesWithProgress.filter(challenge => {
-    // First check if the challenge matches the search query
-    const searchTerms = searchQuery.toLowerCase().trim();
-    const matchesSearch = searchTerms === '' ||
-      challenge.title.toLowerCase().includes(searchTerms) ||
-      challenge.description.toLowerCase().includes(searchTerms) ||
-      challenge.tags.some(tag => tag.toLowerCase().includes(searchTerms));
+  // Filter challenges based on debounced search query and filter
+  const filteredChallenges = useMemo(() => {
+    return challengesWithProgress.filter(challenge => {
+      // First check if the challenge matches the search query
+      const searchTerms = debouncedSearchQuery.toLowerCase().trim();
+      const matchesSearch = searchTerms === '' ||
+        challenge.title.toLowerCase().includes(searchTerms) ||
+        challenge.description.toLowerCase().includes(searchTerms) ||
+        challenge.tags.some(tag => tag.toLowerCase().includes(searchTerms));
 
-    // If it doesn't match the search, no need to check filters
-    if (!matchesSearch) return false;
+      // If it doesn't match the search, no need to check filters
+      if (!matchesSearch) return false;
 
-    // Apply filters based on the selected filter type
-    switch (filter) {
-      case 'all':
-        return true;
-      case 'saved':
-        return savedChallenges.includes(challenge.id);
-      case 'in-progress':
-        return challenge.progress > 0 && challenge.progress < 100;
-      case 'completed':
-        return challenge.progress === 100;
-      case 'beginner':
-      case 'intermediate':
-      case 'advanced':
-        return challenge.difficulty === filter;
-      default:
-        return true;
-    }
-  });
+      // Apply filters based on the selected filter type
+      switch (filter) {
+        case 'all':
+          return true;
+        case 'saved':
+          return savedChallenges.includes(challenge.id);
+        case 'in-progress':
+          return challenge.progress > 0 && challenge.progress < 100;
+        case 'completed':
+          return challenge.progress === 100;
+        case 'beginner':
+        case 'intermediate':
+        case 'advanced':
+          return challenge.difficulty === filter;
+        default:
+          return true;
+      }
+    });
+  }, [challengesWithProgress, debouncedSearchQuery, filter, savedChallenges]);
 
   // Find the featured or in-progress challenge to highlight
   const featuredChallenge = challengesWithProgress.find(c => c.featured || (c.progress > 0 && c.progress < 100));
@@ -170,33 +259,21 @@ const Challenges = () => {
 
   return (
     <div className="relative">
-      <main className="container py-6 pt-24 relative z-10" style={{ contentVisibility: 'auto', containIntrinsicSize: '0 800px' }}>
+      <main className="container py-6 pt-24 relative z-10" style={{ 
+        willChange: 'scroll-position',
+        transform: 'translateZ(0)',
+      }}>
         {/* Hero Section */}
-        <motion.section 
-          className="mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className={`${isMobile ? 'p-4' : 'p-8'} bg-gradient-to-r from-blue-500/10 via-teal-500/10 to-purple-500/10 backdrop-blur-md rounded-xl border border-white/20 shadow-lg`}>
+        <section className="mb-8">
+          <div className={`${isMobile ? 'p-4' : 'p-8'} bg-gradient-to-r from-blue-500/5 via-teal-500/5 to-purple-500/5 rounded-xl border border-white/20 shadow-sm`}>
             <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <motion.h1 
-                  className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-600`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                >
+                <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-600`}>
                   {user ? `Welcome back, ${user.displayName}!` : 'Welcome to Testing Playground!'}
-                </motion.h1>
+                </h1>
 
                 {user && (
-                  <motion.div 
-                    className="mb-4 bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-sm border border-white/50"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                  >
+                  <div className="mb-4 bg-white/90 rounded-lg p-4 shadow-sm border border-white/50">
                     <div className="flex justify-between text-sm mb-2">
                       <span className={`font-medium ${isMobile ? 'text-xs' : ''}`}>Level {user.level + 1}</span>
                       <span className={`text-teal-600 font-semibold ${isMobile ? 'text-xs' : ''}`}>{calculateLevelProgress(user)}%</span>
@@ -205,60 +282,45 @@ const Challenges = () => {
                       value={calculateLevelProgress(user)}
                       className="h-2"
                     />
-                  </motion.div>
+                  </div>
                 )}
 
                 {/* User Stats */}
                 {user && (
-                  <motion.div 
-                    className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.4 }}
-                  >
-                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 text-center shadow-sm border border-white/50">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div className="bg-white/90 rounded-lg p-3 text-center shadow-sm border border-white/50">
                       <Trophy className="w-4 h-4 text-yellow-500 mx-auto mb-1" />
                       <div className="text-lg font-bold text-gray-800">{userStats.completed}</div>
                       <div className="text-xs text-gray-600">Completed</div>
                     </div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 text-center shadow-sm border border-white/50">
+                    <div className="bg-white/90 rounded-lg p-3 text-center shadow-sm border border-white/50">
                       <BookOpen className="w-4 h-4 text-blue-500 mx-auto mb-1" />
                       <div className="text-lg font-bold text-gray-800">{userStats.inProgress}</div>
                       <div className="text-xs text-gray-600">In Progress</div>
                     </div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 text-center shadow-sm border border-white/50">
+                    <div className="bg-white/90 rounded-lg p-3 text-center shadow-sm border border-white/50">
                       <Target className="w-4 h-4 text-teal-500 mx-auto mb-1" />
                       <div className="text-lg font-bold text-gray-800">{userStats.total}</div>
                       <div className="text-xs text-gray-600">Total</div>
                     </div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 text-center shadow-sm border border-white/50">
+                    <div className="bg-white/90 rounded-lg p-3 text-center shadow-sm border border-white/50">
                       <Star className="w-4 h-4 text-purple-500 mx-auto mb-1" />
                       <div className="text-lg font-bold text-gray-800">{userStats.completionRate}%</div>
                       <div className="text-xs text-gray-600">Success</div>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
 
-                <motion.p 
-                  className={`text-gray-700 mb-4 ${isMobile ? 'text-sm' : ''}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.5 }}
-                >
+                <p className={`text-gray-700 mb-4 ${isMobile ? 'text-sm' : ''}`}>
                   {user
                     ? 'Continue your learning journey with recommended challenges.'
                     : 'Start your testing journey with our curated challenges.'}
-                </motion.p>
+                </p>
               </div>
 
               {featuredChallenge && (
-                <motion.div 
-                  className={`flex flex-col ${isMobile ? 'mt-2' : 'justify-center'}`}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.3 }}
-                >
-                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-sm border border-white/50">
+                <div className={`flex flex-col ${isMobile ? 'mt-2' : 'justify-center'}`}>
+                  <div className="bg-white/90 rounded-lg p-4 shadow-sm border border-white/50">
                     <div className="mb-2">
                       <Badge variant="outline" className="mb-2 bg-teal-50 border-teal-200 text-teal-700">
                         <Star className="w-3 h-3 mr-1" />
@@ -270,30 +332,23 @@ const Challenges = () => {
                       </p>
                     </div>
 
-                    <MotionButton
+                    <Button
                       onClick={() => handleStartChallenge(featuredChallenge.id)}
-                      className="w-full sm:w-auto bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white shadow-lg"
-                      whileHover={!prefersReducedMotion ? { scale: 1.02, y: -2 } : {}}
-                      whileTap={{ scale: 0.98 }}
+                      className="w-full sm:w-auto bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white shadow-lg transition-colors"
                     >
                       {featuredChallenge.progress > 0 ? 'Continue Challenge' : 'Start Challenge'}
                       <ArrowRight className="w-4 h-4 ml-2" />
-                    </MotionButton>
+                    </Button>
                   </div>
-                </motion.div>
+                </div>
               )}
             </div>
           </div>
-        </motion.section>
+        </section>
 
         {/* Search and Filter Section */}
-        <motion.section 
-          className="mb-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 shadow-sm border border-white/50">
+        <section className="mb-6">
+          <div className="bg-white/90 rounded-lg p-4 shadow-sm border border-white/50">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -313,7 +368,7 @@ const Challenges = () => {
                     <ChevronDown className="w-4 h-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 bg-white/95 backdrop-blur-sm">
+                <DropdownMenuContent className="w-56 bg-white/95">
                   <DropdownMenuLabel>Filter by</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup value={filter} onValueChange={setFilter}>
@@ -330,13 +385,13 @@ const Challenges = () => {
               </DropdownMenu>
             </div>
           </div>
-        </motion.section>
+        </section>
 
         {/* Challenges Grid */}
         <section>
           {isLoadingProgress ? (
             <div className="flex justify-center items-center py-12">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/50">
+              <div className="bg-white/90 rounded-2xl p-8 shadow-sm border border-white/50">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
                 <p className="text-gray-600 text-center">Loading challenges...</p>
               </div>
@@ -344,25 +399,21 @@ const Challenges = () => {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredChallenges.map((challenge) => (
-                <div
+                <LazyChallenge
                   key={challenge.id}
-                  className={`${prefersReducedMotion ? '' : 'animate-in fade-in duration-300'}`}
-                >
-                  <ChallengeCard
-                    challenge={challenge}
-                    isSaved={savedChallenges.includes(challenge.id)}
-                    onSave={() => handleSaveChallenge(challenge.id)}
-                    onStart={() => handleStartChallenge(challenge.id)}
-                    onDetails={() => handleDetailsClick(challenge.id)}
-                  />
-                </div>
+                  challenge={challenge}
+                  isSaved={savedChallenges.includes(challenge.id)}
+                  onSave={() => handleSaveChallenge(challenge.id)}
+                  onStart={() => handleStartChallenge(challenge.id)}
+                  onDetails={() => handleDetailsClick(challenge.id)}
+                />
               ))}
             </div>
           )}
 
           {filteredChallenges.length === 0 && !isLoadingProgress && (
             <div className="text-center py-12">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/50">
+              <div className="bg-white/90 rounded-2xl p-8 shadow-sm border border-white/50">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
@@ -389,6 +440,8 @@ const Challenges = () => {
       </main>
     </div>
   );
-};
+});
+
+Challenges.displayName = 'Challenges';
 
 export default Challenges;

@@ -27,8 +27,7 @@ import {
   Settings,
   Sparkles,
   Play,
-  Quote,
-  ChevronDown} from 'lucide-react';
+  Quote} from 'lucide-react';
 
 interface ServiceDetailProps {
   icon: React.ReactNode;
@@ -597,87 +596,7 @@ const TestimonialCard = ({ testimonial, index }: {
   );
 };
 
-const FAQItem = ({ faq, index }: { faq: { question: string; answer: string; }; index: number }) => {
-  const [isOpen, setIsOpen] = useState(false);
 
-  return (
-    <motion.div
-      className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      viewport={{ once: true }}
-    >
-      <button
-        className="w-full flex items-center justify-between text-left"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <h3 className="text-lg font-semibold text-gray-800 pr-4">{faq.question}</h3>
-        <motion.div
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.3 }}
-          className="flex-shrink-0"
-        >
-          <ChevronDown className="w-5 h-5 text-teal-500" />
-        </motion.div>
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <p className="text-gray-600 mt-4 leading-relaxed">{faq.answer}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-};
-
-const TechShowcase = () => {
-  const technologies = [
-    { name: "React", icon: "⚛️", color: "from-blue-400 to-blue-600" },
-    { name: "Node.js", icon: "🟢", color: "from-green-400 to-green-600" },
-    { name: "TypeScript", icon: "💙", color: "from-blue-500 to-blue-700" },
-    { name: "AWS", icon: "☁️", color: "from-orange-400 to-orange-600" },
-    { name: "Docker", icon: "🐳", color: "from-blue-400 to-blue-500" },
-    { name: "MongoDB", icon: "🍃", color: "from-green-500 to-green-700" },
-    { name: "PostgreSQL", icon: "🐘", color: "from-blue-600 to-blue-800" },
-    { name: "Kubernetes", icon: "⚙️", color: "from-purple-500 to-purple-700" }
-  ];
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-      {technologies.map((tech, index) => (
-        <motion.div
-          key={tech.name}
-          className={`bg-gradient-to-br ${tech.color} rounded-2xl p-4 text-white text-center shadow-lg`}
-          initial={{ opacity: 0, scale: 0.5, y: 30 }}
-          whileInView={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ 
-            duration: 0.5, 
-            delay: index * 0.1,
-            type: "spring",
-            damping: 20 
-          }}
-          viewport={{ once: true }}
-          whileHover={{ 
-            scale: 1.05, 
-            y: -3,
-            boxShadow: "0 8px 20px -5px rgba(0, 0, 0, 0.2)"
-          }}
-        >
-          <div className="text-2xl mb-2">{tech.icon}</div>
-          <div className="text-sm font-semibold">{tech.name}</div>
-        </motion.div>
-      ))}
-    </div>
-  );
-};
 
 const Services = () => {
   const [selectedService, setSelectedService] = useState<ServiceDetailProps | null>(null);
@@ -895,24 +814,6 @@ const Services = () => {
     }
   ];
 
-  const faqs = [
-    {
-      question: "How do you ensure project quality and deadlines?",
-      answer: "We follow agile methodology with regular sprints, automated testing, and continuous integration. You'll receive weekly progress updates and can track development in real-time."
-    },
-    {
-      question: "What kind of support do you provide after project completion?",
-      answer: "We provide comprehensive post-launch support including bug fixes, performance monitoring, security updates, and feature enhancements. Support packages range from 3 months to 12 months."
-    },
-    {
-      question: "Can you work with our existing team and tools?",
-      answer: "Absolutely! We're experienced in collaborating with in-house teams and can adapt to your existing workflows, tools, and communication preferences."
-    },
-    {
-      question: "How do you handle project changes and scope adjustments?",
-      answer: "We maintain flexibility through agile development. Changes are documented, assessed for impact, and implemented with transparent communication about timeline and cost implications."
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-teal-50 relative overflow-hidden">
@@ -1100,7 +1001,7 @@ const Services = () => {
                 { number: "100+", label: "Projects Delivered", icon: <Rocket className="w-6 h-6" /> },
                 { number: "99%", label: "Client Satisfaction", icon: <Star className="w-6 h-6" /> },
                 { number: "24/7", label: "Support Available", icon: <Shield className="w-6 h-6" /> },
-                { number: "5+", label: "Years Experience", icon: <Award className="w-6 h-6" /> }
+                { number: "1+", label: "Years Experience", icon: <Award className="w-6 h-6" /> }
               ].map((stat, index) => (
                 <motion.div
                   key={index}

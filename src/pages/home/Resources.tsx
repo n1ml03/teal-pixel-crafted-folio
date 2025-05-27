@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Badge } from "@/components/ui/badge.tsx";
 import { Input } from "@/components/ui/input.tsx";
@@ -25,7 +25,7 @@ import {
   Github,
   Heart} from 'lucide-react';
 
-// Enhanced Category Filter Component
+// Enhanced Category Filter Component with optimized animations
 const CategoryFilter = ({ 
   categories, 
   selectedCategory, 
@@ -38,28 +38,30 @@ const CategoryFilter = ({
   return (
     <div className="flex flex-wrap gap-2">
       <motion.button
-        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+        className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
           selectedCategory === ''
             ? 'bg-teal-500 text-white shadow-lg'
             : 'bg-white/80 text-gray-600 hover:bg-teal-50 border border-gray-200'
         }`}
         onClick={() => onCategoryChange('')}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ duration: 0.15 }}
       >
         All Resources
       </motion.button>
       {categories.map((category) => (
         <motion.button
           key={category.id}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
             selectedCategory === category.name
               ? 'bg-teal-500 text-white shadow-lg'
               : 'bg-white/80 text-gray-600 hover:bg-teal-50 border border-gray-200'
           }`}
           onClick={() => onCategoryChange(category.name)}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ duration: 0.15 }}
         >
           {category.name}
         </motion.button>
@@ -68,14 +70,14 @@ const CategoryFilter = ({
   );
 };
 
-// Enhanced Stats Component
-const ResourceStats = () => {
-  const stats = [
+// Optimized Stats Component
+const ResourceStats = React.memo(() => {
+  const stats = useMemo(() => [
     { number: `${resources.length}+`, label: "Curated Resources", icon: <BookOpen className="w-5 h-5" /> },
     { number: `${resourceCategories.length}`, label: "Categories", icon: <Layers className="w-5 h-5" /> },
     { number: `${resources.filter(r => r.featured).length}`, label: "Featured Tools", icon: <Star className="w-5 h-5" /> },
     { number: "10K+", label: "Developers Helped", icon: <Users className="w-5 h-5" /> }
-  ];
+  ], []);
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -83,19 +85,15 @@ const ResourceStats = () => {
         <motion.div
           key={index}
           className="text-center bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-gray-100"
-          initial={{ opacity: 0, scale: 0.5, y: 20 }}
-          whileInView={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: index * 0.1, type: "spring", damping: 25 }}
-          viewport={{ once: true }}
-          whileHover={{ y: -4, scale: 1.02 }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: index * 0.05 }}
+          viewport={{ once: true, margin: "-50px" }}
+          whileHover={{ y: -2 }}
         >
-          <motion.div 
-            className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center text-white mx-auto mb-3 shadow-lg"
-            whileHover={{ rotate: 360 }}
-            transition={{ duration: 0.6 }}
-          >
+          <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center text-white mx-auto mb-3 shadow-lg">
             {stat.icon}
-          </motion.div>
+          </div>
           <div className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-blue-500 bg-clip-text text-transparent mb-1">
             {stat.number}
           </div>
@@ -104,7 +102,7 @@ const ResourceStats = () => {
       ))}
     </div>
   );
-};
+});
 
 const Resources = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,9 +113,11 @@ const Resources = () => {
   const [selectedPricing, setSelectedPricing] = useState('');
   const [filteredResources, setFilteredResources] = useState<Resource[]>(resources);
   const [isFilterExpanded, setIsFilterExpanded] = useState(true);
+  
+  // Simplified scroll transforms for better performance
   const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 1000], [0, -50]);
-  const y2 = useTransform(scrollY, [0, 1000], [0, 50]);
+  const y1 = useTransform(scrollY, [0, 500], [0, -25]);
+  const y2 = useTransform(scrollY, [0, 500], [0, 25]);
 
   // Load search history from localStorage on component mount
   useEffect(() => {
@@ -127,143 +127,141 @@ const Resources = () => {
     }
   }, []);
 
-  // Memoized search and filter function to improve performance
+  // Optimized memoized search and filter function
   const filterResources = useCallback(() => {
-    // Debounce search to improve performance
-    const searchTimer = setTimeout(() => {
-      let result = resources;
+    let result = resources;
 
-      // Filter by search query with relevance scoring
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+    // Filter by search query with relevance scoring
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
 
-        // Calculate relevance score for each resource
-        const scoredResources = resources.map(resource => {
-          let score = 0;
+      // Calculate relevance score for each resource
+      const scoredResources = resources.map(resource => {
+        let score = 0;
 
-          // Title match (highest weight)
-          if (resource.title.toLowerCase() === query) {
-            score += 100; // Exact title match
-          } else if (resource.title.toLowerCase().includes(query)) {
-            score += 50; // Partial title match
-          }
+        // Title match (highest weight)
+        if (resource.title.toLowerCase() === query) {
+          score += 100;
+        } else if (resource.title.toLowerCase().includes(query)) {
+          score += 50;
+        }
 
-          // Category match
-          if (resource.category.toLowerCase().includes(query)) {
-            score += 30;
-          }
+        // Category match
+        if (resource.category.toLowerCase().includes(query)) {
+          score += 30;
+        }
 
-          // Tag matches (good relevance)
-          const tagMatches = resource.tags.filter(tag =>
-            tag.toLowerCase().includes(query)
-          ).length;
-          score += tagMatches * 25;
+        // Tag matches
+        const tagMatches = resource.tags.filter(tag =>
+          tag.toLowerCase().includes(query)
+        ).length;
+        score += tagMatches * 25;
 
-          // Type match
-          if (resource.type.toLowerCase().includes(query)) {
-            score += 20;
-          }
+        // Type match
+        if (resource.type.toLowerCase().includes(query)) {
+          score += 20;
+        }
 
-          // Description match (lowest weight but still valuable)
-          if (resource.description.toLowerCase().includes(query)) {
-            score += 15;
-          }
+        // Description match
+        if (resource.description.toLowerCase().includes(query)) {
+          score += 15;
+        }
 
-          // Pricing match
-          if (resource.pricing && resource.pricing.toLowerCase().includes(query)) {
-            score += 15;
-          }
+        // Pricing match
+        if (resource.pricing && resource.pricing.toLowerCase().includes(query)) {
+          score += 15;
+        }
 
-          // Difficulty match
-          if (resource.difficulty && resource.difficulty.toLowerCase().includes(query)) {
-            score += 10;
-          }
+        // Difficulty match
+        if (resource.difficulty && resource.difficulty.toLowerCase().includes(query)) {
+          score += 10;
+        }
 
-          return { resource, score };
-        });
+        return { resource, score };
+      });
 
-        // Filter resources with a score > 0 and sort by score
-        result = scoredResources
-          .filter(item => item.score > 0)
-          .sort((a, b) => b.score - a.score)
-          .map(item => item.resource);
-      }
+      // Filter resources with a score > 0 and sort by score
+      result = scoredResources
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(item => item.resource);
+    }
 
-      // Apply additional filters
-      if (selectedCategory) {
-        result = result.filter(resource => resource.category === selectedCategory);
-      }
+    // Apply additional filters
+    if (selectedCategory) {
+      result = result.filter(resource => resource.category === selectedCategory);
+    }
 
-      if (selectedTag) {
-        result = result.filter(resource => resource.tags.includes(selectedTag));
-      }
+    if (selectedTag) {
+      result = result.filter(resource => resource.tags.includes(selectedTag));
+    }
 
-      if (selectedType) {
-        result = result.filter(resource => resource.type === selectedType);
-      }
+    if (selectedType) {
+      result = result.filter(resource => resource.type === selectedType);
+    }
 
-      if (selectedPricing) {
-        result = result.filter(resource => resource.pricing === selectedPricing);
-      }
+    if (selectedPricing) {
+      result = result.filter(resource => resource.pricing === selectedPricing);
+    }
 
-      setFilteredResources(result);
-    }, 100); // Reduced debounce time for faster response
-
-    return () => clearTimeout(searchTimer);
+    setFilteredResources(result);
   }, [searchQuery, selectedCategory, selectedTag, selectedType, selectedPricing]);
 
   // Apply filters when dependencies change
   useEffect(() => {
-    filterResources();
+    const timeoutId = setTimeout(() => {
+      filterResources();
+    }, 150); // Debounce for better performance
+    
+    return () => clearTimeout(timeoutId);
   }, [filterResources]);
 
-  // Save search to history
-  const saveSearchToHistory = (query: string) => {
+  // Memoized callbacks
+  const saveSearchToHistory = useCallback((query: string) => {
     if (query.trim() && !searchHistory.includes(query)) {
-      const newHistory = [query, ...searchHistory].slice(0, 5); // Keep only 5 most recent searches
+      const newHistory = [query, ...searchHistory].slice(0, 5);
       setSearchHistory(newHistory);
       localStorage.setItem('resourceSearchHistory', JSON.stringify(newHistory));
     }
-  };
+  }, [searchHistory]);
 
-  // Handle search submission
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Save to history
       saveSearchToHistory(searchQuery);
-      // The filtering will be handled by the useEffect
     }
-  };
+  }, [searchQuery, saveSearchToHistory]);
 
-  // Reset all filters
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSelectedCategory('');
     setSelectedTag('');
     setSelectedType('');
     setSelectedPricing('');
     setSearchQuery('');
-  };
+  }, []);
 
-  // Apply type filter
-  const applyTypeFilter = (type: string) => {
+  const applyTypeFilter = useCallback((type: string) => {
     setSelectedType(type === selectedType ? '' : type);
-  };
+  }, [selectedType]);
 
-  // Apply pricing filter
-  const applyPricingFilter = (pricing: string) => {
+  const applyPricingFilter = useCallback((pricing: string) => {
     setSelectedPricing(pricing === selectedPricing ? '' : pricing);
-  };
+  }, [selectedPricing]);
 
-  // Get all unique tags from resources
+  // Memoized filtered resources for featured section
+  const featuredResources = useMemo(() => 
+    filteredResources.filter(r => r.featured), 
+    [filteredResources]
+  );
 
-  // Enhanced testimonials data
-
-  // FAQ data
+  const regularResources = useMemo(() => 
+    featuredResources.length > 0 ? filteredResources.filter(r => !r.featured) : filteredResources,
+    [filteredResources, featuredResources.length]
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-teal-50 relative overflow-hidden">
-      {/* Animated background elements */}
+      {/* Simplified animated background elements */}
       <motion.div 
         className="absolute top-20 left-10 w-32 h-32 bg-teal-100 rounded-full opacity-20"
         style={{ y: y1 }}
@@ -272,29 +270,24 @@ const Resources = () => {
         className="absolute bottom-20 right-10 w-24 h-24 bg-blue-100 rounded-full opacity-30"
         style={{ y: y2 }}
       />
-      <motion.div 
-        className="absolute top-1/2 left-1/2 w-40 h-40 bg-purple-100 rounded-full opacity-10 -translate-x-1/2 -translate-y-1/2"
-        animate={{ rotate: 360, scale: [1, 1.05, 1] }}
-        transition={{ duration: 20, repeat: Infinity }}
-      />
 
       <Header />
 
       <main className="pt-20 relative z-10">
-        {/* Enhanced Hero Section */}
+        {/* Optimized Hero Section */}
         <section className="py-24 relative overflow-hidden">
           <div className="container mx-auto px-4 text-center">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, type: "spring", damping: 25 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
             >
               {/* Floating badge */}
               <motion.div
                 className="inline-flex items-center bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 mb-6 shadow-lg border border-teal-100"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.1, duration: 0.4 }}
               >
                 <Sparkles className="w-4 h-4 text-teal-500 mr-2" />
                 <span className="text-sm font-medium text-gray-700">Curated Developer Collection</span>
@@ -304,7 +297,7 @@ const Resources = () => {
                 className="text-5xl md:text-6xl font-bold text-gray-800 mb-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.6 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
               >
                 Developer{" "}
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-teal-500 to-blue-500 relative">
@@ -313,7 +306,7 @@ const Resources = () => {
                     className="absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-blue-400 rounded-full"
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
-                    transition={{ delay: 0.8, duration: 0.6 }}
+                    transition={{ delay: 0.6, duration: 0.4 }}
                   />
                 </span>
               </motion.h1>
@@ -322,7 +315,7 @@ const Resources = () => {
                 className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
               >
                 A handpicked collection of the best tools, resources, and guides for developers 
                 and QA engineers to boost productivity and enhance skills.
@@ -333,7 +326,7 @@ const Resources = () => {
                 className="relative max-w-2xl mx-auto"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
               >
                 <form onSubmit={handleSearchSubmit}>
                   <Input
@@ -357,8 +350,8 @@ const Resources = () => {
               className="flex flex-col items-center"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              viewport={{ once: true, margin: "-100px" }}
             >
               <h3 className="text-lg font-semibold text-gray-800 mb-6">Filter by Category</h3>
               <CategoryFilter
@@ -388,8 +381,9 @@ const Resources = () => {
                           <motion.button
                             onClick={resetFilters}
                             className="text-xs text-teal-600 hover:text-teal-700 flex items-center bg-teal-50 px-2 py-1 rounded-full"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            transition={{ duration: 0.15 }}
                           >
                             Reset All
                           </motion.button>
@@ -397,8 +391,9 @@ const Resources = () => {
                         <motion.button
                           onClick={() => setIsFilterExpanded(!isFilterExpanded)}
                           className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-200"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          transition={{ duration: 0.15 }}
                           aria-label={isFilterExpanded ? "Collapse filters" : "Expand filters"}
                           title={isFilterExpanded ? "Collapse filters" : "Expand filters"}
                         >
@@ -419,7 +414,7 @@ const Resources = () => {
                         height: isFilterExpanded ? "auto" : 0,
                         opacity: isFilterExpanded ? 1 : 0
                       }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
                       style={{ overflow: "hidden" }}
                     >
                       {/* Resource Type */}
@@ -435,7 +430,7 @@ const Resources = () => {
                             return (
                               <Badge
                                 key={type}
-                                className={`cursor-pointer flex items-center justify-between px-3 py-2 transition-all duration-300 ${
+                                className={`cursor-pointer flex items-center justify-between px-3 py-2 transition-all duration-200 ${
                                   isSelected
                                     ? 'bg-teal-100 text-teal-700 border-teal-200 shadow-sm'
                                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200'
@@ -465,7 +460,7 @@ const Resources = () => {
                             return (
                               <Badge
                                 key={pricing}
-                                className={`cursor-pointer flex items-center justify-between px-3 py-2 transition-all duration-300 ${
+                                className={`cursor-pointer flex items-center justify-between px-3 py-2 transition-all duration-200 ${
                                   isSelected
                                     ? 'bg-teal-100 text-teal-700 border-teal-200 shadow-sm'
                                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200'
@@ -512,7 +507,7 @@ const Resources = () => {
                     {(selectedCategory || selectedTag || selectedType || selectedPricing || searchQuery) && (
                       <div className="flex flex-wrap items-center gap-2">
                         {searchQuery && (
-                          <Badge className="bg-gray-100 text-gray-700 px-3 py-2 flex items-center gap-2 hover:bg-gray-200 transition-colors">
+                          <Badge className="bg-gray-100 text-gray-700 px-3 py-2 flex items-center gap-2 hover:bg-gray-200 transition-colors duration-200">
                             <Search className="w-3 h-3" />
                             {searchQuery}
                             <button
@@ -526,7 +521,7 @@ const Resources = () => {
                         )}
 
                         {selectedCategory && (
-                          <Badge className="bg-teal-100 text-teal-700 px-3 py-2 flex items-center gap-2 hover:bg-teal-200 transition-colors">
+                          <Badge className="bg-teal-100 text-teal-700 px-3 py-2 flex items-center gap-2 hover:bg-teal-200 transition-colors duration-200">
                             <Layers className="w-3 h-3" />
                             {selectedCategory}
                             <button
@@ -540,7 +535,7 @@ const Resources = () => {
                         )}
 
                         {selectedType && (
-                          <Badge className="bg-indigo-100 text-indigo-700 px-3 py-2 flex items-center gap-2 hover:bg-indigo-200 transition-colors">
+                          <Badge className="bg-indigo-100 text-indigo-700 px-3 py-2 flex items-center gap-2 hover:bg-indigo-200 transition-colors duration-200">
                             <BookOpen className="w-3 h-3" />
                             {selectedType}
                             <button
@@ -554,7 +549,7 @@ const Resources = () => {
                         )}
 
                         {selectedPricing && (
-                          <Badge className="bg-purple-100 text-purple-700 px-3 py-2 flex items-center gap-2 hover:bg-purple-200 transition-colors">
+                          <Badge className="bg-purple-100 text-purple-700 px-3 py-2 flex items-center gap-2 hover:bg-purple-200 transition-colors duration-200">
                             <Star className="w-3 h-3" />
                             {selectedPricing}
                             <button
@@ -569,13 +564,14 @@ const Resources = () => {
 
                         {(selectedCategory || selectedTag || selectedType || selectedPricing || searchQuery) && (
                           <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            transition={{ duration: 0.15 }}
                           >
                             <Button
                               onClick={resetFilters}
                               variant="outline"
-                              className="text-sm text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 border-gray-200 px-4 py-2 rounded-xl"
+                              className="text-sm text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 border-gray-200 px-4 py-2 rounded-xl transition-all duration-200"
                             >
                               Clear All Filters
                             </Button>
@@ -590,7 +586,7 @@ const Resources = () => {
                 {filteredResources.length > 0 ? (
                   <>
                     {/* Featured resources section */}
-                    {filteredResources.some(r => r.featured) && (
+                    {featuredResources.length > 0 && (
                       <div className="mb-12">
                         <div className="flex items-center mb-8">
                           <div className="h-px flex-grow bg-gradient-to-r from-transparent via-teal-200 to-transparent"></div>
@@ -605,15 +601,15 @@ const Resources = () => {
                           className="grid grid-cols-1 md:grid-cols-2 gap-8"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          transition={{ duration: 0.5 }}
+                          transition={{ duration: 0.4 }}
                         >
-                          {filteredResources.filter(r => r.featured).map((resource, index) => (
+                          {featuredResources.map((resource, index) => (
                             <motion.div
                               key={resource.id}
                               initial={{ opacity: 0, y: 20 }}
                               whileInView={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.5, delay: index * 0.1 }}
-                              viewport={{ once: true }}
+                              transition={{ duration: 0.4, delay: index * 0.05 }}
+                              viewport={{ once: true, margin: "-50px" }}
                             >
                               <ResourceCard
                                 resource={resource}
@@ -628,7 +624,7 @@ const Resources = () => {
 
                     {/* Regular resources */}
                     <div className="mb-6">
-                      {filteredResources.some(r => r.featured) && (
+                      {featuredResources.length > 0 && (
                         <div className="flex items-center mb-8">
                           <div className="h-px flex-grow bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
                           <h3 className="text-2xl font-bold text-gray-800 px-6">All Resources</h3>
@@ -640,25 +636,23 @@ const Resources = () => {
                         className="grid grid-cols-1 md:grid-cols-2 gap-8"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ duration: 0.5 }}
+                        transition={{ duration: 0.4 }}
                       >
-                        {filteredResources
-                          .filter(r => filteredResources.some(fr => fr.featured) ? !r.featured : true)
-                          .map((resource, index) => (
-                            <motion.div
-                              key={resource.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              whileInView={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.5, delay: index * 0.05 }}
-                              viewport={{ once: true }}
-                            >
-                              <ResourceCard
-                                resource={resource}
-                                index={index}
-                                onTagClick={setSelectedTag}
-                              />
-                            </motion.div>
-                          ))}
+                        {regularResources.map((resource, index) => (
+                          <motion.div
+                            key={resource.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: index * 0.02 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                          >
+                            <ResourceCard
+                              resource={resource}
+                              index={index}
+                              onTagClick={setSelectedTag}
+                            />
+                          </motion.div>
+                        ))}
                       </motion.div>
                     </div>
                   </>
@@ -667,27 +661,17 @@ const Resources = () => {
                     className="text-center py-20"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
+                    transition={{ duration: 0.4 }}
                   >
                     <motion.div
                       className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-gray-100 p-12 relative overflow-hidden max-w-2xl mx-auto"
-                      initial={{ scale: 0.9 }}
+                      initial={{ scale: 0.95 }}
                       animate={{ scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.2 }}
+                      transition={{ duration: 0.3 }}
                     >
-                      <motion.div
-                        className="text-gray-400 mb-6 bg-gray-50 rounded-full p-6 w-24 h-24 flex items-center justify-center mx-auto"
-                        initial={{ y: 10 }}
-                        animate={{ y: 0 }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          repeatType: "reverse",
-                          ease: "easeInOut"
-                        }}
-                      >
+                      <div className="text-gray-400 mb-6 bg-gray-50 rounded-full p-6 w-24 h-24 flex items-center justify-center mx-auto">
                         <BookOpen className="h-12 w-12 text-teal-500" />
-                      </motion.div>
+                      </div>
 
                       <h3 className="text-2xl font-bold text-gray-800 mb-3">No Resources Found</h3>
                       <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
@@ -695,8 +679,9 @@ const Resources = () => {
                       </p>
 
                       <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
                       >
                         <Button
                           onClick={resetFilters}
@@ -715,14 +700,14 @@ const Resources = () => {
         </section>
 
         {/* Resource Stats */}
-        <section className="py-24 bg-white/40 backdrop-blur-sm">
+        <section className="py-24 bg-white/40">
           <div className="container mx-auto px-4">
             <motion.div
               className="text-center mb-16"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
+              transition={{ duration: 0.4 }}
+              viewport={{ once: true, margin: "-100px" }}
             >
               <h2 className="text-4xl font-bold text-gray-800 mb-4">
                 Resource <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-500">Impact</span>
@@ -735,46 +720,23 @@ const Resources = () => {
           </div>
         </section>
 
-        {/* Enhanced CTA Section */}
+        {/* Simplified CTA Section */}
         <section className="py-24 relative overflow-hidden">
-          {/* Animated background */}
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-br from-teal-600 via-teal-500 to-blue-500"
-            animate={{ 
-              background: [
-                "linear-gradient(135deg, #0d9488 0%, #14b8a6 50%, #3b82f6 100%)",
-                "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #0d9488 100%)",
-                "linear-gradient(135deg, #3b82f6 0%, #0d9488 50%, #14b8a6 100%)"
-              ]
-            }}
-            transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
-          />
+          <div className="absolute inset-0 bg-gradient-to-br from-teal-600 via-teal-500 to-blue-500" />
           
-          {/* Floating elements */}
-          <motion.div 
-            className="absolute top-16 left-16 w-24 h-24 bg-white/10 rounded-full"
-            animate={{ y: [0, -20, 0], x: [0, 15, 0] }}
-            transition={{ duration: 6, repeat: Infinity }}
-          />
-          <motion.div 
-            className="absolute bottom-16 right-16 w-20 h-20 bg-white/10 rounded-full"
-            animate={{ y: [0, 15, 0], x: [0, -20, 0] }}
-            transition={{ duration: 8, repeat: Infinity }}
-          />
-
           <div className="container mx-auto px-4 text-center relative z-10">
             <motion.div
               className="max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, type: "spring", damping: 25 }}
-              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true, margin: "-100px" }}
             >
               <motion.h2 
                 className="text-4xl md:text-5xl font-bold text-white mb-6"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.1, duration: 0.4 }}
                 viewport={{ once: true }}
               >
                 Boost Your
@@ -788,7 +750,7 @@ const Resources = () => {
                 className="text-xl text-white/90 mb-8 leading-relaxed"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
                 viewport={{ once: true }}
               >
                 Discover new tools, stay updated with the latest resources, and connect with 
@@ -799,27 +761,29 @@ const Resources = () => {
                 className="flex flex-col sm:flex-row gap-4 justify-center"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
                 viewport={{ once: true }}
               >
                 <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
                 >
                   <Button 
-                    className="bg-white text-teal-600 hover:bg-gray-50 px-8 py-3 rounded-xl font-semibold shadow-lg"
+                    className="bg-white text-teal-600 hover:bg-gray-50 px-8 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200"
                   >
                     <Heart className="w-4 h-4 mr-2" />
                     Suggest Resource
                   </Button>
                 </motion.div>
                 <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
                 >
                   <Button 
                     variant="outline" 
-                    className="border-2 border-white text-white hover:bg-white/10 px-8 py-3 rounded-xl font-semibold"
+                    className="border-2 border-white text-white hover:bg-white/10 px-8 py-3 rounded-xl font-semibold transition-all duration-200"
                   >
                     <Github className="w-4 h-4 mr-2" />
                     Contribute

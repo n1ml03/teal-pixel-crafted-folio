@@ -226,8 +226,8 @@ const ExperienceSection = () => {
   const stats = [
     { icon: TrendingUp, number: "1+", label: "Years Experience", color: "text-teal-300" },
     { icon: Award, number: "3", label: "Positions", color: "text-blue-300" },
-    { icon: Code, number: "15+", label: "Projects", color: "text-purple-300" },
-    { icon: TestTube, number: "500+", label: "Test Cases", color: "text-green-300" }
+    { icon: Code, number: "5+", label: "Projects", color: "text-purple-300" },
+    { icon: TestTube, number: "5000+", label: "Test Cases", color: "text-green-300" }
   ];
 
   return (

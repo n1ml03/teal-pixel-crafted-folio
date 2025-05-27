@@ -238,6 +238,34 @@ img:hover {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+/* Blog post cover images - fixed size */
+.blog-cover-image {
+  width: 100%;
+  height: 16rem; /* 256px on mobile */
+  object-fit: cover;
+  object-position: center;
+}
+
+@media (min-width: 768px) {
+  .blog-cover-image {
+    height: 20rem; /* 320px on tablet */
+  }
+}
+
+@media (min-width: 1024px) {
+  .blog-cover-image {
+    height: 24rem; /* 384px on desktop */
+  }
+}
+
+/* Related posts images - consistent sizing */
+.related-post-image {
+  width: 100%;
+  height: 12rem; /* 192px */
+  object-fit: cover;
+  object-position: center;
+}
+
 /* Horizontal rule */
 hr {
   border: 0;

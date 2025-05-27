@@ -455,10 +455,10 @@ const ProjectsSection = () => {
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { icon: Code, number: "15+", label: "Projects Completed", color: "text-teal-600" },
-              { icon: Award, number: "3+", label: "Years Experience", color: "text-blue-600" },
+              { icon: Code, number: "5+", label: "Projects Completed", color: "text-teal-600" },
+              { icon: Award, number: "1+", label: "Years Experience", color: "text-blue-600" },
               { icon: Zap, number: "100%", label: "Client Satisfaction", color: "text-purple-600" },
-              { icon: Target, number: "5+", label: "Technologies", color: "text-green-600" }
+              { icon: Target, number: "8+", label: "Technologies", color: "text-green-600" }
             ].map((stat, index) => (
               <motion.div
                 key={index}

@@ -73,10 +73,10 @@ const CategoryFilter = ({
 // Enhanced Stats Component
 const ProjectStats = () => {
   const stats = [
-    { number: "15+", label: "Projects Completed", icon: <Rocket className="w-5 h-5" /> },
+    { number: "5+", label: "Projects Completed", icon: <Rocket className="w-5 h-5" /> },
     { number: "100%", label: "Client Satisfaction", icon: <Star className="w-5 h-5" /> },
-    { number: "5+", label: "Technologies Used", icon: <Code className="w-5 h-5" /> },
-    { number: "3+", label: "Years Experience", icon: <Award className="w-5 h-5" /> }
+    { number: "8+", label: "Technologies Used", icon: <Code className="w-5 h-5" /> },
+    { number: "1+", label: "Years Experience", icon: <Award className="w-5 h-5" /> }
   ];
 
   return (
