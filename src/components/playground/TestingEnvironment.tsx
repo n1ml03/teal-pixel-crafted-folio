@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -145,7 +145,7 @@ const getStatusBadgeStyle = (status: number) => {
   }
 };
 
-export const TestingEnvironment = ({
+export const TestingEnvironment = React.memo(({
   initialUrl = 'about:blank',
   onUrlChange,
   onScreenshot,
@@ -491,6 +491,19 @@ export const TestingEnvironment = ({
   // Determine if we're in a narrow viewport
   const isNarrowViewport = useIsMobile();
 
+  // Memoized viewport style to prevent recalculations
+  const viewportStyle = useMemo(() => ({
+    width: Math.min(viewportSize.width, 800),
+    height: Math.min(viewportSize.height, 600),
+    aspectRatio: `${viewportSize.width}/${viewportSize.height}`
+  }), [viewportSize]);
+
+  // Memoized console logs (limit to last 100 for performance)
+  const limitedConsoleLogs = useMemo(() => consoleLogs.slice(-100), [consoleLogs]);
+  
+  // Memoized network requests (limit to first 50 for performance)
+  const limitedNetworkRequests = useMemo(() => networkRequests.slice(0, 50), [networkRequests]);
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-muted/10 backdrop-blur-sm">
       {/* Enhanced Browser Controls */}
@@ -665,11 +678,7 @@ export const TestingEnvironment = ({
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
                 className="relative shadow-2xl rounded-lg overflow-hidden border border-border/50 bg-background"
-                style={{
-                  width: Math.min(viewportSize.width, 800),
-                  height: Math.min(viewportSize.height, 600),
-                  aspectRatio: `${viewportSize.width}/${viewportSize.height}`
-                }}
+                style={viewportStyle}
               >
                 <iframe
                   ref={iframeRef}
@@ -718,14 +727,14 @@ export const TestingEnvironment = ({
             </div>
             <ScrollArea className="h-[calc(100%-3rem)]">
               <div className="p-4 space-y-2 font-mono text-sm">
-                {consoleLogs.map((log, index) => (
+                {limitedConsoleLogs.map((log, index) => (
                   <motion.div
-                    key={index}
+                    key={`${index}-${log.timestamp}`}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.02 }}
+                    transition={{ delay: Math.min(index * 0.005, 0.1) }}
                     className={cn(
-                      "flex items-start gap-3 p-3 rounded-lg border transition-all duration-200 hover:scale-[1.01]",
+                      "flex items-start gap-3 p-3 rounded-lg border transition-colors duration-200",
                       consoleLogStyles[log.type]
                     )}
                   >
@@ -765,13 +774,13 @@ export const TestingEnvironment = ({
             </div>
             <ScrollArea className="h-[calc(100%-3.5rem)]">
               <div className="p-4 space-y-3">
-                {networkRequests.map((request, index) => (
+                {limitedNetworkRequests.map((request, index) => (
                   <motion.div
                     key={request.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.02 }}
-                    className="bg-background/80 p-4 rounded-lg border border-border/50 hover:border-border transition-all duration-200 hover:shadow-md"
+                    transition={{ delay: Math.min(index * 0.005, 0.1) }}
+                    className="bg-background/80 p-4 rounded-lg border border-border/50 hover:border-border transition-colors duration-200"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -915,16 +924,19 @@ export const TestingEnvironment = ({
                   return (
                     <motion.div
                       key={test.id}
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
                       className={cn(
-                        "bg-background/80 border rounded-xl p-4 transition-all duration-300 hover:shadow-md",
+                        "bg-background/80 border rounded-xl p-4 transition-all duration-300",
                         result?.passed && "border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/50 to-green-50/30 dark:from-emerald-950/20 dark:to-green-950/10",
                         result?.passed === false && "border-red-200 dark:border-red-800 bg-gradient-to-br from-red-50/50 to-rose-50/30 dark:from-red-950/20 dark:to-rose-950/10",
                         isCurrentTest && "border-primary/50 shadow-lg shadow-primary/10"
                       )}
-                      animate={isCurrentTest ? {
-                        scale: [1, 1.02, 1],
-                        transition: { repeat: Infinity, duration: 1.5 }
-                      } : {}}
+                      style={{
+                        transform: isCurrentTest ? 'scale(1.02)' : 'scale(1)',
+                        transition: 'transform 0.3s ease'
+                      }}
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-3">
@@ -932,7 +944,7 @@ export const TestingEnvironment = ({
                             <motion.div
                               initial={{ scale: 0.5, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
-                              transition={{ type: "spring" }}
+                              transition={{ duration: 0.2 }}
                               className="bg-gradient-to-br from-emerald-500 to-green-600 p-1.5 rounded-full shadow-lg shadow-emerald-500/25"
                             >
                               <CheckCircle2 className="h-4 w-4 text-white" />
@@ -942,7 +954,7 @@ export const TestingEnvironment = ({
                             <motion.div
                               initial={{ scale: 0.5, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
-                              transition={{ type: "spring" }}
+                              transition={{ duration: 0.2 }}
                               className="bg-gradient-to-br from-red-500 to-rose-600 p-1.5 rounded-full shadow-lg shadow-red-500/25"
                             >
                               <AlertCircle className="h-4 w-4 text-white" />
@@ -1007,6 +1019,6 @@ export const TestingEnvironment = ({
       </Tabs>
     </div>
   );
-};
+});
 
 export default TestingEnvironment;

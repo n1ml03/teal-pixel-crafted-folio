@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Badge } from "@/components/ui/badge.tsx";
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Project } from '@/types/project.ts';
@@ -12,7 +11,6 @@ import {
   Code,
   ArrowRight,
   ExternalLink,
-  Filter,
   Sparkles,
   Bookmark,
   Eye,
@@ -20,8 +18,6 @@ import {
   Star,
   Award,
   MessageCircle,
-  ChevronDown,
-  Quote,
   Github,
   Rocket
 } from 'lucide-react';
@@ -42,8 +38,8 @@ const CategoryFilter = ({
       <motion.button
         className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
           selectedCategory === null
-            ? 'bg-teal-500 text-white shadow-lg'
-            : 'bg-white/80 text-gray-600 hover:bg-teal-50 border border-gray-200'
+            ? 'bg-gradient-to-r from-teal-500 to-blue-500 text-white shadow-lg'
+            : 'bg-white/90 border-gray-200 hover:border-teal-300 hover:bg-teal-50 text-gray-700 border'
         }`}
         onClick={() => onCategoryChange(null)}
         whileHover={{ scale: 1.05 }}
@@ -56,8 +52,8 @@ const CategoryFilter = ({
           key={category}
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
             selectedCategory === category
-              ? 'bg-teal-500 text-white shadow-lg'
-              : 'bg-white/80 text-gray-600 hover:bg-teal-50 border border-gray-200'
+              ? 'bg-gradient-to-r from-teal-500 to-blue-500 text-white shadow-lg'
+              : 'bg-white/90 border-gray-200 hover:border-teal-300 hover:bg-teal-50 text-gray-700 border'
           }`}
           onClick={() => onCategoryChange(category)}
           whileHover={{ scale: 1.05 }}
@@ -188,24 +184,24 @@ const Projects = () => {
             >
               {/* Floating badge */}
               <motion.div
-                className="inline-flex items-center bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 mb-6 shadow-lg border border-teal-100"
+                className="inline-flex items-center bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 mb-6 shadow-lg border border-border"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <Sparkles className="w-4 h-4 text-teal-500 mr-2" />
-                <span className="text-sm font-medium text-gray-700">Project Portfolio & Showcase</span>
+                <Sparkles className="w-4 h-4 text-primary mr-2" />
+                <span className="text-sm font-medium text-muted-foreground">Project Portfolio & Showcase</span>
               </motion.div>
 
               <motion.h1 
-                className="text-5xl md:text-6xl font-bold text-gray-800 mb-6"
+                className="text-5xl md:text-6xl font-bold text-foreground mb-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
               >
-                Project{" "}
+                My{" "}
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-teal-500 to-blue-500 relative">
-                  Showcase
+                  Projects
                   <motion.div
                     className="absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-blue-400 rounded-full"
                     initial={{ scaleX: 0 }}
@@ -216,13 +212,13 @@ const Projects = () => {
               </motion.h1>
               
               <motion.p 
-                className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed"
+                className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                Explore my portfolio in QA, full-stack development, and data analytics—showcasing 
-                problem-solving skills, technical expertise, and attention to detail.
+                A showcase of my development work, from web applications to testing frameworks. 
+                Each project represents a unique challenge and learning experience.
               </motion.p>
 
               {/* Enhanced Search Bar */}
@@ -235,11 +231,11 @@ const Projects = () => {
                 <Input
                   type="text"
                   placeholder="Search projects by name, technology, or category..."
-                  className="pl-12 pr-4 py-4 rounded-2xl border-gray-200 focus:border-teal-500 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm"
+                  className="pl-12 pr-4 py-4 rounded-2xl border-border focus:border-primary shadow-lg hover:shadow-xl transition-all duration-300 bg-background/90 backdrop-blur-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
               </motion.div>
             </motion.div>
           </div>
@@ -255,7 +251,7 @@ const Projects = () => {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-lg font-semibold text-gray-800 mb-6">Filter by Category</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-6">Filter by Category</h3>
               <CategoryFilter
                 categories={categories}
                 selectedCategory={selectedCategory}
@@ -308,8 +304,8 @@ const Projects = () => {
                         <FolderSearch className="h-12 w-12 text-teal-500" />
                       </motion.div>
 
-                      <h3 className="text-2xl font-bold text-gray-800 mb-3">No Projects Found</h3>
-                      <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                      <h3 className="text-2xl font-bold text-foreground mb-3">No Projects Found</h3>
+                      <p className="text-muted-foreground mb-8 max-w-md mx-auto">
                         We couldn't find any projects matching your current filters. Try adjusting your search criteria or reset all filters.
                       </p>
 
@@ -319,10 +315,10 @@ const Projects = () => {
                       >
                         <Button
                           onClick={resetFilters}
-                          className="bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl px-8 py-3 shadow-lg"
+                          variant="outline"
+                          className="text-sm ml-2 px-4 py-2 rounded-xl border-2 border-teal-200 text-teal-600 hover:bg-teal-50"
                         >
-                          <Filter className="mr-2 h-4 w-4" />
-                          Reset All Filters
+                          Reset all filters
                         </Button>
                       </motion.div>
                     </motion.div>
@@ -343,18 +339,16 @@ const Projects = () => {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl font-bold text-gray-800 mb-4">
-                Project <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-500">Achievements</span>
+              <h2 className="text-4xl font-bold text-foreground mb-4">
+                Project <span className="text-primary">Achievements</span>
               </h2>
-              <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
-                Numbers that reflect the quality and impact of my work
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+                Metrics that showcase the impact and quality of my work
               </p>
             </motion.div>
             <ProjectStats />
           </div>
         </section>
-
-
 
         {/* Enhanced CTA Section */}
         <section className="py-24 relative overflow-hidden">
@@ -428,7 +422,6 @@ const Projects = () => {
                 >
                   <Button 
                     className="bg-white text-teal-600 hover:bg-gray-50 px-8 py-3 rounded-xl font-semibold shadow-lg"
-                    onClick={() => window.location.href = '/contact-form'}
                   >
                     <MessageCircle className="w-4 h-4 mr-2" />
                     Start a Project
@@ -463,7 +456,7 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
 
   return (
     <motion.div
-      className="group relative bg-white/90 backdrop-blur-sm rounded-3xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-500"
+      className="group relative bg-card/90 backdrop-blur-sm rounded-3xl overflow-hidden shadow-lg border border-border hover:shadow-xl transition-all duration-500"
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ 
@@ -477,14 +470,14 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
       whileHover={{
         y: -8,
         scale: 1.02,
-        boxShadow: "0 20px 40px -12px rgba(20, 184, 166, 0.15)",
-        borderColor: "rgba(20, 184, 166, 0.3)"
+        boxShadow: "0 20px 40px -12px hsl(var(--primary) / 0.15)",
+        borderColor: "hsl(var(--primary) / 0.3)"
       }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
     >
       {/* Enhanced Image container */}
-      <div className="aspect-[16/10] bg-gray-100 relative overflow-hidden">
+      <div className="aspect-[16/10] bg-muted relative overflow-hidden">
         <img
           src={project.images.main}
           alt={project.title}
@@ -501,7 +494,7 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
               href={project.links.github}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-white/95 hover:bg-white text-gray-800 p-3 rounded-full transition-colors shadow-lg hover:shadow-xl backdrop-blur-sm"
+              className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white p-3 rounded-full transition-colors shadow-lg hover:shadow-xl backdrop-blur-sm"
               aria-label="View GitHub Repository"
               whileHover={{ scale: 1.1, y: -2 }}
               whileTap={{ scale: 0.9 }}
@@ -514,7 +507,7 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
               href={project.links.demo}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-teal-500/95 hover:bg-teal-500 text-white p-3 rounded-full transition-colors shadow-lg hover:shadow-xl backdrop-blur-sm"
+              className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white p-3 rounded-full transition-colors shadow-lg hover:shadow-xl backdrop-blur-sm"
               aria-label="View Live Demo"
               whileHover={{ scale: 1.1, y: -2 }}
               whileTap={{ scale: 0.9 }}
@@ -527,13 +520,13 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
         {/* Enhanced category badge */}
         <div className="absolute top-4 left-4">
           <motion.span
-            className="bg-white/95 backdrop-blur-sm text-gray-800 text-xs px-4 py-2 rounded-full font-medium shadow-lg border border-white/20 flex items-center"
+            className="bg-teal-100 text-teal-700 text-xs px-3 py-1 rounded-full flex items-center border border-teal-200 hover:bg-teal-200 transition-colors"
             whileHover={{ scale: 1.05 }}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 + 0.3 }}
           >
-            <Sparkles className="w-3 h-3 mr-2 text-teal-500" />
+            <span className="w-1.5 h-1.5 bg-teal-500 rounded-full mr-2" />
             {project.category}
           </motion.span>
         </div>
@@ -554,17 +547,17 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
       {/* Enhanced Content */}
       <div className="p-8 relative">
         {/* Decorative element */}
-        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-teal-50 to-transparent rounded-bl-full opacity-50" />
+        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary/10 to-transparent rounded-bl-full opacity-50" />
 
         <motion.h3 
-          className="text-xl font-bold text-gray-800 mb-3 group-hover:text-teal-600 transition-colors"
+          className="text-xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors"
           animate={isHovered ? { x: 5 } : { x: 0 }}
           transition={{ duration: 0.2 }}
         >
           {project.title}
         </motion.h3>
 
-        <p className="text-gray-600 text-sm mb-6 line-clamp-2 relative z-10 leading-relaxed">
+        <p className="text-muted-foreground text-sm mb-6 line-clamp-2 relative z-10 leading-relaxed">
           {project.description}
         </p>
 
@@ -573,7 +566,7 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
           {project.tags.slice(0, 3).map((tag, tagIndex) => (
             <motion.span
               key={tagIndex}
-              className="bg-teal-50 text-teal-700 text-xs px-3 py-1 rounded-full flex items-center border border-teal-100/50 hover:bg-teal-100 transition-colors"
+              className="bg-teal-100 text-teal-700 text-xs px-3 py-1 rounded-full flex items-center border border-teal-200 hover:bg-teal-200 transition-colors"
               whileHover={{ scale: 1.05, y: -1 }}
             >
               <span className="w-1.5 h-1.5 bg-teal-500 rounded-full mr-2" />
@@ -582,7 +575,7 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
           ))}
           {project.tags.length > 3 && (
             <motion.span
-              className="bg-gray-50 text-gray-600 text-xs px-3 py-1 rounded-full border border-gray-100/50 hover:bg-gray-100 transition-colors"
+              className="bg-muted text-muted-foreground text-xs px-3 py-1 rounded-full border border-border hover:bg-accent transition-colors"
               whileHover={{ scale: 1.05, y: -1 }}
             >
               +{project.tags.length - 3} more
@@ -591,7 +584,7 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
         </div>
 
         {/* Enhanced action footer */}
-        <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+        <div className="pt-4 border-t border-border flex justify-between items-center">
           <Link
             to={`/projects/${project.slug}`}
             className="inline-flex items-center text-teal-600 font-semibold text-sm group/link hover:text-teal-700 transition-colors"
@@ -608,7 +601,7 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
 
           <div className="flex space-x-2">
             <motion.button
-              className="text-gray-400 hover:text-teal-500 transition-colors p-1 rounded-full hover:bg-teal-50"
+              className="text-muted-foreground hover:text-teal-600 transition-colors p-1 rounded-full hover:bg-teal-100"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               aria-label="View project"
@@ -616,7 +609,7 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
               <Eye size={16} />
             </motion.button>
             <motion.button
-              className="text-gray-400 hover:text-teal-500 transition-colors p-1 rounded-full hover:bg-teal-50"
+              className="text-muted-foreground hover:text-teal-600 transition-colors p-1 rounded-full hover:bg-teal-100"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               aria-label="Save project"

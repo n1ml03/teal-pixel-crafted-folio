@@ -128,9 +128,18 @@ const Sandbox = () => {
           <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>
             Use this sandbox environment to practice your testing skills without any specific challenge objectives.
           </p>
+          <div className={`mt-2 text-xs text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
+            <p>💡 <strong>Tip:</strong> Many websites block iframe embedding. Try these iframe-friendly URLs:</p>
+            <ul className="list-disc list-inside mt-1 space-y-1">
+              <li>https://httpbin.org/html - Simple HTML testing page</li>
+              <li>https://jsonplaceholder.typicode.com/ - JSON API testing site</li>
+              <li>https://reqres.in/ - REST API testing service</li>
+              <li>https://httpstat.us/ - HTTP status code testing</li>
+            </ul>
+          </div>
         </div>
-        <div className={isMobile ? "h-[calc(100vh-180px)]" : "h-[calc(150vh-250px)]"}>
-          <TestingEnvironment initialUrl="https://example.com" sandboxMode="open" />
+        <div className={isMobile ? "h-[calc(100vh-220px)]" : "h-[calc(150vh-290px)]"}>
+          <TestingEnvironment initialUrl="https://httpbin.org/html" sandboxMode="open" />
         </div>
       </div>
     </div>

@@ -66,7 +66,7 @@ The testing solution was designed to be scalable and maintainable, with a focus 
       gallery: [
         'https://images.unsplash.com/photo-1555952517-2e8e729e0b44?q=80&w=1000',
         'https://images.unsplash.com/photo-1553877522-43269d4ea984?q=80&w=1000',
-        'https://images.unsplash.com/photo-1553877522-1b580d2e8cf6?q=80&w=1000'
+        'https://images.unsplash.com/photo-1555952517-2e8e729e0b44?q=80&w=1000'
       ]
     },
     links: {
@@ -113,8 +113,8 @@ The system includes inventory management, sales tracking, employee management, a
       main: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000',
       gallery: [
         'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1000',
-        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1000',
-        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1000'
+        'https://images.unsplash.com/photo-1553877522-43269d4ea984?q=80&w=1000',
+        'https://images.unsplash.com/photo-1555952517-2e8e729e0b44?q=80&w=1000'
       ]
     },
     links: {
@@ -160,8 +160,8 @@ Using advanced data mining techniques and machine learning algorithms, the proje
       main: 'https://images.unsplash.com/photo-1607799279861-4dd421887fb3?q=80&w=1000',
       gallery: [
         'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1000',
-        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1000',
-        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1000'
+        'https://images.unsplash.com/photo-1553877522-43269d4ea984?q=80&w=1000',
+        'https://images.unsplash.com/photo-1555952517-2e8e729e0b44?q=80&w=1000'
       ]
     },
     links: {

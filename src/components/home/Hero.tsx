@@ -1,13 +1,7 @@
 import {
   Mail as MailIcon,
-  ArrowDown,
-  Code,
-  TestTube,
-  Sparkles,
   Github,
   Linkedin,
-  Workflow,
-  Star,
   Award,
   Zap,
   Eye
@@ -258,7 +252,7 @@ const Hero = () => {
 
             {/* Simplified main heading */}
             <motion.h1 
-              className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-4 lg:mb-6 leading-tight"
+              className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-4 lg:mb-6 leading-tight"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.6, ease: "easeOut" }}
@@ -271,7 +265,7 @@ const Hero = () => {
 
             {/* Simplified subtitle */}
             <motion.div
-              className="text-lg sm:text-xl lg:text-2xl text-gray-600 mb-6 lg:mb-8 font-medium"
+              className="text-xl sm:text-2xl lg:text-2xl text-gray-600 mb-6 lg:mb-8 font-medium"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
@@ -287,7 +281,7 @@ const Hero = () => {
 
             {/* Simplified description */}
             <motion.p 
-              className="text-gray-600 text-base sm:text-lg leading-relaxed mb-8 lg:mb-10 max-w-xl mx-auto lg:mx-0"
+              className="text-gray-600 text-lg sm:text-xl leading-relaxed mb-8 lg:mb-10 max-w-xl mx-auto lg:mx-0"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.5 }}

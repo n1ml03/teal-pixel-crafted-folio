@@ -8,32 +8,41 @@ import {
   createRoutesFromElements,
   Navigate
 } from "react-router-dom";
-import { ParallaxProvider } from "@/components/utils/ParallaxProvider.tsx";
-import RouterWrapper from "@/components/utils/RouterWrapper.tsx";
+import { ParallaxProvider } from "@/components/utils/ParallaxProvider";
+import RouterWrapper from "@/components/utils/RouterWrapper";
 import { lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkipLink } from "@/components/ui/skip-link";
-import EnhancedErrorBoundary from "@/components/ui/enhanced-error-boundary.tsx";
+import EnhancedErrorBoundary from "@/components/ui/enhanced-error-boundary";
+import { AIConfigProvider } from "@/contexts/AIConfigContext";
+import GlobalAIConfig from "@/components/ai/GlobalAIConfig";
 
 
 // Lazy load pages for code splitting
-const Home = lazy(() => import("./pages/home/Home.tsx"));
-const Blog = lazy(() => import("./pages/home/Blog.tsx"));
-const BlogPost = lazy(() => import("./pages/home/BlogPost.tsx"));
-const Resources = lazy(() => import("./pages/home/Resources.tsx"));
-const Projects = lazy(() => import("./pages/home/Projects.tsx"));
-const ProjectDetail = lazy(() => import("./pages/home/ProjectDetail.tsx"));
-const ContactForm = lazy(() => import("./pages/home/ContactForm.tsx"));
-const Services = lazy(() => import("./pages/home/Services.tsx"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const Home = lazy(() => import("@/pages/home/Home"));
+const Blog = lazy(() => import("@/pages/home/Blog"));
+const BlogPost = lazy(() => import("@/pages/home/BlogPost"));
+const Resources = lazy(() => import("@/pages/home/Resources"));
+const Projects = lazy(() => import("@/pages/home/Projects"));
+const ProjectDetail = lazy(() => import("@/pages/home/ProjectDetail"));
+const ContactForm = lazy(() => import("@/pages/home/ContactForm"));
+const Services = lazy(() => import("@/pages/home/Services"));
+const ProfessionalTools = lazy(() => import("@/pages/home/ProfessionalTools"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+
+// Individual tool pages
+const APITesterPage = lazy(() => import("@/pages/tools/APITesterPage"));
+const TestCaseGeneratorPage = lazy(() => import("@/pages/tools/TestCaseGeneratorPage"));
+const BugReportSimulatorPage = lazy(() => import("@/pages/tools/BugReportSimulatorPage"));
+const CodeReviewToolPage = lazy(() => import("@/pages/tools/CodeReviewToolPage"));
 
 // URL Shortener pages
-const URLShortenerPage = lazy(() => import("./pages/shorten/URLShortenerPage.tsx"));
-const URLRedirect = lazy(() => import("./components/shorten/URLRedirect.tsx"));
+const URLShortenerPage = lazy(() => import("@/pages/shorten/URLShortenerPage"));
+const URLRedirect = lazy(() => import("@/components/shorten/URLRedirect"));
 
 // Testing Playground pages
-const PlaygroundRoutes = lazy(() => import("./pages/playground/Playground"));
-import { AuthProvider } from "./contexts/AuthContext";
+const PlaygroundRoutes = lazy(() => import("@/pages/playground/Playground"));
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Loading fallback with fixed dimensions to prevent layout shifts
 const PageLoader = () => (
@@ -64,7 +73,14 @@ const router = createBrowserRouter(
       <Route path="/projects" element={<Projects />} />
       <Route path="/projects/:slug" element={<ProjectDetail />} />
       <Route path="/services" element={<Services />} />
+      <Route path="/professional-tools" element={<ProfessionalTools />} />
       <Route path="/contact-form" element={<ContactForm />} />
+
+      {/* Individual Tool Routes */}
+      <Route path="/tools/api-tester" element={<APITesterPage />} />
+      <Route path="/tools/test-case-generator" element={<TestCaseGeneratorPage />} />
+      <Route path="/tools/bug-report-simulator" element={<BugReportSimulatorPage />} />
+      <Route path="/tools/code-review-tool" element={<CodeReviewToolPage />} />
 
       {/* URL Shortener Routes */}
       <Route path="/url-shortener" element={<URLShortenerPage />} />
@@ -96,19 +112,18 @@ const router = createBrowserRouter(
 const App = () => {
   return (
     <EnhancedErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ParallaxProvider>
+      <ParallaxProvider>
+        <QueryClientProvider client={queryClient}>
           <TooltipProvider>
-            <SkipLink targetId="main-content" />
-            <Toaster />
-            <div id="app-container" style={{ minHeight: '100vh', contain: 'content' }}>
-              <Suspense fallback={<PageLoader />}>
-                <RouterProvider router={router} />
-              </Suspense>
-            </div>
+            <AIConfigProvider>
+              <SkipLink targetId="main-content" />
+              <RouterProvider router={router} />
+              <GlobalAIConfig />
+              <Toaster />
+            </AIConfigProvider>
           </TooltipProvider>
-        </ParallaxProvider>
-      </QueryClientProvider>
+        </QueryClientProvider>
+      </ParallaxProvider>
     </EnhancedErrorBoundary>
   );
 };

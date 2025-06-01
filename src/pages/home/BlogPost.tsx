@@ -10,9 +10,9 @@ import Footer from '@/components/home/Footer.tsx';
 import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
 import {
   Calendar, Clock, Tag as TagIcon,
-  List, Hash, BookOpen, 
-  Heart, ArrowRight, User
-} from 'lucide-react';
+  List, BookOpen, 
+  Heart, ArrowRight, User, 
+  ChevronRight} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
@@ -27,12 +27,13 @@ const BlogPost = () => {
   const [post, setPost] = useState<BlogPostType | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPostType[]>([]);
   const [readingProgress, setReadingProgress] = useState(0);
-  const [tableOfContents, setTableOfContents] = useState<{id: string, text: string, level: number}[]>([]);
+  const [tableOfContents, setTableOfContents] = useState<{id: string, text: string, level: number, progress: number}[]>([]);
   const [activeHeading, setActiveHeading] = useState<string | null>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [tocCollapsed, setTocCollapsed] = useState(false);
   const articleRef = useRef<HTMLElement>(null);
   
   const { scrollY } = useScroll();
@@ -54,14 +55,14 @@ const BlogPost = () => {
 
         // Generate table of contents
         const headingRegex = /^(#{1,3})\s+(.+)$/gm;
-        const toc: {id: string, text: string, level: number}[] = [];
+        const toc: {id: string, text: string, level: number, progress: number}[] = [];
         let match: RegExpExecArray | null;
 
         while ((match = headingRegex.exec(foundPost.content)) !== null) {
           const level = match[1].length;
           const text = match[2].trim();
           const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
-          toc.push({ id, text, level });
+          toc.push({ id, text, level, progress: 0 });
         }
 
         setTableOfContents(toc);
@@ -71,7 +72,7 @@ const BlogPost = () => {
     }
   }, [slug, navigate]);
 
-  // Reading progress and active heading tracking
+  // Enhanced reading progress and active heading tracking
   useEffect(() => {
     const updateReadingProgress = () => {
       if (articleRef.current) {
@@ -81,16 +82,33 @@ const BlogPost = () => {
         const scrolled = (scrollTop / (articleHeight - windowHeight)) * 100;
         setReadingProgress(Math.min(Math.max(scrolled, 0), 100));
 
-        // Update active heading
+        // Update active heading and section progress
         if (tableOfContents.length > 0) {
-          const scrollPosition = scrollTop + 100;
-          for (let i = tableOfContents.length - 1; i >= 0; i--) {
-            const element = document.getElementById(tableOfContents[i].id);
-            if (element && element.offsetTop <= scrollPosition) {
-              setActiveHeading(tableOfContents[i].id);
-              break;
+          const scrollPosition = scrollTop + 120;
+          const updatedToc = [...tableOfContents];
+          
+          for (let i = 0; i < updatedToc.length; i++) {
+            const currentElement = document.getElementById(updatedToc[i].id);
+            const nextElement = i < updatedToc.length - 1 ? document.getElementById(updatedToc[i + 1].id) : null;
+            
+            if (currentElement) {
+              const sectionStart = currentElement.offsetTop;
+              const sectionEnd = nextElement ? nextElement.offsetTop : articleHeight;
+              const sectionHeight = sectionEnd - sectionStart;
+              
+              if (scrollPosition >= sectionStart && scrollPosition < sectionEnd) {
+                setActiveHeading(updatedToc[i].id);
+                const sectionProgress = Math.min(Math.max(((scrollPosition - sectionStart) / sectionHeight) * 100, 0), 100);
+                updatedToc[i].progress = sectionProgress;
+              } else if (scrollPosition >= sectionEnd) {
+                updatedToc[i].progress = 100;
+              } else {
+                updatedToc[i].progress = 0;
+              }
             }
           }
+          
+          setTableOfContents(updatedToc);
         }
       }
     };
@@ -98,7 +116,7 @@ const BlogPost = () => {
     window.addEventListener('scroll', updateReadingProgress, { passive: true });
     updateReadingProgress();
     return () => window.removeEventListener('scroll', updateReadingProgress);
-  }, [tableOfContents]);
+  }, [tableOfContents.length]);
 
   const scrollToHeading = (id: string) => {
     const element = document.getElementById(id);
@@ -140,8 +158,8 @@ const BlogPost = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <div className="h-8 w-64 bg-gradient-to-r from-teal-200 to-teal-300 rounded-2xl mb-4"></div>
-          <div className="h-4 w-32 bg-gradient-to-r from-teal-100 to-teal-200 rounded-xl"></div>
+          <div className="h-8 w-64 bg-teal-200 rounded-2xl mb-4"></div>
+          <div className="h-4 w-32 bg-teal-100 rounded-xl"></div>
         </motion.div>
       </div>
     );
@@ -153,7 +171,7 @@ const BlogPost = () => {
 
       {/* Reading Progress Bar */}
       <motion.div
-        className="fixed top-0 left-0 h-1 bg-gradient-to-r from-teal-500 to-teal-600 z-50"
+        className="fixed top-0 left-0 h-1 bg-gradient-to-r from-teal-500 to-blue-500 z-50"
         style={{ width: `${readingProgress}%` }}
       />
 
@@ -163,37 +181,37 @@ const BlogPost = () => {
         {/* Hero Section */}
         <section className="relative py-20">
           <motion.div 
-            className="absolute inset-0 bg-gradient-to-br from-teal-50/80 to-white/60"
+            className="absolute inset-0 bg-gradient-to-br from-accent/80 to-background/60"
             style={{ y: y1 }}
           />
           
           <div className="container mx-auto px-4 relative z-10">
             <ScrollReveal>
-              <div className="max-w-4xl mx-auto">
-                <Badge variant="secondary" className="mb-6 bg-teal-50 text-teal-700 px-4 py-2">
+              <div className="max-w-4xl">
+                <Badge variant="secondary" className="mb-6 px-4 py-2">
                   <TagIcon className="w-4 h-4 mr-2" />
                   {post.category}
                 </Badge>
 
-                <h1 className="text-4xl md:text-6xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-500">
+                <h1 className="text-3xl md:text-5xl font-bold mb-8 text-teal-600">
                   {post.title}
                 </h1>
 
                 {/* Post Meta */}
                 <div className="flex flex-wrap items-center gap-6 mb-8">
-                  <div className="flex items-center bg-white/70 px-4 py-2 rounded-xl">
-                    <Calendar className="w-5 h-5 text-teal-500 mr-2" />
-                    <span className="text-gray-600">{post.date}</span>
+                  <div className="flex items-center bg-card/70 px-4 py-2 rounded-xl">
+                    <Calendar className="w-5 h-5 text-teal-600 mr-2" />
+                    <span className="text-muted-foreground">{post.date}</span>
                   </div>
                   
-                  <div className="flex items-center bg-white/70 px-4 py-2 rounded-xl">
-                    <Clock className="w-5 h-5 text-teal-500 mr-2" />
-                    <span className="text-gray-600">{post.readingTime} min read</span>
+                  <div className="flex items-center bg-card/70 px-4 py-2 rounded-xl">
+                    <Clock className="w-5 h-5 text-teal-600 mr-2" />
+                    <span className="text-muted-foreground">{post.readingTime} min read</span>
                   </div>
                   
-                  <div className="flex items-center bg-white/70 px-4 py-2 rounded-xl">
-                    <User className="w-5 h-5 text-teal-500 mr-2" />
-                    <span className="text-gray-600">{post.author.name}</span>
+                  <div className="flex items-center bg-card/70 px-4 py-2 rounded-xl">
+                    <User className="w-5 h-5 text-teal-600 mr-2" />
+                    <span className="text-muted-foreground">{post.author.name}</span>
                   </div>
                 </div>
 
@@ -203,8 +221,8 @@ const BlogPost = () => {
                     onClick={handleLike}
                     className={`flex items-center px-6 py-3 rounded-xl font-medium transition-all ${
                       isLiked 
-                        ? 'bg-red-50 text-red-600 border border-red-200' 
-                        : 'bg-white/70 text-gray-600 border border-gray-200 hover:bg-red-50'
+                        ? 'bg-destructive/10 text-destructive border border-destructive/20' 
+                        : 'bg-card/70 text-muted-foreground border border-border hover:bg-destructive/5'
                     }`}
                   >
                     <Heart className={`w-5 h-5 mr-2 ${isLiked ? 'fill-current' : ''}`} />
@@ -215,8 +233,8 @@ const BlogPost = () => {
                     onClick={handleBookmark}
                     className={`flex items-center px-6 py-3 rounded-xl font-medium transition-all ${
                       isBookmarked 
-                        ? 'bg-teal-50 text-teal-600 border border-teal-200' 
-                        : 'bg-white/70 text-gray-600 border border-gray-200 hover:bg-teal-50'
+                        ? 'bg-teal-100 text-teal-700 border border-teal-200' 
+                        : 'bg-card/70 text-muted-foreground border border-border hover:bg-teal-50'
                     }`}
                   >
                     <BookOpen className={`w-5 h-5 mr-2 ${isBookmarked ? 'fill-current' : ''}`} />
@@ -233,34 +251,101 @@ const BlogPost = () => {
           <div className="container mx-auto px-4">
             <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto">
               
-              {/* Mobile TOC */}
+              {/* Mobile TOC - Enhanced */}
               {tableOfContents.length > 0 && (
-                <div className="lg:hidden mb-8">
-                  <details className="bg-white/90 rounded-xl shadow-lg border">
-                    <summary className="p-4 cursor-pointer flex items-center">
-                      <List className="w-5 h-5 mr-3 text-teal-500" />
-                      <span className="font-semibold">Table of Contents</span>
-                    </summary>
+                <motion.div 
+                  className="lg:hidden mb-8"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div className="bg-gradient-to-br from-card/95 to-card/85 rounded-2xl shadow-xl border border-border/50 backdrop-blur-sm">
+                    <button
+                      onClick={() => setTocCollapsed(!tocCollapsed)}
+                      className="w-full p-6 flex items-center justify-between text-left hover:bg-accent/50 transition-all duration-300"
+                    >
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-blue-500 flex items-center justify-center mr-4">
+                          <List className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-foreground text-lg">Table of Contents</span>
+                          <div className="text-sm text-muted-foreground">
+                            {tableOfContents.length} sections
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <motion.div
+                        animate={{ rotate: tocCollapsed ? 0 : 90 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      </motion.div>
+                    </button>
                     
-                    <div className="px-4 pb-4 space-y-1">
-                      {tableOfContents.map((toc) => (
-                        <button
-                          key={toc.id}
-                          onClick={() => scrollToHeading(toc.id)}
-                          className={`w-full text-left p-2 rounded-lg transition-all text-sm ${
-                            activeHeading === toc.id
-                              ? 'bg-teal-50 text-teal-700'
-                              : 'text-gray-600 hover:bg-gray-50'
-                          }`}
-                          style={{ paddingLeft: `${(toc.level - 1) * 8 + 8}px` }}
-                        >
-                          <Hash className="w-3 h-3 mr-2 inline" />
-                          {toc.text}
-                        </button>
-                      ))}
-                    </div>
-                  </details>
-                </div>
+                    <motion.div
+                      initial={false}
+                      animate={{ 
+                        height: tocCollapsed ? 0 : "auto",
+                        opacity: tocCollapsed ? 0 : 1 
+                      }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6 space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                        {tableOfContents.map((toc, index) => (
+                          <motion.button
+                            key={toc.id}
+                            onClick={() => scrollToHeading(toc.id)}
+                            className={`group relative w-full text-left p-3 rounded-xl transition-all duration-300 ${
+                              activeHeading === toc.id
+                                ? 'bg-gradient-to-r from-teal-100 to-blue-100 text-teal-700 shadow-md'
+                                : 'text-muted-foreground hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/30 hover:text-accent-foreground'
+                            }`}
+                            style={{ paddingLeft: `${(toc.level - 1) * 12 + 12}px` }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                          >
+                            <div className="flex items-center">
+                              <div className={`w-2 h-2 rounded-full mr-3 transition-all duration-300 ${
+                                activeHeading === toc.id ? 'bg-teal-500' : 'bg-muted-foreground/30'
+                              }`} />
+                              <span className="text-sm font-medium line-clamp-3 flex-1">
+                                {toc.text}
+                              </span>
+                              
+                              {/* Progress percentage for mobile */}
+                              {activeHeading === toc.id && (
+                                <motion.span
+                                  className="text-xs font-bold text-teal-600 ml-2"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  {Math.round(toc.progress)}%
+                                </motion.span>
+                              )}
+                            </div>
+                            
+                            {/* Progress indicator */}
+                            <div className="mt-2 h-0.5 bg-teal-200 rounded-full overflow-hidden">
+                              <motion.div
+                                className="h-full bg-gradient-to-r from-teal-500 to-blue-500"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${toc.progress}%` }}
+                                transition={{ duration: 0.3 }}
+                              />
+                            </div>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </div>
+                </motion.div>
               )}
 
               {/* Main Content */}
@@ -268,12 +353,12 @@ const BlogPost = () => {
                 ref={articleRef}
                 className="flex-1"
               >
-                <div className="bg-white/90 rounded-xl p-8 shadow-lg border">
+                <div className="bg-card/90 rounded-xl p-8 shadow-lg border border-border">
                   {post.coverImage && (
                     <div className="mb-8 rounded-xl overflow-hidden relative">
                       {/* Loading state */}
                       {!imageLoaded && !imageError && (
-                        <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
+                        <div className="absolute inset-0 bg-muted flex items-center justify-center z-10">
                           <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
                         </div>
                       )}
@@ -281,22 +366,15 @@ const BlogPost = () => {
                       <img
                         src={post.coverImage.startsWith('./') ? post.coverImage.replace('./', '/') : post.coverImage}
                         alt={post.title}
-                        className={`blog-cover-image transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        className="w-full h-64 md:h-80 object-cover"
                         onLoad={handleImageLoad}
                         onError={handleImageError}
-                        loading="eager"
                       />
                     </div>
                   )}
 
-                  {/* Excerpt */}
-                  <div className="mb-8 p-6 bg-teal-50 rounded-xl border border-teal-100">
-                    <h3 className="font-semibold text-gray-800 mb-2">Quick Summary</h3>
-                    <p className="text-gray-600">{post.excerpt}</p>
-                  </div>
-
-                  {/* Markdown Content */}
-                  <div className="prose prose-lg prose-teal max-w-none">
+                  {/* Article Content */}
+                  <div className="prose prose-base max-w-none markdown-content">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[
@@ -304,86 +382,155 @@ const BlogPost = () => {
                         [rehypeAutolinkHeadings, { behavior: 'wrap' }],
                         rehypeHighlight
                       ]}
-                      components={{
-                        h1: ({ node, ...props }) => (
-                          <h1 {...props} className="scroll-mt-24" />
-                        ),
-                        h2: ({ node, ...props }) => (
-                          <h2 {...props} className="scroll-mt-24" />
-                        ),
-                        h3: ({ node, ...props }) => (
-                          <h3 {...props} className="scroll-mt-24" />
-                        ),
-                      }}
                     >
                       {post.content}
                     </ReactMarkdown>
                   </div>
-                </div>
 
-                {/* Tags */}
-                {post.tags && post.tags.length > 0 && (
-                  <div className="mt-8">
-                    <div className="bg-white/90 rounded-xl p-6 shadow-lg border">
-                      <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-                        <TagIcon className="w-5 h-5 mr-2 text-teal-500" />
-                        Related Topics
-                      </h3>
-                      
+                  {/* Tags */}
+                  {post.tags && post.tags.length > 0 && (
+                    <div className="mt-8 pt-8 border-t border-border">
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-4">Tags</h4>
                       <div className="flex flex-wrap gap-2">
-                        {post.tags.map((tag) => (
+                        {post.tags.map((tag, index) => (
                           <Badge 
-                            key={tag}
-                            variant="outline" 
-                            className="text-teal-600 border-teal-200 bg-teal-50"
+                            key={index}
+                            variant="secondary"
+                            className="bg-teal-100 text-teal-700 hover:bg-teal-200 cursor-pointer"
                           >
-                            #{tag}
+                            {tag}
                           </Badge>
                         ))}
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Scroll to top button */}
-                {readingProgress > 20 && (
-                  <button
-                    className="fixed bottom-8 right-8 w-12 h-12 bg-teal-500 text-white rounded-full shadow-lg hover:bg-teal-600 transition-colors z-40"
-                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  >
-                    ↑
-                  </button>
-                )}
+                  )}
+                </div>
               </article>
 
-              {/* Desktop TOC - Right Side */}
+              {/* Desktop TOC Sidebar - Enhanced */}
               {tableOfContents.length > 0 && (
-                <div className="hidden lg:block lg:w-72">
-                  <div className="sticky top-28">
-                    <div className="bg-white/90 rounded-xl p-6 shadow-lg border">
-                      <div className="flex items-center mb-4">
-                        <List className="w-5 h-5 mr-3 text-teal-500" />
-                        <h3 className="font-bold text-gray-800">Contents</h3>
+                <div className="hidden lg:block lg:w-80 xl:w-96">
+                  <div className="sticky top-24">
+                    <motion.div 
+                      className="bg-gradient-to-br from-card/95 to-card/85 rounded-2xl shadow-2xl border border-border/50 backdrop-blur-sm overflow-hidden"
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                    >
+                      {/* Header */}
+                      <div className="p-6 bg-gradient-to-r from-teal-500/10 to-blue-500/10 border-b border-border/30">
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-blue-500 flex items-center justify-center mr-4">
+                            <List className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-foreground">
+                              Table of Contents
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {tableOfContents.length} sections • {Math.round(readingProgress)}% complete
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Overall progress bar */}
+                        <div className="mt-4 h-2 bg-muted/50 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-teal-500 to-blue-500 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${readingProgress}%` }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        </div>
                       </div>
                       
-                      <nav className="space-y-1 max-h-96 overflow-y-auto">
-                        {tableOfContents.map((toc) => (
-                          <button
+                      {/* TOC Items */}
+                      <div className="p-4 space-y-1 max-h-[calc(100vh-280px)] min-h-[400px] overflow-y-auto custom-scrollbar">
+                        {tableOfContents.map((toc, index) => (
+                          <motion.div
                             key={toc.id}
-                            onClick={() => scrollToHeading(toc.id)}
-                            className={`w-full text-left p-2 rounded-lg transition-all text-sm ${
-                              activeHeading === toc.id
-                                ? 'bg-teal-50 text-teal-700'
-                                : 'text-gray-600 hover:bg-gray-50'
-                            }`}
-                            style={{ paddingLeft: `${(toc.level - 1) * 12 + 12}px` }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className="relative"
                           >
-                            <Hash className="w-3 h-3 mr-2 inline" />
-                            {toc.text}
-                          </button>
+                            <button
+                              onClick={() => scrollToHeading(toc.id)}
+                              className={`group relative w-full text-left p-4 xl:p-5 rounded-xl transition-all duration-300 ${
+                                activeHeading === toc.id
+                                  ? 'bg-gradient-to-r from-teal-100 to-blue-100 text-teal-700 shadow-lg transform scale-105'
+                                  : 'text-muted-foreground hover:bg-gradient-to-r hover:from-accent/50 hover:to-accent/30 hover:text-accent-foreground hover:transform hover:scale-102'
+                              }`}
+                              style={{ paddingLeft: `${(toc.level - 1) * 16 + 16}px` }}
+                            >
+                              <div className="flex items-center">
+                                {/* Level indicator */}
+                                <div className={`w-3 h-3 xl:w-4 xl:h-4 rounded-full mr-3 transition-all duration-300 ${
+                                  activeHeading === toc.id 
+                                    ? 'bg-gradient-to-r from-teal-500 to-blue-500 shadow-lg' 
+                                    : toc.progress > 0 
+                                      ? 'bg-teal-300' 
+                                      : 'bg-muted-foreground/30'
+                                }`}>
+                                  {activeHeading === toc.id && (
+                                    <motion.div
+                                      className="w-full h-full rounded-full bg-white"
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 0.5 }}
+                                      transition={{ duration: 0.3 }}
+                                    />
+                                  )}
+                                </div>
+                                
+                                <span className={`text-sm xl:text-base line-clamp-3 flex-1 transition-all duration-300 leading-relaxed ${
+                                  toc.level === 1 ? 'font-bold' : 
+                                  toc.level === 2 ? 'font-semibold' : 'font-medium'
+                                }`}>
+                                  {toc.text}
+                                </span>
+                                
+                                {/* Progress percentage */}
+                                {activeHeading === toc.id && (
+                                  <motion.span
+                                    className="text-xs xl:text-sm font-bold text-teal-600 ml-2"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.3 }}
+                                  >
+                                    {Math.round(toc.progress)}%
+                                  </motion.span>
+                                )}
+                              </div>
+                              
+                              {/* Section progress bar */}
+                              <div className="mt-3 h-1 xl:h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                                <motion.div
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    activeHeading === toc.id
+                                      ? 'bg-gradient-to-r from-teal-500 to-blue-500'
+                                      : 'bg-teal-300'
+                                  }`}
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${toc.progress}%` }}
+                                  transition={{ duration: 0.5, ease: "easeOut" }}
+                                />
+                              </div>
+                            </button>
+                            
+                            {/* Connection line for hierarchy */}
+                            {index < tableOfContents.length - 1 && toc.level < tableOfContents[index + 1].level && (
+                              <div 
+                                className="absolute w-px h-4 bg-border/50"
+                                style={{ 
+                                  left: `${(toc.level - 1) * 16 + 22}px`,
+                                  bottom: '-2px'
+                                }}
+                              />
+                            )}
+                          </motion.div>
                         ))}
-                      </nav>
-                    </div>
+                      </div>
+                    </motion.div>
                   </div>
                 </div>
               )}
@@ -393,61 +540,66 @@ const BlogPost = () => {
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
-          <section className="py-20">
+          <section className="py-16 bg-muted/30">
             <div className="container mx-auto px-4">
               <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-16">
-                  <h2 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-500">
-                    Continue Reading
-                  </h2>
-                  <p className="text-xl text-gray-600">
-                    Discover more insights and ideas in these related articles
-                  </p>
-                </div>
-
+                <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
+                  Related Articles
+                </h2>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {relatedPosts.map((relatedPost) => (
-                    <Link 
+                  {relatedPosts.map((relatedPost, index) => (
+                    <motion.div
                       key={relatedPost.id}
-                      to={`/blog/${relatedPost.slug}`}
-                      className="block h-full group"
+                      className="bg-card rounded-xl overflow-hidden shadow-lg border border-border hover:shadow-xl transition-all duration-300"
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      viewport={{ once: true }}
                     >
-                      <div className="bg-white rounded-xl p-6 shadow-lg border h-full hover:shadow-xl transition-shadow">
-                        {relatedPost.coverImage && (
-                          <div className="mb-4 rounded-lg overflow-hidden">
-                            <img
-                              src={relatedPost.coverImage.startsWith('./') ? relatedPost.coverImage.replace('./', '/') : relatedPost.coverImage}
-                              alt={relatedPost.title}
-                              className="related-post-image group-hover:scale-105 transition-transform duration-300"
-                            />
-                          </div>
-                        )}
-
-                        <Badge className="mb-3 bg-teal-50 text-teal-700">
+                      {relatedPost.coverImage && (
+                        <div className="aspect-video overflow-hidden">
+                          <img
+                            src={relatedPost.coverImage.startsWith('./') ? relatedPost.coverImage.replace('./', '/') : relatedPost.coverImage}
+                            alt={relatedPost.title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              console.error(`Failed to load related post image: ${relatedPost.coverImage}`);
+                              e.currentTarget.src = "https://placehold.co/400x225/e2e8f0/64748b?text=Image+Not+Available";
+                            }}
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="p-6">
+                        <Badge variant="secondary" className="mb-3">
                           {relatedPost.category}
                         </Badge>
-
-                        <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-teal-600 transition-colors">
+                        
+                        <h3 className="text-xl font-semibold text-foreground mb-3 line-clamp-2">
                           {relatedPost.title}
                         </h3>
-
-                        <p className="text-gray-600 mb-4 line-clamp-3">
+                        
+                        <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
                           {relatedPost.excerpt}
                         </p>
-
-                        <div className="flex items-center justify-between text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-2" />
-                            <span>{relatedPost.date}</span>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Calendar className="w-4 h-4 mr-1" />
+                            {relatedPost.date}
                           </div>
                           
-                          <div className="flex items-center text-teal-600">
-                            <span className="mr-2">Read more</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </div>
+                          <Link
+                            to={`/blog/${relatedPost.slug}`}
+                            className="inline-flex items-center text-teal-600 hover:text-teal-700 font-medium text-sm"
+                          >
+                            Read More
+                            <ArrowRight className="w-4 h-4 ml-1" />
+                          </Link>
                         </div>
                       </div>
-                    </Link>
+                    </motion.div>
                   ))}
                 </div>
               </div>

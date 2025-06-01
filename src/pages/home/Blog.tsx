@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Badge } from "@/components/ui/badge.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Button } from "@/components/ui/button.tsx";
@@ -7,7 +7,7 @@ import { BlogPost } from '@/types/blog.ts';
 import { blogPosts, blogCategories, blogTags } from '@/data/blog-posts.ts';
 import Header from '@/components/home/Header.tsx';
 import Footer from '@/components/home/Footer.tsx';
-import { Search, Sparkles, BookOpen, PenTool, Star, Award, Users, ChevronDown, Quote, MessageCircle, Mail, Rss, Filter, Target } from 'lucide-react';
+import { Search, Sparkles, BookOpen, PenTool, Star, Award, Users, MessageCircle, Mail, Rss, Filter, Target } from 'lucide-react';
 import BlogPostCard from '@/components/utils/BlogPostCard.tsx';
 
 // Enhanced Category Filter Component
@@ -25,8 +25,8 @@ const CategoryFilter = ({
       <motion.button
         className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
           selectedCategory === ''
-            ? 'bg-teal-500 text-white shadow-lg'
-            : 'bg-white/80 text-gray-600 hover:bg-teal-50 border border-gray-200'
+            ? 'bg-gradient-to-r from-teal-500 to-blue-500 text-white shadow-lg'
+            : 'bg-white/90 border-gray-200 hover:border-teal-300 hover:bg-teal-50 text-gray-700 border'
         }`}
         onClick={() => onCategoryChange('')}
         whileHover={{ scale: 1.05 }}
@@ -39,8 +39,8 @@ const CategoryFilter = ({
           key={category.id}
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
             selectedCategory === category.name
-              ? 'bg-teal-500 text-white shadow-lg'
-              : 'bg-white/80 text-gray-600 hover:bg-teal-50 border border-gray-200'
+              ? 'bg-gradient-to-r from-teal-500 to-blue-500 text-white shadow-lg'
+              : 'bg-white/90 border-gray-200 hover:border-teal-300 hover:bg-teal-50 text-gray-700 border'
           }`}
           onClick={() => onCategoryChange(category.name)}
           whileHover={{ scale: 1.05 }}
@@ -105,7 +105,7 @@ const NewsletterSignup = () => {
 
   return (
     <motion.div
-      className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-3xl shadow-xl p-8 text-white relative overflow-hidden"
+      className="bg-gradient-to-r from-teal-600 to-blue-600 rounded-3xl shadow-xl p-8 text-white relative overflow-hidden"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
@@ -128,7 +128,7 @@ const NewsletterSignup = () => {
           <Mail className="w-6 h-6 mr-3" />
           <h3 className="text-2xl font-bold">Stay Updated</h3>
         </div>
-        <p className="text-teal-50 mb-6 leading-relaxed">
+        <p className="text-primary-foreground/80 mb-6 leading-relaxed">
           Get the latest articles, tutorials, and insights delivered straight to your inbox. 
           Join 10,000+ developers who trust our content.
         </p>
@@ -140,7 +140,7 @@ const NewsletterSignup = () => {
               placeholder="Enter your email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/40"
+              className="bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/60 focus:bg-white/20 focus:border-white/40"
               required
             />
             <motion.div
@@ -149,7 +149,8 @@ const NewsletterSignup = () => {
             >
               <Button 
                 type="submit"
-                className="w-full bg-white text-teal-700 hover:bg-teal-50 font-semibold py-3 rounded-xl shadow-lg"
+                variant="secondary"
+                className="w-full font-semibold py-3 rounded-xl shadow-lg bg-white text-teal-600 hover:bg-gray-50"
               >
                 <Rss className="w-4 h-4 mr-2" />
                 Subscribe Now
@@ -164,10 +165,10 @@ const NewsletterSignup = () => {
             transition={{ type: "spring", damping: 15 }}
           >
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Star className="w-8 h-8 text-white" />
+              <Star className="w-8 h-8 text-primary-foreground" />
             </div>
             <h4 className="text-xl font-semibold mb-2">Welcome aboard! 🎉</h4>
-            <p className="text-teal-50">Thank you for subscribing. Check your email for confirmation.</p>
+            <p className="text-primary-foreground/80">Thank you for subscribing. Check your email for confirmation.</p>
           </motion.div>
         )}
       </div>
@@ -305,11 +306,11 @@ const Blog = () => {
                 <Input
                   type="text"
                   placeholder="Search articles by title, content, or topic..."
-                  className="pl-12 pr-4 py-4 rounded-2xl border-gray-200 focus:border-teal-500 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm"
+                  className="pl-12 pr-4 py-4 rounded-2xl border-border focus:border-primary shadow-lg hover:shadow-xl transition-all duration-300 bg-background/90 backdrop-blur-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
               </motion.div>
             </motion.div>
           </div>
@@ -325,7 +326,7 @@ const Blog = () => {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-lg font-semibold text-gray-800 mb-6">Filter by Category</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-6">Filter by Category</h3>
               <CategoryFilter
                 categories={blogCategories}
                 selectedCategory={selectedCategory}
@@ -349,17 +350,17 @@ const Blog = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <span className="text-sm text-gray-500 font-medium flex items-center">
+                    <span className="text-sm text-muted-foreground font-medium flex items-center">
                       <Filter className="w-4 h-4 mr-2" />
                       Active filters:
                     </span>
 
                     {selectedCategory && (
-                      <Badge className="bg-teal-50 text-teal-700 px-4 py-2 flex items-center gap-2 border border-teal-100 hover:bg-teal-100 transition-colors">
+                      <Badge variant="secondary" className="px-4 py-2 flex items-center gap-2">
                         Category: {selectedCategory}
                         <button
                           onClick={() => setSelectedCategory('')}
-                          className="ml-1 text-teal-700 hover:text-teal-900 hover:bg-teal-200 rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                          className="ml-1 text-secondary-foreground hover:text-foreground hover:bg-accent rounded-full w-5 h-5 flex items-center justify-center font-bold"
                         >
                           ×
                         </button>
@@ -367,11 +368,11 @@ const Blog = () => {
                     )}
 
                     {selectedTag && (
-                      <Badge className="bg-blue-50 text-blue-700 px-4 py-2 flex items-center gap-2 border border-blue-100 hover:bg-blue-100 transition-colors">
+                      <Badge variant="outline" className="px-4 py-2 flex items-center gap-2">
                         Tag: {selectedTag}
                         <button
                           onClick={() => setSelectedTag('')}
-                          className="ml-1 text-blue-700 hover:text-blue-900 hover:bg-blue-200 rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                          className="ml-1 text-foreground hover:text-muted-foreground hover:bg-accent rounded-full w-5 h-5 flex items-center justify-center font-bold"
                         >
                           ×
                         </button>
@@ -379,11 +380,11 @@ const Blog = () => {
                     )}
 
                     {searchQuery && (
-                      <Badge className="bg-gray-100 text-gray-700 px-4 py-2 flex items-center gap-2 border border-gray-200 hover:bg-gray-200 transition-colors">
+                      <Badge variant="outline" className="px-4 py-2 flex items-center gap-2">
                         Search: "{searchQuery}"
                         <button
                           onClick={() => setSearchQuery('')}
-                          className="ml-1 text-gray-700 hover:text-gray-900 hover:bg-gray-300 rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                          className="ml-1 text-foreground hover:text-muted-foreground hover:bg-accent rounded-full w-5 h-5 flex items-center justify-center font-bold"
                         >
                           ×
                         </button>
@@ -397,7 +398,7 @@ const Blog = () => {
                       <Button
                         onClick={resetFilters}
                         variant="outline"
-                        className="text-sm text-teal-600 hover:text-teal-800 ml-2 bg-transparent hover:bg-teal-50 border-teal-200 hover:border-teal-300 px-4 py-2 rounded-xl"
+                        className="text-sm ml-2 px-4 py-2 rounded-xl border-2 border-teal-200 text-teal-600 hover:bg-teal-50"
                       >
                         Reset all filters
                       </Button>
@@ -444,8 +445,8 @@ const Blog = () => {
                         <BookOpen className="h-12 w-12 text-teal-500" />
                       </motion.div>
 
-                      <h3 className="text-2xl font-bold text-gray-800 mb-3">No Articles Found</h3>
-                      <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                      <h3 className="text-2xl font-bold text-foreground mb-3">No Articles Found</h3>
+                      <p className="text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
                         We couldn't find any articles matching your current filters. Try adjusting your search criteria or reset all filters.
                       </p>
 
@@ -455,7 +456,7 @@ const Blog = () => {
                       >
                         <Button
                           onClick={resetFilters}
-                          className="bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl px-8 py-3 shadow-lg"
+                          className="rounded-xl px-8 py-3 shadow-lg bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white"
                         >
                           <Filter className="mr-2 h-4 w-4" />
                           Reset All Filters
@@ -479,8 +480,8 @@ const Blog = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4 }}
                   >
-                    <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                      <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
+                    <h3 className="text-xl font-bold text-foreground mb-6 flex items-center">
+                      <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-blue-500 rounded-lg flex items-center justify-center mr-3">
                         <Target className="w-4 h-4 text-white" />
                       </div>
                       Categories
@@ -492,13 +493,22 @@ const Blog = () => {
                           onClick={() => setSelectedCategory(category.name)}
                           className={`block w-full text-left px-4 py-3 rounded-xl transition-all ${
                             selectedCategory === category.name
-                              ? 'bg-teal-50 text-teal-700 border-l-4 border-teal-500 font-semibold shadow-sm'
-                              : 'text-gray-600 hover:bg-gray-50 hover:text-teal-600 hover:shadow-sm'
+                              ? 'bg-teal-100 text-teal-700 border-l-4 border-teal-500 font-semibold shadow-sm'
+                              : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-sm'
                           }`}
                           whileHover={{ x: selectedCategory === category.name ? 0 : 4 }}
                           whileTap={{ scale: 0.98 }}
                         >
-                          {category.name}
+                          <div className="flex items-center justify-between">
+                            <span>{category.name}</span>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              selectedCategory === category.name 
+                                ? 'bg-teal-500 text-teal-100' 
+                                : 'bg-muted text-muted-foreground'
+                            }`}>
+                              {blogPosts.filter(post => post.category === category.name).length}
+                            </span>
+                          </div>
                         </motion.button>
                       ))}
                     </div>
@@ -506,14 +516,14 @@ const Blog = () => {
 
                   {/* Enhanced Popular Tags */}
                   <motion.div
-                    className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300"
+                    className="bg-card/80 backdrop-blur-sm rounded-2xl shadow-lg border border-border p-6 hover:shadow-xl transition-all duration-300"
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: 0.1 }}
                   >
-                    <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                      <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
-                        <PenTool className="w-4 h-4 text-white" />
+                    <h3 className="text-xl font-bold text-foreground mb-6 flex items-center">
+                      <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mr-3">
+                        <PenTool className="w-4 h-4 text-primary-foreground" />
                       </div>
                       Popular Tags
                     </h3>
@@ -524,8 +534,8 @@ const Blog = () => {
                           onClick={() => setSelectedTag(tag.name)}
                           className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
                             selectedTag === tag.name
-                              ? 'bg-teal-100 text-teal-800 border border-teal-200 shadow-sm'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-transparent hover:shadow-sm'
+                              ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
+                              : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-transparent hover:shadow-sm'
                           }`}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -554,10 +564,10 @@ const Blog = () => {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl font-bold text-gray-800 mb-4">
-                Blog <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-500">Impact</span>
+              <h2 className="text-4xl font-bold text-foreground mb-4">
+                Blog <span className="text-primary">Impact</span>
               </h2>
-              <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
                 Numbers that reflect the reach and value of our content
               </p>
             </motion.div>

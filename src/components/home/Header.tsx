@@ -11,7 +11,8 @@ import {
   Layers,
   TestTube,
   Link2,
-  Briefcase
+  Briefcase,
+  Settings
 } from "lucide-react";
 import { motion } from 'framer-motion';
 import { softSpringTransition } from '@/lib/motion';
@@ -100,7 +101,7 @@ const Header = () => {
             variant="ghost"
           >
             <BookOpen className="w-4 h-4 mr-1" />
-            Blog
+            Blogs
           </MotionButton>
 
           <MotionButton
@@ -123,6 +124,17 @@ const Header = () => {
           >
             <Briefcase className="w-4 h-4 mr-1" />
             Services
+          </MotionButton>
+
+          <MotionButton
+            onClick={() => window.location.href = '/professional-tools'}
+            className={`flex items-center text-gray-700 hover:text-teal-500 transition-all duration-300 text-sm font-medium ${location.pathname.includes('/professional-tools') ? 'text-teal-500' : ''}`}
+            whileHover={{ y: -2, color: "rgb(20, 184, 166)" }}
+            whileTap={{ scale: 0.95 }}
+            variant="ghost"
+          >
+            <Settings className="w-4 h-4 mr-1" />
+            QA Tools
           </MotionButton>
 
           <MotionButton
@@ -229,6 +241,19 @@ const Header = () => {
             >
               <Briefcase className="w-4 h-4 mr-2" />
               Services
+            </MotionButton>
+
+            <MotionButton
+              onClick={() => window.location.href = '/professional-tools'}
+              className={`flex items-center text-gray-700 hover:text-teal-500 transition-colors py-2 border-b border-gray-100 px-4 rounded-lg hover:bg-gray-50 w-full justify-start ${location.pathname.includes('/professional-tools') ? 'text-teal-500 bg-gray-50' : ''}`}
+              whileHover={{ x: 5, backgroundColor: "rgb(249, 250, 251)" }}
+              whileTap={{ scale: 0.98 }}
+              variant="ghost"
+              transitionType="tween"
+              transitionDuration={0.2}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              QA Tools
             </MotionButton>
 
             <MotionButton

@@ -136,15 +136,7 @@ const ProjectDetail = () => {
   };
 
   // Handle like and bookmark actions
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    toast.success(isLiked ? "Removed from favorites" : "Added to favorites!");
-  };
 
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-    toast.success(isBookmarked ? "Bookmark removed" : "Bookmarked for later!");
-  };
 
   if (!project) {
     return (

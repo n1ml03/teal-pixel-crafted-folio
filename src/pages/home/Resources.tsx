@@ -40,8 +40,8 @@ const CategoryFilter = ({
       <motion.button
         className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
           selectedCategory === ''
-            ? 'bg-teal-500 text-white shadow-lg'
-            : 'bg-white/80 text-gray-600 hover:bg-teal-50 border border-gray-200'
+            ? 'bg-gradient-to-r from-teal-500 to-blue-500 text-white shadow-lg'
+            : 'bg-white/90 border-teal-200 hover:border-teal-300 hover:bg-teal-50 text-teal-700 border'
         }`}
         onClick={() => onCategoryChange('')}
         whileHover={{ scale: 1.02 }}
@@ -55,8 +55,8 @@ const CategoryFilter = ({
           key={category.id}
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
             selectedCategory === category.name
-              ? 'bg-teal-500 text-white shadow-lg'
-              : 'bg-white/80 text-gray-600 hover:bg-teal-50 border border-gray-200'
+              ? 'bg-gradient-to-r from-teal-500 to-blue-500 text-white shadow-lg'
+              : 'bg-white/90 border-teal-200 hover:border-teal-300 hover:bg-teal-50 text-teal-700 border'
           }`}
           onClick={() => onCategoryChange(category.name)}
           whileHover={{ scale: 1.02 }}
@@ -91,9 +91,13 @@ const ResourceStats = React.memo(() => {
           viewport={{ once: true, margin: "-50px" }}
           whileHover={{ y: -2 }}
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center text-white mx-auto mb-3 shadow-lg">
+          <motion.div 
+            className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center text-white mx-auto mb-3 shadow-lg"
+            whileHover={{ rotate: 360 }}
+            transition={{ duration: 0.6 }}
+          >
             {stat.icon}
-          </div>
+          </motion.div>
           <div className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-blue-500 bg-clip-text text-transparent mb-1">
             {stat.number}
           </div>
@@ -284,20 +288,20 @@ const Resources = () => {
             >
               {/* Floating badge */}
               <motion.div
-                className="inline-flex items-center bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 mb-6 shadow-lg border border-teal-100"
+                className="inline-flex items-center bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 mb-6 shadow-lg border border-border"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.4 }}
+                transition={{ delay: 0.2 }}
               >
-                <Sparkles className="w-4 h-4 text-teal-500 mr-2" />
-                <span className="text-sm font-medium text-gray-700">Curated Developer Collection</span>
+                <Sparkles className="w-4 h-4 text-primary mr-2" />
+                <span className="text-sm font-medium text-muted-foreground">Curated Developer Collection</span>
               </motion.div>
 
               <motion.h1 
-                className="text-5xl md:text-6xl font-bold text-gray-800 mb-6"
+                className="text-5xl md:text-6xl font-bold text-foreground mb-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
               >
                 Developer{" "}
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-teal-500 to-blue-500 relative">
@@ -306,19 +310,19 @@ const Resources = () => {
                     className="absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-blue-400 rounded-full"
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
-                    transition={{ delay: 0.6, duration: 0.4 }}
+                    transition={{ delay: 0.8, duration: 0.6 }}
                   />
                 </span>
               </motion.h1>
               
               <motion.p 
-                className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed"
+                className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
+                transition={{ delay: 0.4 }}
               >
-                A handpicked collection of the best tools, resources, and guides for developers 
-                and QA engineers to boost productivity and enhance skills.
+                A carefully curated collection of tools, libraries, and resources to supercharge your development workflow. 
+                From testing frameworks to productivity tools.
               </motion.p>
 
               {/* Enhanced Search Bar */}
@@ -326,18 +330,16 @@ const Resources = () => {
                 className="relative max-w-2xl mx-auto"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
+                transition={{ delay: 0.5 }}
               >
-                <form onSubmit={handleSearchSubmit}>
-                  <Input
-                    type="text"
-                    placeholder="Search tools, libraries, frameworks, and resources..."
-                    className="pl-12 pr-4 py-4 rounded-2xl border-gray-200 focus:border-teal-500 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/90 backdrop-blur-sm"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                </form>
+                <Input
+                  type="text"
+                  placeholder="Search resources by name, category, or technology..."
+                  className="pl-12 pr-4 py-4 rounded-2xl border-border focus:border-primary shadow-lg hover:shadow-xl transition-all duration-300 bg-background/90 backdrop-blur-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
               </motion.div>
             </motion.div>
           </div>
@@ -353,7 +355,7 @@ const Resources = () => {
               transition={{ duration: 0.4 }}
               viewport={{ once: true, margin: "-100px" }}
             >
-              <h3 className="text-lg font-semibold text-gray-800 mb-6">Filter by Category</h3>
+              <h3 className="text-lg font-semibold text-teal-700 mb-6">Filter by Category</h3>
               <CategoryFilter
                 categories={resourceCategories}
                 selectedCategory={selectedCategory}
@@ -369,28 +371,25 @@ const Resources = () => {
             <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto">
               {/* Enhanced Sidebar with filters */}
               <div className="lg:w-1/4">
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-lg p-6 sticky top-24">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-teal-100 shadow-lg p-6 sticky top-24">
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center">
-                        <Filter className="w-5 h-5 mr-2 text-teal-500" />
-                        <h3 className="text-xl font-bold text-gray-800">Filters</h3>
+                        <Filter className="w-5 h-5 mr-2 text-teal-600" />
+                        <h3 className="text-xl font-bold text-teal-800">Filters</h3>
                       </div>
                       <div className="flex items-center space-x-2">
                         {(selectedCategory || selectedTag || selectedType || selectedPricing || searchQuery) && (
                           <motion.button
                             onClick={resetFilters}
-                            className="text-xs text-teal-600 hover:text-teal-700 flex items-center bg-teal-50 px-2 py-1 rounded-full"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            transition={{ duration: 0.15 }}
+                            className="text-xs text-teal-600 hover:text-teal-700 flex items-center bg-teal-100 px-2 py-1 rounded-full"
                           >
                             Reset All
                           </motion.button>
                         )}
                         <motion.button
                           onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-                          className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-200"
+                          className="p-2 rounded-full bg-teal-100 hover:bg-teal-200 text-teal-600 transition-all duration-200"
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           transition={{ duration: 0.15 }}
@@ -419,9 +418,9 @@ const Resources = () => {
                     >
                       {/* Resource Type */}
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                          <BookOpen className="w-4 h-4 mr-2 text-teal-500" />
-                          Resource Type
+                        <h4 className="text-sm font-medium text-teal-700 mb-3 flex items-center">
+                          <BookOpen className="w-4 h-4 mr-2 text-teal-600" />
+                          Type
                         </h4>
                         <div className="grid grid-cols-2 gap-2">
                           {['tool', 'library', 'framework', 'language', 'service', 'course', 'guide', 'template'].map((type) => {
@@ -430,10 +429,10 @@ const Resources = () => {
                             return (
                               <Badge
                                 key={type}
-                                className={`cursor-pointer flex items-center justify-between px-3 py-2 transition-all duration-200 ${
+                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
                                   isSelected
                                     ? 'bg-teal-100 text-teal-700 border-teal-200 shadow-sm'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200'
+                                    : 'bg-teal-50 text-teal-600 hover:bg-teal-100 border-teal-200'
                                 }`}
                                 onClick={() => applyTypeFilter(type)}
                               >
@@ -449,8 +448,8 @@ const Resources = () => {
 
                       {/* Pricing */}
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                          <Star className="w-4 h-4 mr-2 text-teal-500" />
+                        <h4 className="text-sm font-medium text-teal-700 mb-3 flex items-center">
+                          <Star className="w-4 h-4 mr-2 text-teal-600" />
                           Pricing
                         </h4>
                         <div className="grid grid-cols-2 gap-2">
@@ -460,10 +459,10 @@ const Resources = () => {
                             return (
                               <Badge
                                 key={pricing}
-                                className={`cursor-pointer flex items-center justify-between px-3 py-2 transition-all duration-200 ${
+                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
                                   isSelected
                                     ? 'bg-teal-100 text-teal-700 border-teal-200 shadow-sm'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200'
+                                    : 'bg-teal-50 text-teal-600 hover:bg-teal-100 border-teal-200'
                                 }`}
                                 onClick={() => applyPricingFilter(pricing)}
                               >
@@ -491,15 +490,13 @@ const Resources = () => {
               <div className="lg:w-3/4">
                 {/* Enhanced Results count and active filters */}
                 <div className="mb-8">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-100">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-teal-100">
                     <div className="flex items-center mb-3 md:mb-0">
-                      <Info className="w-5 h-5 text-teal-500 mr-2 flex-shrink-0" />
-                      <p className="text-gray-600">
+                      <Info className="w-5 h-5 text-teal-600 mr-2 flex-shrink-0" />
+                      <p className="text-teal-700">
                         Showing <span className="font-medium text-lg text-teal-600">{filteredResources.length}</span> of <span className="font-medium text-lg">{resources.length}</span> resources
                         {searchQuery && (
-                          <span className="ml-1">
-                            for <span className="font-medium italic text-teal-600">"{searchQuery}"</span>
-                          </span>
+                          <> for <span className="font-medium italic text-teal-600">"{searchQuery}"</span></>
                         )}
                       </p>
                     </div>
@@ -507,13 +504,11 @@ const Resources = () => {
                     {(selectedCategory || selectedTag || selectedType || selectedPricing || searchQuery) && (
                       <div className="flex flex-wrap items-center gap-2">
                         {searchQuery && (
-                          <Badge className="bg-gray-100 text-gray-700 px-3 py-2 flex items-center gap-2 hover:bg-gray-200 transition-colors duration-200">
-                            <Search className="w-3 h-3" />
-                            {searchQuery}
+                          <Badge className="bg-teal-100 text-teal-700 px-3 py-2 flex items-center gap-2 hover:bg-teal-200 transition-colors duration-200">
+                            Search: "{searchQuery}"
                             <button
                               onClick={() => setSearchQuery('')}
-                              className="ml-1 hover:text-gray-900 font-bold"
-                              aria-label="Clear search"
+                              className="ml-1 hover:text-teal-900 font-bold"
                             >
                               ×
                             </button>
@@ -522,12 +517,10 @@ const Resources = () => {
 
                         {selectedCategory && (
                           <Badge className="bg-teal-100 text-teal-700 px-3 py-2 flex items-center gap-2 hover:bg-teal-200 transition-colors duration-200">
-                            <Layers className="w-3 h-3" />
-                            {selectedCategory}
+                            Category: {selectedCategory}
                             <button
                               onClick={() => setSelectedCategory('')}
                               className="ml-1 hover:text-teal-900 font-bold"
-                              aria-label="Clear category filter"
                             >
                               ×
                             </button>
@@ -535,12 +528,12 @@ const Resources = () => {
                         )}
 
                         {selectedType && (
-                          <Badge className="bg-indigo-100 text-indigo-700 px-3 py-2 flex items-center gap-2 hover:bg-indigo-200 transition-colors duration-200">
+                          <Badge className="bg-teal-100 text-teal-700 px-3 py-2 flex items-center gap-2 hover:bg-teal-200 transition-colors duration-200">
                             <BookOpen className="w-3 h-3" />
                             {selectedType}
                             <button
                               onClick={() => setSelectedType('')}
-                              className="ml-1 hover:text-indigo-900 font-bold"
+                              className="ml-1 hover:text-teal-900 font-bold"
                               aria-label="Clear type filter"
                             >
                               ×
@@ -549,12 +542,12 @@ const Resources = () => {
                         )}
 
                         {selectedPricing && (
-                          <Badge className="bg-purple-100 text-purple-700 px-3 py-2 flex items-center gap-2 hover:bg-purple-200 transition-colors duration-200">
+                          <Badge className="bg-teal-100 text-teal-700 px-3 py-2 flex items-center gap-2 hover:bg-teal-200 transition-colors duration-200">
                             <Star className="w-3 h-3" />
                             {selectedPricing}
                             <button
                               onClick={() => setSelectedPricing('')}
-                              className="ml-1 hover:text-purple-900 font-bold"
+                              className="ml-1 hover:text-teal-900 font-bold"
                               aria-label="Clear pricing filter"
                             >
                               ×
@@ -570,8 +563,7 @@ const Resources = () => {
                           >
                             <Button
                               onClick={resetFilters}
-                              variant="outline"
-                              className="text-sm text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 border-gray-200 px-4 py-2 rounded-xl transition-all duration-200"
+                              className="text-sm text-teal-600 hover:text-teal-700 bg-teal-100 border-teal-200 px-4 py-2 rounded-xl transition-all duration-200"
                             >
                               Clear All Filters
                             </Button>
@@ -589,12 +581,12 @@ const Resources = () => {
                     {featuredResources.length > 0 && (
                       <div className="mb-12">
                         <div className="flex items-center mb-8">
-                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-teal-200 to-transparent"></div>
-                          <h3 className="text-2xl font-bold text-gray-800 px-6 flex items-center">
-                            <Star className="w-6 h-6 mr-3 text-amber-500" fill="currentColor" />
+                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-border to-transparent"></div>
+                          <h3 className="text-2xl font-bold text-teal-600 px-6 flex items-center">
+                            <Star className="w-6 h-6 mr-3 text-teal-600" />
                             Featured Resources
                           </h3>
-                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-teal-200 to-transparent"></div>
+                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-border to-transparent"></div>
                         </div>
 
                         <motion.div
@@ -626,9 +618,9 @@ const Resources = () => {
                     <div className="mb-6">
                       {featuredResources.length > 0 && (
                         <div className="flex items-center mb-8">
-                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
-                          <h3 className="text-2xl font-bold text-gray-800 px-6">All Resources</h3>
-                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
+                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-border to-transparent"></div>
+                          <h3 className="text-2xl font-bold text-teal-600 px-6">All Resources</h3>
+                          <div className="h-px flex-grow bg-gradient-to-r from-transparent via-border to-transparent"></div>
                         </div>
                       )}
 
@@ -664,7 +656,7 @@ const Resources = () => {
                     transition={{ duration: 0.4 }}
                   >
                     <motion.div
-                      className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-gray-100 p-12 relative overflow-hidden max-w-2xl mx-auto"
+                      className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-teal-100 p-12 relative overflow-hidden max-w-2xl mx-auto"
                       initial={{ scale: 0.95 }}
                       animate={{ scale: 1 }}
                       transition={{ duration: 0.3 }}
@@ -673,19 +665,18 @@ const Resources = () => {
                         <BookOpen className="h-12 w-12 text-teal-500" />
                       </div>
 
-                      <h3 className="text-2xl font-bold text-gray-800 mb-3">No Resources Found</h3>
-                      <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                      <h3 className="text-2xl font-bold text-teal-600 mb-3">No Resources Found</h3>
+                      <p className="text-muted-foreground mb-8 max-w-md mx-auto leading-relaxed">
                         We couldn't find any resources matching your current filters. Try adjusting your search criteria or reset all filters.
                       </p>
 
                       <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        transition={{ duration: 0.15 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
                         <Button
                           onClick={resetFilters}
-                          className="bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl px-8 py-3 shadow-lg"
+                          className="rounded-xl px-8 py-3 shadow-lg"
                         >
                           <Filter className="mr-2 h-4 w-4" />
                           Reset All Filters
@@ -709,10 +700,10 @@ const Resources = () => {
               transition={{ duration: 0.4 }}
               viewport={{ once: true, margin: "-100px" }}
             >
-              <h2 className="text-4xl font-bold text-gray-800 mb-4">
-                Resource <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-500">Impact</span>
+              <h2 className="text-4xl font-bold text-teal-600 mb-4">
+                Resource <span className="text-teal-600">Impact</span>
               </h2>
-              <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
                 Numbers that reflect the value and reach of our curated collection
               </p>
             </motion.div>
@@ -722,7 +713,30 @@ const Resources = () => {
 
         {/* Simplified CTA Section */}
         <section className="py-24 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-teal-600 via-teal-500 to-blue-500" />
+          {/* Animated background */}
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-br from-teal-600 via-teal-500 to-blue-500"
+            animate={{ 
+              background: [
+                "linear-gradient(135deg, #0d9488 0%, #14b8a6 50%, #3b82f6 100%)",
+                "linear-gradient(135deg, #14b8a6 0%, #3b82f6 50%, #0d9488 100%)",
+                "linear-gradient(135deg, #3b82f6 0%, #0d9488 50%, #14b8a6 100%)"
+              ]
+            }}
+            transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
+          />
+          
+          {/* Floating elements */}
+          <motion.div 
+            className="absolute top-16 left-16 w-24 h-24 bg-white/10 rounded-full"
+            animate={{ y: [0, -20, 0], x: [0, 15, 0] }}
+            transition={{ duration: 6, repeat: Infinity }}
+          />
+          <motion.div 
+            className="absolute bottom-16 right-16 w-20 h-20 bg-white/10 rounded-full"
+            animate={{ y: [0, 15, 0], x: [0, -20, 0] }}
+            transition={{ duration: 8, repeat: Infinity }}
+          />
           
           <div className="container mx-auto px-4 text-center relative z-10">
             <motion.div
