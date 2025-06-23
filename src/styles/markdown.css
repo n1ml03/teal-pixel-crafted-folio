@@ -1,0 +1,371 @@
+/* Custom Markdown Styles */
+
+/* Anchor links for headings */
+.anchor-link {
+  position: relative;
+  display: inline-block;
+  margin-left: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+h1:hover .anchor-link,
+h2:hover .anchor-link,
+h3:hover .anchor-link,
+h4:hover .anchor-link,
+h5:hover .anchor-link,
+h6:hover .anchor-link {
+  opacity: 1;
+}
+
+/* Highlight animation for headings */
+@keyframes highlight-pulse {
+  0% {
+    background-color: rgba(20, 184, 166, 0);
+  }
+  50% {
+    background-color: rgba(20, 184, 166, 0.1);
+  }
+  100% {
+    background-color: rgba(20, 184, 166, 0);
+  }
+}
+
+.highlight-heading {
+  animation: highlight-pulse 2s ease-in-out;
+  border-radius: 0.25rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+  position: relative;
+}
+
+.highlight-heading::before {
+  content: '';
+  position: absolute;
+  left: -1rem;
+  top: 0;
+  bottom: 0;
+  width: 0.25rem;
+  background-color: #14b8a6;
+  border-radius: 0.25rem;
+  opacity: 0;
+  animation: fade-in-out 2s ease-in-out;
+}
+
+@keyframes fade-in-out {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Code blocks */
+pre {
+  position: relative;
+  background-color: #1e293b;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  border: 1px solid #334155;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+pre code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* Syntax highlighting enhancements */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-name,
+.hljs-tag {
+  color: #ff79c6;
+}
+
+.hljs-string,
+.hljs-title,
+.hljs-section,
+.hljs-attribute,
+.hljs-literal,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-addition {
+  color: #50fa7b;
+}
+
+.hljs-comment,
+.hljs-quote,
+.hljs-deletion,
+.hljs-meta {
+  color: #6272a4;
+}
+
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link {
+  color: #bd93f9;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+table thead {
+  background-color: #f1f5f9;
+}
+
+table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #334155;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+table tr:last-child td {
+  border-bottom: none;
+}
+
+table tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+/* Blockquotes */
+blockquote {
+  position: relative;
+  border-left: 4px solid #14b8a6;
+  background-color: rgba(20, 184, 166, 0.05);
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: #334155;
+}
+
+blockquote::before {
+  content: '"';
+  position: absolute;
+  top: -0.5rem;
+  left: 0.5rem;
+  font-size: 2.5rem;
+  color: rgba(20, 184, 166, 0.2);
+  font-family: Georgia, serif;
+}
+
+blockquote p {
+  margin-bottom: 0.5rem;
+}
+
+blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists */
+ul, ol {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+
+ul li, ol li {
+  margin-bottom: 0.5rem;
+}
+
+ul li::marker {
+  color: #14b8a6;
+}
+
+ol li::marker {
+  color: #14b8a6;
+  font-weight: 600;
+}
+
+/* Task lists */
+ul.contains-task-list {
+  list-style-type: none;
+  padding-left: 0.5rem;
+}
+
+ul.contains-task-list li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+ul.contains-task-list li input[type="checkbox"] {
+  margin-right: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+img:hover {
+  transform: scale(1.01);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Blog post cover images - fixed size */
+.blog-cover-image {
+  width: 100%;
+  height: 16rem; /* 256px on mobile */
+  object-fit: cover;
+  object-position: center;
+}
+
+@media (min-width: 768px) {
+  .blog-cover-image {
+    height: 20rem; /* 320px on tablet */
+  }
+}
+
+@media (min-width: 1024px) {
+  .blog-cover-image {
+    height: 24rem; /* 384px on desktop */
+  }
+}
+
+/* Related posts images - consistent sizing */
+.related-post-image {
+  width: 100%;
+  height: 12rem; /* 192px */
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Horizontal rule */
+hr {
+  border: 0;
+  height: 1px;
+  background-image: linear-gradient(to right, rgba(20, 184, 166, 0.1), rgba(20, 184, 166, 0.5), rgba(20, 184, 166, 0.1));
+  margin: 2rem 0;
+}
+
+/* Enhanced readability for wider content */
+p, li {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+  color: #475569;
+}
+
+/* Improved paragraph spacing */
+p {
+  margin-bottom: 1.5rem;
+}
+
+/* Footnotes */
+.footnotes {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.footnotes ol {
+  padding-left: 1.5rem;
+}
+
+.footnotes li {
+  margin-bottom: 0.5rem;
+}
+
+.footnotes a {
+  color: #14b8a6;
+  text-decoration: none;
+}
+
+.footnotes a:hover {
+  text-decoration: underline;
+}
+
+/* Keyboard shortcuts */
+kbd {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+  color: #334155;
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  vertical-align: middle;
+  margin: 0 0.25rem;
+}
+
+/* Enhanced Table of Contents Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(20, 184, 166, 0.3) rgba(0, 0, 0, 0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(20, 184, 166, 0.5), rgba(59, 130, 246, 0.5));
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(20, 184, 166, 0.8), rgba(59, 130, 246, 0.8));
+}
+
+/* Line clamp utility for TOC text */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}

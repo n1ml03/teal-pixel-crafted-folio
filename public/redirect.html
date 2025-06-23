@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting...</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: #f9fafb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      text-align: center;
+    }
+    h1 {
+      color: #111827;
+      margin-bottom: 16px;
+    }
+    p {
+      color: #4b5563;
+      margin-bottom: 24px;
+      word-break: break-all;
+    }
+    .url {
+      background-color: #f3f4f6;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 24px;
+      font-family: monospace;
+    }
+    .countdown {
+      font-size: 18px;
+      font-weight: 600;
+      color: #059669;
+      margin-bottom: 24px;
+    }
+    .button {
+      background-color: #0f766e;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .button:hover {
+      background-color: #0e6b63;
+    }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .error {
+      color: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loading">
+      <h1>Redirecting...</h1>
+      <p>You are being redirected to:</p>
+      <div class="url" id="destination-url">Loading destination...</div>
+      <div class="countdown" id="countdown">Redirecting in <span id="seconds">5</span> seconds</div>
+      <button class="button" id="redirect-now">
+        <span class="spinner"></span>
+        Redirect Now
+      </button>
+    </div>
+
+    <div id="error" style="display: none;">
+      <h1 class="error">Redirect Error</h1>
+      <p id="error-message">This shortened URL does not exist or has expired.</p>
+      <button class="button" id="go-back">
+        Go to URL Shortener
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Get the short code from the URL
+    const path = window.location.pathname;
+    const shortCode = path.split('/').pop();
+
+    // Elements
+    const loadingEl = document.getElementById('loading');
+    const errorEl = document.getElementById('error');
+    const destinationUrlEl = document.getElementById('destination-url');
+    const secondsEl = document.getElementById('seconds');
+    const redirectNowBtn = document.getElementById('redirect-now');
+    const errorMessageEl = document.getElementById('error-message');
+    const goBackBtn = document.getElementById('go-back');
+
+    // Variables
+    let countdown = 5;
+    let countdownInterval;
+    let originalUrl = '';
+
+    // Get shortened URL data from localStorage
+    function getShortenedURL(shortCode) {
+      try {
+        const urlsJson = localStorage.getItem('shortened_urls');
+        if (!urlsJson) return null;
+
+        const urls = JSON.parse(urlsJson);
+        return urls.find(url => url.shortCode === shortCode);
+      } catch (error) {
+        console.error('Error getting URL from localStorage:', error);
+        return null;
+      }
+    }
+
+    // Record click
+    function recordClick(shortCode) {
+      try {
+        // Get the URL
+        const urlsJson = localStorage.getItem('shortened_urls');
+        if (!urlsJson) return;
+
+        const urls = JSON.parse(urlsJson);
+        const urlIndex = urls.findIndex(url => url.shortCode === shortCode);
+
+        if (urlIndex === -1) return;
+
+        // Update click count
+        urls[urlIndex].clicks = (urls[urlIndex].clicks || 0) + 1;
+
+        // Save back to localStorage
+        localStorage.setItem('shortened_urls', JSON.stringify(urls));
+
+        // Record click data
+        const clicksJson = localStorage.getItem('url_clicks');
+        const clicks = clicksJson ? JSON.parse(clicksJson) : [];
+
+        clicks.push({
+          id: Math.random().toString(36).substring(2, 15),
+          urlId: urls[urlIndex].id,
+          timestamp: new Date().toISOString(),
+          referrer: document.referrer || undefined,
+          device: navigator.userAgent || undefined
+        });
+
+        localStorage.setItem('url_clicks', JSON.stringify(clicks));
+      } catch (error) {
+        console.error('Error recording click:', error);
+      }
+    }
+
+    // Start countdown
+    function startCountdown() {
+      countdownInterval = setInterval(() => {
+        countdown--;
+        secondsEl.textContent = countdown;
+
+        if (countdown <= 0) {
+          clearInterval(countdownInterval);
+          window.location.href = originalUrl;
+        }
+      }, 1000);
+    }
+
+    // Initialize
+    function init() {
+      // Get the shortened URL
+      const shortenedURL = getShortenedURL(shortCode);
+
+      if (!shortenedURL) {
+        showError('This shortened URL does not exist or has expired.');
+        return;
+      }
+
+      // Check if URL has expired
+      if (shortenedURL.expiresAt && new Date(shortenedURL.expiresAt) < new Date()) {
+        showError('This shortened URL has expired.');
+        return;
+      }
+
+      // Record the click
+      recordClick(shortCode);
+
+      // Set the original URL
+      originalUrl = shortenedURL.originalURL;
+      destinationUrlEl.textContent = originalUrl;
+
+      // Start countdown
+      startCountdown();
+
+      // Add event listeners
+      redirectNowBtn.addEventListener('click', () => {
+        clearInterval(countdownInterval);
+        // Validate URL before redirect
+        try {
+          const url = new URL(originalUrl);
+          if (url.protocol === 'http:' || url.protocol === 'https:') {
+            window.location.href = originalUrl;
+          } else {
+            showError('Invalid URL protocol. Only HTTP and HTTPS are allowed.');
+          }
+        } catch (error) {
+          showError('Invalid URL format.');
+        }
+      });
+    }
+
+    // Show error
+    function showError(message) {
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'block';
+      errorMessageEl.textContent = message;
+    }
+
+    // Go back to URL shortener
+    goBackBtn.addEventListener('click', () => {
+      window.location.href = '/playground/url-shortener';
+    });
+
+    // Initialize
+    init();
+  </script>
+</body>
+</html>

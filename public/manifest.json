@@ -1,0 +1,19 @@
+{
+  "name": "Nam Le | Developer & QA Engineer Portfolio",
+  "short_name": "Nam Le Portfolio",
+  "description": "Portfolio of Nam Le - Developer & QA Engineer specializing in building robust software solutions",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#008080",
+  "theme_color": "#008080",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["business", "portfolio", "development"],
+  "lang": "en"
+} 

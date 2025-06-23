@@ -1,0 +1,180 @@
+/**
+ * Playground extras CSS
+ * This file contains non-critical styles for the playground section
+ * It's loaded after the initial render to improve performance
+ */
+
+/* Advanced animations that aren't needed for initial render */
+@keyframes rotate-playground {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes scale-playground {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Decorative elements */
+.playground-decorative-element {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  animation: rotate-playground 30s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.playground-decorative-circle {
+  border-radius: 50%;
+  background: linear-gradient(45deg, rgba(0, 128, 128, 0.2), rgba(0, 128, 255, 0.2));
+  animation: scale-playground 15s ease-in-out infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Advanced hover effects */
+.playground-card-advanced {
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.playground-card-advanced:hover {
+  transform: perspective(1000px) rotateX(10deg) rotateY(10deg) rotateZ(0deg);
+  box-shadow: 0 30px 60px -12px rgba(50, 50, 93, 0.25), 0 18px 36px -18px rgba(0, 0, 0, 0.3);
+}
+
+/* Advanced tooltip styles */
+.playground-tooltip-advanced {
+  position: relative;
+}
+
+.playground-tooltip-advanced::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.playground-tooltip-advanced:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Advanced code highlighting */
+.playground-code-highlight {
+  position: relative;
+}
+
+.playground-code-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -10px;
+  width: 4px;
+  height: 100%;
+  background-color: #14b8a6;
+  border-radius: 2px;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.playground-code-highlight:hover::before {
+  opacity: 1;
+  left: -5px;
+}
+
+/* Advanced badge styles */
+.playground-badge-advanced {
+  position: relative;
+  overflow: hidden;
+}
+
+.playground-badge-advanced::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(30deg);
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) rotate(30deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(30deg);
+  }
+}
+
+/* Advanced progress bar */
+.playground-progress-advanced {
+  position: relative;
+  overflow: hidden;
+}
+
+.playground-progress-advanced::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: var(--progress, 0%);
+  background: linear-gradient(
+    to right,
+    rgba(20, 184, 166, 0.5),
+    rgba(20, 184, 166, 0.8)
+  );
+  transition: width 0.5s ease;
+}
+
+/* Advanced modal animations */
+.playground-modal-advanced-enter {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.playground-modal-advanced-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.playground-modal-advanced-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.playground-modal-advanced-exit-active {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.3s, transform 0.3s;
+}
