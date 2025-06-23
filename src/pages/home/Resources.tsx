@@ -31,7 +31,7 @@ const CategoryFilter = ({
   selectedCategory, 
   onCategoryChange 
 }: { 
-  categories: any[]; 
+  categories: import('@/data/resources').ResourceCategory[]; 
   selectedCategory: string; 
   onCategoryChange: (category: string) => void; 
 }) => {

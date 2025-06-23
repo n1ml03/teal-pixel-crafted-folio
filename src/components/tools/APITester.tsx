@@ -102,6 +102,26 @@ interface AITestSuite {
   recommendations: string[];
 }
 
+interface APIResponse {
+  status?: number;
+  statusText?: string;
+  headers?: { [key: string]: string };
+  data?: unknown;
+  responseTime?: number;
+  size?: number;
+  url?: string;
+  method?: string;
+  timestamp?: Date;
+  error?: string;
+}
+
+interface TestResult {
+  success: boolean;
+  actualStatus?: number;
+  responseTime?: number;
+  error?: string;
+}
+
 const APITester = () => {
   const [method, setMethod] = useState('GET');
   const [url, setUrl] = useState('https://jsonplaceholder.typicode.com/posts/1');
@@ -110,7 +130,7 @@ const APITester = () => {
   ]);
   const [body, setBody] = useState('');
   const [auth, setAuth] = useState({ type: 'none', token: '', username: '', password: '' });
-  const [response, setResponse] = useState<any>(null);
+  const [response, setResponse] = useState<APIResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<RequestHistory[]>([]);
   const [environments, setEnvironments] = useState<Environment[]>([
@@ -128,7 +148,7 @@ const APITester = () => {
   const [autoGenerateTests, setAutoGenerateTests] = useState(false);
   const [selectedTestCase, setSelectedTestCase] = useState<APITestCase | null>(null);
   const [runningTestSuite, setRunningTestSuite] = useState(false);
-  const [testResults, setTestResults] = useState<{ [key: string]: any }>({});
+  const [testResults, setTestResults] = useState<{ [key: string]: TestResult }>({});
 
   const { config } = useAIConfig();
   const responseRef = useRef<HTMLDivElement>(null);
@@ -267,7 +287,7 @@ const APITester = () => {
     }
   };
 
-  const formatJSON = (obj: any) => {
+  const formatJSON = (obj: unknown) => {
     try {
       return JSON.stringify(obj, null, 2);
     } catch {
@@ -319,9 +339,23 @@ const APITester = () => {
         authType: auth.type
       });
 
+      function isAITestSuite(data: unknown): data is AITestSuite {
+        return (
+          typeof data === 'object' && data !== null &&
+          'endpoint' in data &&
+          'method' in data &&
+          'testCases' in data &&
+          'coverage' in data &&
+          'recommendations' in data
+        );
+      }
+
       if (result.success && result.data) {
-        setAiTestSuite(result.data);
-        setActiveTab('ai-tests');
+        if (isAITestSuite(result.data)) {
+          setAiTestSuite(result.data);
+        } else {
+          throw new Error('Invalid AI test suite format');
+        }
       } else {
         throw new Error(result.error || 'Failed to generate API tests');
       }
@@ -425,9 +459,11 @@ Please generate comprehensive test cases covering:
     }
   };
 
-  const validateResponse = (responseData: any, validations: APITestCase['validations']) => {
+  const validateResponse = (responseData: unknown, validations: APITestCase['validations']) => {
     return validations.map(validation => {
-      const fieldValue = getNestedValue(responseData, validation.field);
+      const fieldValue = typeof responseData === 'object' && responseData !== null
+        ? getNestedValue(responseData as Record<string, unknown>, validation.field)
+        : undefined;
       const isValid = evaluateCondition(fieldValue, validation.condition, validation.expectedValue);
       
       return {
@@ -440,11 +476,11 @@ Please generate comprehensive test cases covering:
     });
   };
 
-  const getNestedValue = (obj: any, path: string) => {
+  const getNestedValue = (obj: Record<string, unknown>, path: string) => {
     return path.split('.').reduce((current, key) => current?.[key], obj);
   };
 
-  const evaluateCondition = (actual: any, condition: string, expected: string): boolean => {
+  const evaluateCondition = (actual: unknown, condition: string, expected: string): boolean => {
     switch (condition) {
       case 'equals':
         return actual == expected;
@@ -500,7 +536,7 @@ Please generate comprehensive test cases covering:
 
       return () => clearTimeout(timer);
     }
-  }, [url, method, autoGenerateTests, config.useAI]);
+  }, [url, method, autoGenerateTests, config.useAI, generateAPITests]);
 
   const getCategoryColor = (category: APITestCase['category']) => {
     switch (category) {
@@ -1282,4 +1318,4 @@ Please generate comprehensive test cases covering:
   );
 };
 
-export default APITester; 
+export default APITester;

@@ -15,7 +15,6 @@ import {
   Settings
 } from "lucide-react";
 import { motion } from 'framer-motion';
-import { softSpringTransition } from '@/lib/motion';
 import { useLocation } from 'react-router-dom';
 
 const Header = () => {
@@ -174,7 +173,7 @@ const Header = () => {
             className="bg-black hover:bg-gray-800 rounded-full px-5 py-2 text-sm font-medium text-white flex items-center"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            transitionType="spring"
+            transition={{ type: "spring", stiffness: 300, damping: 25, mass: 1 }}
             onClick={() => window.location.href = '/contact-form'}
           >
             <MessageSquare className="w-4 h-4 mr-1.5" />
@@ -188,7 +187,7 @@ const Header = () => {
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.95)" }}
           whileTap={{ scale: 0.95 }}
-          transition={softSpringTransition}
+          transition={{ type: "spring", stiffness: 300, damping: 25, mass: 1 }}
         >
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </motion.button>
@@ -300,7 +299,7 @@ const Header = () => {
               onClick={() => window.location.href = '/contact-form'}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              transitionType="spring"
+              transition={{ type: "spring", stiffness: 300, damping: 25, mass: 1 }}
             >
               <MessageSquare className="w-4 h-4 mr-1.5" />
               Contact Me

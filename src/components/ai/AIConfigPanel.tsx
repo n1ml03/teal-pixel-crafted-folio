@@ -127,7 +127,7 @@ const AIConfigPanel: React.FC<AIConfigPanelProps> = ({
           updateConfig(importData.config);
         }
         if (importData.templates && Array.isArray(importData.templates)) {
-          importData.templates.forEach((template: any) => {
+          importData.templates.forEach((template: import('@/contexts/AIConfigContext').AIPromptTemplate) => {
             if (!templates.find(t => t.id === template.id)) {
               addTemplate(template);
             }
@@ -642,7 +642,7 @@ const AIConfigPanel: React.FC<AIConfigPanelProps> = ({
                       <Label className="text-sm font-medium">Quality Level</Label>
                       <Select 
                         value={config.qualityLevel} 
-                        onValueChange={(value: any) => updateConfig({ qualityLevel: value })}
+                        onValueChange={(value: string) => updateConfig({ qualityLevel: value as import('@/contexts/AIConfigContext').AIConfiguration['qualityLevel'] })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -759,4 +759,4 @@ const AIConfigPanel: React.FC<AIConfigPanelProps> = ({
   );
 };
 
-export default AIConfigPanel; 
+export default AIConfigPanel;

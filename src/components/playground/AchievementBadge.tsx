@@ -161,7 +161,10 @@ export const AchievementBadge = memo(({
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{
-              ...softSpringTransition,
+              type: "spring",
+              stiffness: 300,
+              damping: 25,
+              mass: 1,
               delay: animationDelay,
               duration: 0.6
             }}

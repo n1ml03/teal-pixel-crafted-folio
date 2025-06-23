@@ -54,12 +54,14 @@ const TimelineItem = ({
   const dotAnimation = useMemo(() => ({
     initial: !prefersReducedMotion ? { scale: 0, rotate: -45 } : {},
     whileInView: !prefersReducedMotion ? { scale: 1, rotate: 0 } : {},
-    transition: !prefersReducedMotion ? { 
-      type: "spring", 
-      damping: 20, 
-      delay: index * 0.03,
-      duration: 0.4
-    } : {}
+    transition: !prefersReducedMotion
+      ? {
+          type: "spring" as const,
+          damping: 20,
+          delay: index * 0.03,
+          duration: 0.4
+        }
+      : {}
   }), [prefersReducedMotion, index]);
 
   const cardAnimation = useMemo(() => ({
@@ -68,7 +70,7 @@ const TimelineItem = ({
     transition: !prefersReducedMotion ? { 
       duration: 0.3, 
       delay: index * 0.03,
-      ease: "easeOut"
+      ease: "easeOut" as const
     } : {}
   }), [prefersReducedMotion, index]);
 

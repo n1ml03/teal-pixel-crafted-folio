@@ -105,7 +105,7 @@ interface StepTemplate {
   title: string;
   description: string;
   fields: string[];
-  validation: (data: any) => boolean;
+  validation: (data: Partial<BugReport>) => boolean;
 }
 
 const BugReportSimulator = () => {
@@ -242,7 +242,7 @@ const BugReportSimulator = () => {
     }));
   }, []);
 
-  const updateBugReport = (field: string, value: any) => {
+  const updateBugReport = (field: string, value: unknown) => {
     setBugReport(prev => ({
       ...prev,
       [field]: value
@@ -427,7 +427,7 @@ Tags: ${report.tags?.join(', ') || 'None'}
       });
 
       if (result.success && result.data) {
-        setAiAnalysis(result.data);
+        setAiAnalysis(result.data as unknown as AIAnalysis);
         setShowAIPanel(true);
       } else {
         throw new Error(result.error || 'Failed to analyze bug report');
@@ -1393,4 +1393,4 @@ TAGS: ${report.tags?.join(', ') || 'None'}
   );
 };
 
-export default BugReportSimulator; 
+export default BugReportSimulator;

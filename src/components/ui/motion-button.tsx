@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion, VariantLabels, TargetAndTransition } from 'framer-motion';
 import { Button, ButtonProps } from "@/components/ui/button";
@@ -8,6 +7,7 @@ export interface MotionButtonProps extends ButtonProps {
   whileTap?: VariantLabels | TargetAndTransition;
   transitionType?: "spring" | "tween";
   transitionDuration?: number;
+  transition?: TargetAndTransition; // Allow custom transition prop
 }
 
 const MotionButton = React.forwardRef<HTMLButtonElement, MotionButtonProps>(
@@ -18,10 +18,13 @@ const MotionButton = React.forwardRef<HTMLButtonElement, MotionButtonProps>(
     whileTap = { scale: 0.97 },
     transitionType = "spring",
     transitionDuration = 0.3,
+    transition, // Accept custom transition
     ...props
   }, ref) => {
-    // Define transition properties based on type
-    const transitionProps = transitionType === "spring"
+    // Define transition properties based on type, unless custom transition is provided
+    const transitionProps = transition
+      ? transition
+      : transitionType === "spring"
       ? {
           type: "spring",
           stiffness: 400,
@@ -38,7 +41,7 @@ const MotionButton = React.forwardRef<HTMLButtonElement, MotionButtonProps>(
       <motion.div
         whileHover={whileHover}
         whileTap={whileTap}
-        transition={transitionProps}
+        transition={typeof transitionProps === 'object' && !Array.isArray(transitionProps) && !('x' in transitionProps) ? transitionProps : undefined}
         className="inline-block"
       >
         <Button

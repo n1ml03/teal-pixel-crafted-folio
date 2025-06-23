@@ -54,7 +54,7 @@ const useDebounce = (value: string, delay: number) => {
 
 // Lazy loading wrapper component for challenge cards
 const LazyChallenge = memo(({ challenge, isSaved, onSave, onStart, onDetails }: {
-  challenge: any;
+  challenge: unknown;
   isSaved: boolean;
   onSave: () => void;
   onStart: () => void;

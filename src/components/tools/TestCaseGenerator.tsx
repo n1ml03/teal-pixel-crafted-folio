@@ -179,8 +179,8 @@ const TestCaseGenerator = () => {
         preconditions: Array.isArray(tc.preconditions) ? tc.preconditions : [],
         steps: Array.isArray(tc.steps) ? tc.steps : [],
         expectedResults: Array.isArray(tc.expectedResults) ? tc.expectedResults : [],
-        priority: tc.priority || 'Medium',
-        type: tc.type || 'Functional',
+        priority: ['High', 'Medium', 'Low'].includes(tc.priority) ? tc.priority as 'High' | 'Medium' | 'Low' : 'Medium',
+        type: ['Functional', 'Non-Functional', 'Security', 'Performance', 'Usability'].includes(tc.type) ? tc.type as 'Functional' | 'Non-Functional' | 'Security' | 'Performance' | 'Usability' : 'Functional',
         category: tc.category || 'General',
         estimatedTime: typeof tc.estimatedTime === 'number' ? tc.estimatedTime : 15,
         testData: tc.testData,
@@ -231,7 +231,7 @@ const TestCaseGenerator = () => {
           testCases,
           coverage: calculateAICoverage(testCases),
           metrics: calculateAIMetrics(testCases),
-          recommendations: response.data.recommendations || [],
+          recommendations: (response.data as any).recommendations || [],
           generatedAt: new Date().toISOString(),
           aiModel: config.selectedModel
         };
@@ -240,14 +240,14 @@ const TestCaseGenerator = () => {
         const analysisResult: AIAnalysisResult = {
           testSuite: aiTestSuite,
           insights: {
-            coverageGaps: response.data.coverageGaps || [],
-            riskAreas: response.data.riskAreas || [],
-            optimizationSuggestions: response.data.optimizations || [],
-            qualityScore: response.data.qualityScore || 85
+            coverageGaps: (response.data as any).coverageGaps || [],
+            riskAreas: (response.data as any).riskAreas || [],
+            optimizationSuggestions: (response.data as any).optimizations || [],
+            qualityScore: (response.data as any).qualityScore || 85
           },
           metadata: {
             analysisTime: response.metadata?.responseTime || 0,
-            confidence: response.data.confidence || 90,
+            confidence: (response.data as any).confidence || 90,
             model: response.metadata?.model || config.selectedModel
           }
         };
@@ -255,8 +255,8 @@ const TestCaseGenerator = () => {
         setAiTestSuite(aiTestSuite);
         setAiAnalysis(analysisResult);
       }
-    } catch (error: any) {
-      setAiError(error.message || 'Failed to perform AI analysis');
+    } catch (error) {
+      setAiError((error as Error).message || 'Failed to perform AI analysis');
     } finally {
       setIsAnalyzing(false);
     }
@@ -330,9 +330,9 @@ const TestCaseGenerator = () => {
       }
       
       setActiveTab('results');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error generating test cases:', error);
-      setAiError(error.message || 'Failed to generate test cases');
+      setAiError((error as Error).message || 'Failed to generate test cases');
     } finally {
       setLoading(false);
       setIsGeneratingAI(false);
@@ -372,7 +372,7 @@ const TestCaseGenerator = () => {
           'System state is updated correctly'
         ],
         priority: req.priority,
-        type: selectedTypes.includes('Functional') ? 'Functional' : selectedTypes[0] as any,
+        type: selectedTypes.includes('Functional') ? 'Functional' : (['Non-Functional', 'Security', 'Performance', 'Usability'].includes(selectedTypes[0]) ? selectedTypes[0] as 'Non-Functional' | 'Security' | 'Performance' | 'Usability' : 'Functional'),
         category: getTestCategory(req.text),
         estimatedTime: 15,
         testData: generateTestData(req.text),
@@ -787,7 +787,7 @@ const TestCaseGenerator = () => {
                         
                         <div className="space-y-2">
                           <Label className="text-sm">Quality Level</Label>
-                          <Select value={qualityLevel} onValueChange={(value: any) => setQualityLevel(value)}>
+                          <Select value={qualityLevel} onValueChange={(value) => setQualityLevel(value as 'basic' | 'standard' | 'premium' | 'enterprise')}>
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -1317,4 +1317,4 @@ const TestCaseGenerator = () => {
   );
 };
 
-export default TestCaseGenerator; 
+export default TestCaseGenerator;

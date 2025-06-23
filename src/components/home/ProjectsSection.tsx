@@ -245,7 +245,7 @@ const FilterButton = ({ active, onClick, children, icon: Icon }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<{ className?: string }>;
 }) => (
   <MotionButton
     onClick={onClick}

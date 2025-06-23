@@ -284,7 +284,7 @@ const CodeReviewTool = () => {
   };
 
   // Convert AI response to CodeIssue format
-  const convertAIResponseToIssues = (aiData: any): CodeIssue[] => {
+  const convertAIResponseToIssues = (aiData: { issues?: any[] }): CodeIssue[] => {
     if (!aiData.issues || !Array.isArray(aiData.issues)) {
       return [];
     }
@@ -336,7 +336,10 @@ const CodeReviewTool = () => {
   };
 
   // Calculate metrics from AI response
-  const calculateMetricsFromAI = (aiData: any, codeText: string): ReviewMetrics => {
+  const calculateMetricsFromAI = (
+    aiData: { issues?: any[]; summary?: any },
+    codeText: string
+  ): ReviewMetrics => {
     const lines = codeText.split('\n');
     const totalLines = lines.filter(line => line.trim().length > 0).length;
     
@@ -785,4 +788,4 @@ function calculateTotal(items) {
   );
 };
 
-export default CodeReviewTool; 
+export default CodeReviewTool;

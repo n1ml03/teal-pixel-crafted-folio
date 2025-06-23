@@ -54,11 +54,11 @@ const BlogPost = () => {
   const [imageError, setImageError] = useState(false);
   const [tocCollapsed, setTocCollapsed] = useState(false);
   const [markdownDependencies, setMarkdownDependencies] = useState<{
-    ReactMarkdown: any;
-    remarkGfm: any;
-    rehypeSlug: any;
-    rehypeAutolinkHeadings: any;
-    rehypeHighlight: any;
+    ReactMarkdown: React.ComponentType<any>;
+    remarkGfm: unknown;
+    rehypeSlug: unknown;
+    rehypeAutolinkHeadings: unknown;
+    rehypeHighlight: unknown;
   } | null>(null);
   const [markdownLoading, setMarkdownLoading] = useState(true);
   const articleRef = useRef<HTMLElement>(null);

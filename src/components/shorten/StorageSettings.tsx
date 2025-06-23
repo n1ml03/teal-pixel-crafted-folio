@@ -44,7 +44,7 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({ onClose }) => {
     setStats(newStats);
   }, [settings]);
 
-  const handleSettingsChange = (key: string, value: any) => {
+  const handleSettingsChange = (key: string, value: unknown) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
@@ -412,4 +412,4 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({ onClose }) => {
   );
 };
 
-export default StorageSettings; 
+export default StorageSettings;

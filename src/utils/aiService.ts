@@ -237,11 +237,11 @@ class AIService {
           }
         };
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (attempt === maxRetries) {
           return {
             success: false,
-            error: `AI call failed after ${maxRetries + 1} attempts: ${error.message}`
+            error: `AI call failed after ${maxRetries + 1} attempts: ${error instanceof Error ? error.message : String(error)}`
           };
         }
         
@@ -595,4 +595,4 @@ export const getAIService = (): AIService | null => {
   return aiServiceInstance;
 };
 
-export default AIService; 
+export default AIService;
