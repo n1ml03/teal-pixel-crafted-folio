@@ -8,7 +8,7 @@ export interface PreloadResource {
   as: 'image' | 'style' | 'script' | 'font' | 'fetch';
   type?: string;
   crossorigin?: 'anonymous' | 'use-credentials';
-  fetchpriority?: 'high' | 'low' | 'auto';
+  fetchPriority?: 'high' | 'low' | 'auto';
   rel?: 'preload' | 'prefetch' | 'preconnect';
 }
 
@@ -81,8 +81,8 @@ class ResourceManager {
         link.crossOrigin = resource.crossorigin;
       }
 
-      if (resource.fetchpriority) {
-        link.setAttribute('fetchpriority', resource.fetchpriority);
+      if (resource.fetchPriority) {
+        link.setAttribute('fetchpriority', resource.fetchPriority);
       }
 
       // Add error handling
@@ -122,9 +122,9 @@ class ResourceManager {
     domains.forEach(domain => this.preconnect(domain));
 
     // Preload resources in priority order
-    const highPriority = resources.filter(r => r.fetchpriority === 'high');
-    const normalPriority = resources.filter(r => r.fetchpriority !== 'high' && r.fetchpriority !== 'low');
-    const lowPriority = resources.filter(r => r.fetchpriority === 'low');
+    const highPriority = resources.filter(r => r.fetchPriority === 'high');
+    const normalPriority = resources.filter(r => r.fetchPriority !== 'high' && r.fetchPriority !== 'low');
+    const lowPriority = resources.filter(r => r.fetchPriority === 'low');
 
     // Load high priority immediately
     highPriority.forEach(resource => this.preload(resource));
@@ -187,7 +187,7 @@ export function preloadCriticalImages(urls: string[]): void {
   const resources: PreloadResource[] = urls.map((url, index) => ({
     href: url,
     as: 'image',
-    fetchpriority: index === 0 ? 'high' : 'auto',
+    fetchPriority: index === 0 ? 'high' : 'auto',
     type: url.endsWith('.webp') ? 'image/webp' : undefined
   }));
   
@@ -200,7 +200,7 @@ export function preloadFonts(urls: string[]): void {
     as: 'font',
     type: 'font/woff2',
     crossorigin: 'anonymous',
-    fetchpriority: 'high'
+    fetchPriority: 'high'
   }));
   
   resourceManager.preloadMany(resources);
@@ -223,7 +223,7 @@ export const CRITICAL_RESOURCES: PreloadResource[] = [
     href: '/images/developer-portrait.webp',
     as: 'image',
     type: 'image/webp',
-    fetchpriority: 'high'
+    fetchPriority: 'high'
   },
   // Fonts
   {
@@ -231,14 +231,14 @@ export const CRITICAL_RESOURCES: PreloadResource[] = [
     as: 'font',
     type: 'font/woff2',
     crossorigin: 'anonymous',
-    fetchpriority: 'high'
+    fetchPriority: 'high'
   },
   {
     href: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2JL7SUc.woff2',
     as: 'font',
     type: 'font/woff2',
     crossorigin: 'anonymous',
-    fetchpriority: 'high'
+    fetchPriority: 'high'
   },
   // Google Fonts CSS
   {
@@ -261,4 +261,4 @@ export function initResourceManager(): void {
       resourceManager.cleanup();
     }, 5000);
   });
-} 
+}

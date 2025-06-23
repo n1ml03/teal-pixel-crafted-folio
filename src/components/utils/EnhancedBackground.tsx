@@ -72,7 +72,7 @@ const AnimatedBackground: React.FC<{
   prefersReducedMotion?: boolean;
 }> = ({ containerRef, prefersReducedMotion = false }) => {
   const { scrollY: scrollYProgress } = useScroll({
-    target: typeof document !== 'undefined' ? document.documentElement : undefined,
+    target: containerRef,
     layoutEffect: false,
   });
 
@@ -140,7 +140,7 @@ const AnimatedBackground: React.FC<{
   return (
     <div
       ref={containerRef}
-      className="fixed top-0 left-0 right-0 bottom-0 -z-10 overflow-hidden"
+      className="relative fixed top-0 left-0 right-0 bottom-0 -z-10 overflow-hidden"
       style={{ transform: 'translateZ(0)' }}
     >
       {backgroundContent}

@@ -25,11 +25,11 @@ loadFonts();
 
 // Defer loading of non-critical CSS using ResourceManager
 const nonCriticalResources = [
-  {
-    href: '/css/animations.css',
-    as: 'style' as const,
-    rel: 'prefetch' as const
-  },
+  // {
+  //   href: '/css/animations.css',
+  //   as: 'style' as const,
+  //   rel: 'prefetch' as const
+  // },
   {
     href: '/css/playground-extras.css',
     as: 'style' as const,

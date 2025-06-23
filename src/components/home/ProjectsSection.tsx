@@ -337,183 +337,185 @@ const ProjectsSection = () => {
   ];
 
   return (
-    <motion.section 
-      id="projects" 
-      className="py-24 relative overflow-hidden"
-      style={!isLowPerformanceDevice && !prefersReducedMotion ? { y } : {}}
-    >
-      {/* Simplified background */}
-      <div className="absolute inset-0 -z-10">
-        {/* Static gradient background for better performance */}
-        <div
-          className="absolute inset-0 opacity-25"
-          style={{
-            background: 'radial-gradient(circle at 50% 50%, rgba(20, 184, 166, 0.12) 0%, rgba(56, 189, 248, 0.08) 50%, transparent 70%)'
-          }}
-        />
-        
-        {/* Minimal decorative elements - only for high performance devices */}
-        {!isLowPerformanceDevice && !prefersReducedMotion && (
-          <>
-            <div className="absolute top-32 right-16 w-48 h-48 rounded-full bg-gradient-to-tr from-blue-100/15 to-purple-100/15 backdrop-blur-sm border border-white/10" />
-            <div className="absolute bottom-32 left-16 w-36 h-36 rounded-2xl bg-gradient-to-tr from-teal-100/15 to-green-100/15 backdrop-blur-sm border border-white/10" />
-          </>
-        )}
-      </div>
-
-      <div className="container mx-auto px-4">
-        {/* Simplified section header */}
-        <div className="max-w-4xl mx-auto text-center mb-20">
-          <motion.div
-            className="inline-flex items-center mb-6"
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-          >
-            <Badge 
-              variant="outline" 
-              className="px-4 py-2 text-sm font-medium bg-white/80 backdrop-blur-sm border-teal-200/50 text-teal-700"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Portfolio Showcase
-            </Badge>
-          </motion.div>
-
-          <motion.h2
-            className="text-5xl lg:text-6xl font-bold mb-6 relative"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            viewport={{ once: true }}
-          >
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-blue-600 to-purple-600">
-              Featured Projects
-            </span>
-            <motion.div 
-              className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-teal-500 to-blue-500 rounded-full"
-              initial={{ width: 0 }}
-              whileInView={{ width: 128 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-              viewport={{ once: true }}
-            />
-          </motion.h2>
-
-          <motion.p
-            className="text-gray-600 text-xl leading-relaxed max-w-3xl mx-auto"
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            viewport={{ once: true }}
-          >
-            A selection of my recent work across frontend, backend, and quality assurance projects.
-            Each project demonstrates my 
-            <span className="text-teal-600 font-semibold"> technical skills and problem-solving approach</span>.
-          </motion.p>
+    <section className="relative w-full h-full">
+      <motion.section 
+        id="projects" 
+        className="py-24 relative overflow-hidden"
+        style={!isLowPerformanceDevice && !prefersReducedMotion ? { y } : {}}
+      >
+        {/* Simplified background */}
+        <div className="absolute inset-0 -z-10">
+          {/* Static gradient background for better performance */}
+          <div
+            className="absolute inset-0 opacity-25"
+            style={{
+              background: 'radial-gradient(circle at 50% 50%, rgba(20, 184, 166, 0.12) 0%, rgba(56, 189, 248, 0.08) 50%, transparent 70%)'
+            }}
+          />
+          
+          {/* Minimal decorative elements - only for high performance devices */}
+          {!isLowPerformanceDevice && !prefersReducedMotion && (
+            <>
+              <div className="absolute top-32 right-16 w-48 h-48 rounded-full bg-gradient-to-tr from-blue-100/15 to-purple-100/15 backdrop-blur-sm border border-white/10" />
+              <div className="absolute bottom-32 left-16 w-36 h-36 rounded-2xl bg-gradient-to-tr from-teal-100/15 to-green-100/15 backdrop-blur-sm border border-white/10" />
+            </>
+          )}
         </div>
 
-        {/* Enhanced project filters */}
-        <motion.div
-          className="flex flex-wrap justify-center gap-4 mb-16"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          viewport={{ once: true }}
-        >
-          {filters.map((filter, index) => (
-            <FilterButton
-              key={filter.name}
-              active={activeFilter === filter.name}
-              onClick={() => setActiveFilter(filter.name)}
-              icon={filter.icon}
+        <div className="container mx-auto px-4">
+          {/* Simplified section header */}
+          <div className="max-w-4xl mx-auto text-center mb-20">
+            <motion.div
+              className="inline-flex items-center mb-6"
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
             >
-              {filter.name}
-            </FilterButton>
-          ))}
-        </motion.div>
-
-        {/* Enhanced Projects Grid */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          viewport={{ once: true }}
-        >
-          {projects.map((project, index) => (
-            <ProjectCard key={index} {...project} index={index} />
-          ))}
-        </motion.div>
-
-        {/* Simplified stats section */}
-        <motion.div
-          className="bg-white/60 backdrop-blur-sm rounded-3xl p-12 border border-white/20 shadow-lg mb-16"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          viewport={{ once: true }}
-        >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { icon: Code, number: "5+", label: "Projects Completed", color: "text-teal-600" },
-              { icon: Award, number: "1+", label: "Years Experience", color: "text-blue-600" },
-              { icon: Zap, number: "100%", label: "Client Satisfaction", color: "text-purple-600" },
-              { icon: Target, number: "8+", label: "Technologies", color: "text-green-600" }
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                className="text-center"
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 + 0.2, duration: 0.4 }}
-                viewport={{ once: true }}
-                whileHover={!prefersReducedMotion ? { scale: 1.02, y: -2 } : {}}
+              <Badge 
+                variant="outline" 
+                className="px-4 py-2 text-sm font-medium bg-white/80 backdrop-blur-sm border-teal-200/50 text-teal-700"
               >
-                <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-white shadow-lg flex items-center justify-center ${stat.color}`}>
-                  {(() => {
-                    const IconComponent = stat.icon;
-                    return <IconComponent className="w-8 h-8" />;
-                  })()}
-                </div>
-                <motion.div 
-                  className={`text-3xl font-bold mb-2 ${stat.color}`}
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ delay: index * 0.05 + 0.3, duration: 0.4 }}
-                  viewport={{ once: true }}
-                >
-                  {stat.number}
-                </motion.div>
-                <p className="text-gray-600 font-medium text-sm">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Portfolio Showcase
+              </Badge>
+            </motion.div>
 
-        {/* Enhanced View more projects button */}
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <MotionButton
-            onClick={() => window.location.href = '/projects'}
-            className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-2xl px-8 py-4 text-sm font-semibold inline-flex items-center shadow-lg hover:shadow-xl"
-            whileHover={{ 
-              scale: 1.05,
-              boxShadow: "0 15px 30px -5px rgba(20, 184, 166, 0.4)"
-            }}
-            whileTap={{ scale: 0.98 }}
+            <motion.h2
+              className="text-5xl lg:text-6xl font-bold mb-6 relative"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true }}
+            >
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-600 via-blue-600 to-purple-600">
+                Featured Projects
+              </span>
+              <motion.div 
+                className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-teal-500 to-blue-500 rounded-full"
+                initial={{ width: 0 }}
+                whileInView={{ width: 128 }}
+                transition={{ delay: 0.8, duration: 0.6 }}
+                viewport={{ once: true }}
+              />
+            </motion.h2>
+
+            <motion.p
+              className="text-gray-600 text-xl leading-relaxed max-w-3xl mx-auto"
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              viewport={{ once: true }}
+            >
+              A selection of my recent work across frontend, backend, and quality assurance projects.
+              Each project demonstrates my 
+              <span className="text-teal-600 font-semibold"> technical skills and problem-solving approach</span>.
+            </motion.p>
+          </div>
+
+          {/* Enhanced project filters */}
+          <motion.div
+            className="flex flex-wrap justify-center gap-4 mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            viewport={{ once: true }}
           >
-            <Layers className="mr-3 h-5 w-5" />
-            View All Projects
-            <ArrowUpRight className="ml-3 h-5 w-5" />
-          </MotionButton>
-        </motion.div>
-      </div>
-    </motion.section>
+            {filters.map((filter, index) => (
+              <FilterButton
+                key={filter.name}
+                active={activeFilter === filter.name}
+                onClick={() => setActiveFilter(filter.name)}
+                icon={filter.icon}
+              >
+                {filter.name}
+              </FilterButton>
+            ))}
+          </motion.div>
+
+          {/* Enhanced Projects Grid */}
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            viewport={{ once: true }}
+          >
+            {projects.map((project, index) => (
+              <ProjectCard key={index} {...project} index={index} />
+            ))}
+          </motion.div>
+
+          {/* Simplified stats section */}
+          <motion.div
+            className="bg-white/60 backdrop-blur-sm rounded-3xl p-12 border border-white/20 shadow-lg mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {[
+                { icon: Code, number: "5+", label: "Projects Completed", color: "text-teal-600" },
+                { icon: Award, number: "1+", label: "Years Experience", color: "text-blue-600" },
+                { icon: Zap, number: "100%", label: "Client Satisfaction", color: "text-purple-600" },
+                { icon: Target, number: "8+", label: "Technologies", color: "text-green-600" }
+              ].map((stat, index) => (
+                <motion.div
+                  key={index}
+                  className="text-center"
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 + 0.2, duration: 0.4 }}
+                  viewport={{ once: true }}
+                  whileHover={!prefersReducedMotion ? { scale: 1.02, y: -2 } : {}}
+                >
+                  <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-white shadow-lg flex items-center justify-center ${stat.color}`}>
+                    {(() => {
+                      const IconComponent = stat.icon;
+                      return <IconComponent className="w-8 h-8" />;
+                    })()}
+                  </div>
+                  <motion.div 
+                    className={`text-3xl font-bold mb-2 ${stat.color}`}
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ delay: index * 0.05 + 0.3, duration: 0.4 }}
+                    viewport={{ once: true }}
+                  >
+                    {stat.number}
+                  </motion.div>
+                  <p className="text-gray-600 font-medium text-sm">{stat.label}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Enhanced View more projects button */}
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <MotionButton
+              onClick={() => window.location.href = '/projects'}
+              className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-2xl px-8 py-4 text-sm font-semibold inline-flex items-center shadow-lg hover:shadow-xl"
+              whileHover={{ 
+                scale: 1.05,
+                boxShadow: "0 15px 30px -5px rgba(20, 184, 166, 0.4)"
+              }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Layers className="mr-3 h-5 w-5" />
+              View All Projects
+              <ArrowUpRight className="ml-3 h-5 w-5" />
+            </MotionButton>
+          </motion.div>
+        </div>
+      </motion.section>
+    </section>
   );
 };
 

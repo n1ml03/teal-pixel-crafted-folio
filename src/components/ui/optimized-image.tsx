@@ -158,7 +158,7 @@ const OptimizedImage: React.FC<OptimizedImageProps> = ({
         height={height}
         loading={loadingAttr}
         decoding="async"
-        fetchpriority={finalFetchPriority}
+        fetchPriority={finalFetchPriority}
         style={{
           objectFit,
           objectPosition: 'center',

@@ -325,7 +325,7 @@ export function preloadCriticalImages(urls: string[]): void {
   const resources = urls.map((url, index) => ({
     href: url,
     as: 'image' as const,
-    fetchpriority: index === 0 ? 'high' as const : 'auto' as const,
+    fetchPriority: index === 0 ? 'high' as const : 'auto' as const,
     type: url.endsWith('.webp') ? 'image/webp' : undefined
   }));
   

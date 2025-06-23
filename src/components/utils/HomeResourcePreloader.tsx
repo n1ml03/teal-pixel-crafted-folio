@@ -20,29 +20,29 @@ export const HomeResourcePreloader = () => {
         href: '/images/coding-preview.webp',
         as: 'image' as const,
         type: 'image/webp',
-        fetchpriority: 'low' as const
+        fetchPriority: 'low' as const
       },
       {
         href: '/images/testing-preview.webp',
         as: 'image' as const,
         type: 'image/webp',
-        fetchpriority: 'low' as const
+        fetchPriority: 'low' as const
       },
       // Tech stack icons
       {
         href: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg',
         as: 'image' as const,
-        fetchpriority: 'low' as const
+        fetchPriority: 'low' as const
       },
       {
         href: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg',
         as: 'image' as const,
-        fetchpriority: 'low' as const
+        fetchPriority: 'low' as const
       },
       {
         href: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg',
         as: 'image' as const,
-        fetchpriority: 'low' as const
+        fetchPriority: 'low' as const
       }
     ];
 

@@ -67,7 +67,7 @@ export function preloadFonts(fontUrls: string[]): void {
     as: 'font' as const,
     type: 'font/woff2',
     crossorigin: 'anonymous' as const,
-    fetchpriority: 'high' as const
+    fetchPriority: 'high' as const
   }));
 
   resourceManager.preloadMany(resources);

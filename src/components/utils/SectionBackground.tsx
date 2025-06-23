@@ -355,7 +355,7 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
   const shouldRenderBackground = isInView || hasRenderedOnce;
 
   return (
-    <div id={sectionId} ref={sectionRef} className="relative" style={{ position: 'relative' }}>
+    <div ref={sectionRef} className="relative w-full h-full">
       {/* Section-specific background elements - conditionally rendered for performance */}
       <div className="absolute inset-0 -z-5 overflow-hidden pointer-events-none">
         {shouldRenderBackground ? renderBackgroundElements() : null}
