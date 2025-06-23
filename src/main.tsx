@@ -30,7 +30,7 @@ const nonCriticalResources = [
   //   as: 'style' as const,
   //   rel: 'prefetch' as const
   // },
-  {
+  {   
     href: '/css/playground-extras.css',
     as: 'style' as const,
     rel: 'prefetch' as const
