@@ -43,7 +43,13 @@ export default defineConfig(({ mode }) => ({
       'date-fns',
       'lodash-es',
       'clsx',
-      'tailwind-merge'
+      'tailwind-merge',
+      // Pre-bundle markdown dependencies to avoid circular deps
+      'react-markdown',
+      'remark-gfm',
+      'rehype-slug',
+      'rehype-autolink-headings',
+      'rehype-highlight'
     ],
     // Exclude problematic packages that should be bundled separately
     exclude: ['fsevents'],
@@ -72,7 +78,11 @@ export default defineConfig(({ mode }) => ({
           return id.includes('.css') ||
                  id.includes('polyfill') ||
                  id.includes('core-js') ||
-                 id.includes('regenerator-runtime');
+                 id.includes('regenerator-runtime') ||
+                 // Allow side effects for markdown ecosystem to prevent initialization issues
+                 id.includes('micromark') ||
+                 id.includes('unist') ||
+                 id.includes('unified');
         },
         propertyReadSideEffects: false,
         tryCatchDeoptimization: false,
@@ -83,7 +93,9 @@ export default defineConfig(({ mode }) => ({
         chunkFileNames: 'assets/[name].[hash].js',
         entryFileNames: 'assets/[name].[hash].js',
         format: 'es',
-        // Optimize chunk splitting for better caching
+        // Ensure proper module initialization order
+        preserveModules: false,
+        // Optimize chunk splitting for better caching and to prevent circular deps
         manualChunks(id) {
           // Vendor chunks - optimized for better caching
           if (id.includes('node_modules')) {
@@ -92,11 +104,26 @@ export default defineConfig(({ mode }) => ({
               return 'vendor-react-core';
             }
 
-            // React ecosystem - frequently updated
+            // Markdown processing - KEEP ALL TOGETHER to prevent circular deps
+            if (id.includes('react-markdown') || id.includes('remark') || id.includes('rehype') ||
+                id.includes('micromark') || id.includes('mdast') || id.includes('hast') ||
+                id.includes('unified') || id.includes('unist') || id.includes('zwitch') ||
+                id.includes('decode-named-character-reference') || id.includes('character-entities') ||
+                id.includes('property-information') || id.includes('html-void-elements') ||
+                id.includes('markdown-table') || id.includes('trough')) {
+              return 'vendor-markdown';
+            }
+
+            // Syntax highlighting - separate from markdown to avoid conflicts
+            if (id.includes('highlight.js') || id.includes('lowlight') || id.includes('prism')) {
+              return 'vendor-highlight';
+            }
+
+            // React ecosystem - excluding react-markdown (moved to markdown chunk)
             if (id.includes('react-router') || id.includes('react-hook-form') ||
-                id.includes('@hookform') || id.includes('react-markdown') ||
-                id.includes('react-resizable-panels') || id.includes('react-scroll-parallax') ||
-                id.includes('qrcode.react') || id.includes('react-intersection-observer')) {
+                id.includes('@hookform') || id.includes('react-resizable-panels') || 
+                id.includes('react-scroll-parallax') || id.includes('qrcode.react') || 
+                id.includes('react-intersection-observer')) {
               return 'vendor-react-ecosystem';
             }
 
@@ -150,18 +177,6 @@ export default defineConfig(({ mode }) => ({
             // Data processing and parsing (excluding removed export packages)
             if (id.includes('csv') || id.includes('xlsx')) {
               return 'vendor-data-processing';
-            }
-
-            // Markdown processing - large ecosystem
-            if (id.includes('react-markdown') || id.includes('remark') || id.includes('rehype') ||
-                id.includes('micromark') || id.includes('mdast') || id.includes('hast') ||
-                id.includes('unified') || id.includes('unist')) {
-              return 'vendor-markdown';
-            }
-
-            // Syntax highlighting - large library
-            if (id.includes('highlight.js') || id.includes('lowlight') || id.includes('prism')) {
-              return 'vendor-highlight';
             }
 
             // Storage and caching

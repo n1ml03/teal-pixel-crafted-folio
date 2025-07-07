@@ -16,29 +16,42 @@ import {
 import '@/styles/markdown.css';
 import { toast } from "sonner";
 
-// Dynamic imports for markdown dependencies
+// Dynamic imports for markdown dependencies with improved error handling
 const loadMarkdownDependencies = async () => {
-  const [
-    { default: ReactMarkdown },
-    { default: remarkGfm },
-    { default: rehypeSlug },
-    { default: rehypeAutolinkHeadings },
-    { default: rehypeHighlight }
-  ] = await Promise.all([
-    import('react-markdown'),
-    import('remark-gfm'),
-    import('rehype-slug'),
-    import('rehype-autolink-headings'),
-    import('rehype-highlight')
-  ]);
+  try {
+    // Load dependencies in the correct order to prevent circular dependency issues
+    const [
+      { default: ReactMarkdown },
+      remarkGfmModule,
+      rehypeSlugModule,
+      rehypeAutolinkHeadingsModule,
+      rehypeHighlightModule
+    ] = await Promise.all([
+      import('react-markdown'),
+      import('remark-gfm'),
+      import('rehype-slug'),
+      import('rehype-autolink-headings'),
+      import('rehype-highlight')
+    ]);
 
-  return {
-    ReactMarkdown,
-    remarkGfm,
-    rehypeSlug,
-    rehypeAutolinkHeadings,
-    rehypeHighlight
-  };
+    // Extract default exports properly to avoid "Cannot access before initialization" errors
+    const remarkGfm = remarkGfmModule.default || remarkGfmModule;
+    const rehypeSlug = rehypeSlugModule.default || rehypeSlugModule;
+    const rehypeAutolinkHeadings = rehypeAutolinkHeadingsModule.default || rehypeAutolinkHeadingsModule;
+    const rehypeHighlight = rehypeHighlightModule.default || rehypeHighlightModule;
+
+    return {
+      ReactMarkdown,
+      remarkGfm,
+      rehypeSlug,
+      rehypeAutolinkHeadings,
+      rehypeHighlight
+    };
+  } catch (error) {
+    console.error('Failed to load markdown dependencies:', error);
+    // Return null to indicate failure
+    return null;
+  }
 };
 
 const BlogPost = () => {
@@ -74,13 +87,29 @@ const BlogPost = () => {
       try {
         setMarkdownLoading(true);
         
-        // Load markdown dependencies
-        const dependencies = await loadMarkdownDependencies();
-        setMarkdownDependencies(dependencies);
+        // Load markdown dependencies with retry logic
+        let dependencies = await loadMarkdownDependencies();
+        
+        // Retry once if failed
+        if (!dependencies) {
+          console.warn('Retrying markdown dependencies load...');
+          await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
+          dependencies = await loadMarkdownDependencies();
+        }
+
+        if (dependencies) {
+          setMarkdownDependencies(dependencies);
+        } else {
+          console.error('Failed to load markdown dependencies after retry');
+        }
         
         // Dynamically load highlight.js CSS
         if (!document.querySelector('link[href*="highlight.js"]')) {
-          await import('highlight.js/styles/github-dark.css');
+          try {
+            await import('highlight.js/styles/github-dark.css');
+          } catch (cssError) {
+            console.warn('Failed to load highlight.js CSS:', cssError);
+          }
         }
         
         setMarkdownLoading(false);
@@ -426,12 +455,12 @@ const BlogPost = () => {
 
                   {/* Article Content */}
                   <div className="prose prose-base max-w-none markdown-content">
-                    {markdownLoading || !markdownDependencies ? (
+                    {markdownLoading ? (
                       <div className="flex items-center justify-center py-12">
                         <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mr-3"></div>
                         <span className="text-muted-foreground">Loading content...</span>
                       </div>
-                    ) : (
+                    ) : markdownDependencies ? (
                       <markdownDependencies.ReactMarkdown
                         remarkPlugins={[markdownDependencies.remarkGfm]}
                         rehypePlugins={[
@@ -442,6 +471,14 @@ const BlogPost = () => {
                       >
                         {post.content}
                       </markdownDependencies.ReactMarkdown>
+                    ) : (
+                      // Fallback: render plain text with basic formatting if markdown fails
+                      <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+                          <strong>Note:</strong> Markdown rendering temporarily unavailable. Displaying plain text.
+                        </div>
+                        {post.content}
+                      </div>
                     )}
                   </div>
 
