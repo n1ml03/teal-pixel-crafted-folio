@@ -1,18 +1,8 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  Legend
-} from 'recharts';
+
+// Dynamic chart components
+const DynamicCharts = lazy(() => import('./DynamicCharts'));
 import {
   Card,
   CardContent,
@@ -212,52 +202,25 @@ export const ProgressStats = ({
 
             <TabsContent value="challenges" className="m-0 space-y-4">
               <div className="h-[250px] w-full p-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={challengeData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={isMobile ? 40 : 60}
-                      outerRadius={isMobile ? 80 : 90}
-                      paddingAngle={2}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}
-                    >
-                      {challengeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Legend />
-                    <RechartsTooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<div className="flex items-center justify-center h-full">Loading chart...</div>}>
+                  <DynamicCharts
+                    type="pie"
+                    data={challengeData}
+                    height={250}
+                  />
+                </Suspense>
               </div>
             </TabsContent>
 
             <TabsContent value="activity" className="m-0 space-y-4">
               <div className="h-[250px] w-full p-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={activityData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <RechartsTooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="challenges"
-                      stroke="#3b82f6"
-                      activeDot={{ r: 8 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="tests"
-                      stroke="#10b981"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<div className="flex items-center justify-center h-full">Loading chart...</div>}>
+                  <DynamicCharts
+                    type="line"
+                    data={activityData}
+                    height={250}
+                  />
+                </Suspense>
               </div>
             </TabsContent>
           </motion.div>

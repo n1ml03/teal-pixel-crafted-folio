@@ -7,15 +7,51 @@ export const useURLHistory = () => {
 
   // Load URL history from localStorage on component mount
   const loadHistory = useCallback(async () => {
-    // Initialize the service if not already initialized
-    await URLShortenerService.initialize();
+    try {
+      // Initialize the service if not already initialized
+      await URLShortenerService.initialize();
 
-    const urls = await URLShortenerService.getURLs();
-    // Sort by creation date (newest first)
-    const sortedUrls = [...urls].sort((a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-    setUrlHistory(sortedUrls);
+      const urls = await URLShortenerService.getURLs();
+
+      // Ensure urls is an array before proceeding
+      if (!Array.isArray(urls)) {
+        console.warn('URLShortenerService.getURLs() did not return an array:', urls);
+        setUrlHistory([]);
+        return;
+      }
+
+      // Additional safety check - ensure all items in the array are valid
+      const validUrls = urls.filter(url => {
+        return url &&
+               typeof url === 'object' &&
+               typeof url.id === 'string' &&
+               typeof url.createdAt === 'string' &&
+               typeof url.originalURL === 'string' &&
+               typeof url.shortURL === 'string';
+      });
+
+      if (validUrls.length !== urls.length) {
+        console.warn('Some URLs were filtered out due to invalid data:', {
+          original: urls.length,
+          valid: validUrls.length
+        });
+      }
+
+      // Sort by creation date (newest first) - use validUrls instead of urls
+      const sortedUrls = validUrls.slice().sort((a, b) => {
+        try {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        } catch (error) {
+          console.warn('Error sorting URLs by date:', error);
+          return 0;
+        }
+      });
+
+      setUrlHistory(sortedUrls);
+    } catch (error) {
+      console.error('Error loading URL history:', error);
+      setUrlHistory([]);
+    }
   }, []);
 
   // Load history on mount

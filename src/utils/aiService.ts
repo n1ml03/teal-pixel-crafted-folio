@@ -70,6 +70,7 @@ export interface AICallOptions {
 class AIService {
   private config: AIConfiguration;
   private httpClient: typeof ky;
+  analyzeBugReport: any;
 
   constructor(config: AIConfiguration) {
     this.config = config;

@@ -51,23 +51,32 @@ export default defineConfig(({ mode }) => ({
     force: mode === 'development',
   },
   build: {
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500, // Reduced from 1000 to encourage smaller chunks
     minify: 'esbuild',
     target: 'esnext',
     // Add specific optimizations for Vercel
     outDir: 'dist',
     emptyOutDir: true,
+    // Additional optimizations for smaller bundles
+    reportCompressedSize: true,
     rollupOptions: {
       // Ensure external dependencies are handled correctly
       external: (id) => {
         // Don't externalize anything for browser builds
         return false;
       },
-      // Optimize tree-shaking
+      // Optimize tree-shaking for maximum bundle reduction
       treeshake: {
-        moduleSideEffects: false,
+        moduleSideEffects: (id) => {
+          // Allow side effects for CSS and certain libraries that need them
+          return id.includes('.css') ||
+                 id.includes('polyfill') ||
+                 id.includes('core-js') ||
+                 id.includes('regenerator-runtime');
+        },
         propertyReadSideEffects: false,
-        tryCatchDeoptimization: false
+        tryCatchDeoptimization: false,
+        unknownGlobalSideEffects: false
       },
       output: {
         assetFileNames: 'assets/[name].[hash].[ext]',
@@ -138,6 +147,39 @@ export default defineConfig(({ mode }) => ({
               return 'vendor-icons';
             }
 
+            // Data processing and parsing (excluding removed export packages)
+            if (id.includes('csv') || id.includes('xlsx')) {
+              return 'vendor-data-processing';
+            }
+
+            // Markdown processing - large ecosystem
+            if (id.includes('react-markdown') || id.includes('remark') || id.includes('rehype') ||
+                id.includes('micromark') || id.includes('mdast') || id.includes('hast') ||
+                id.includes('unified') || id.includes('unist')) {
+              return 'vendor-markdown';
+            }
+
+            // Syntax highlighting - large library
+            if (id.includes('highlight.js') || id.includes('lowlight') || id.includes('prism')) {
+              return 'vendor-highlight';
+            }
+
+            // Storage and caching
+            if (id.includes('idb-keyval') || id.includes('lru-cache') || id.includes('keyv')) {
+              return 'vendor-storage';
+            }
+
+            // Network and HTTP utilities
+            if (id.includes('ky') || id.includes('node-fetch') || id.includes('axios')) {
+              return 'vendor-http';
+            }
+
+            // Performance and optimization utilities
+            if (id.includes('limiter') || id.includes('throttles') || id.includes('p-limit') ||
+                id.includes('quicklink') || id.includes('loadcss')) {
+              return 'vendor-performance';
+            }
+
             // Form and input handling
             if (id.includes('react-hook-form') && !id.includes('@hookform/resolvers')) {
               return 'vendor-forms';
@@ -148,7 +190,17 @@ export default defineConfig(({ mode }) => ({
               return 'vendor-crypto';
             }
 
-            // All other vendor libraries (smaller now)
+            // Command palette and search
+            if (id.includes('cmdk') || id.includes('fuse') || id.includes('search')) {
+              return 'vendor-search';
+            }
+
+            // Blurhash and image processing
+            if (id.includes('blurhash') || id.includes('image')) {
+              return 'vendor-image';
+            }
+
+            // All other vendor libraries (much smaller now)
             return 'vendor-misc';
           }
 

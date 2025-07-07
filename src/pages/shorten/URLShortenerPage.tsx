@@ -7,16 +7,14 @@ import EnhancedBackground from '@/components/utils/EnhancedBackground.tsx';
 import URLInputForm from '@/components/shorten/URLInputForm.tsx';
 import ShortenedURLDisplay from '@/components/shorten/ShortenedURLDisplay.tsx';
 import URLHistoryList from '@/components/shorten/URLHistoryList.tsx';
-import StorageSettings from '@/components/shorten/StorageSettings.tsx';
 import { ShortenedURL, UTMParams } from '@/types/shorten.ts';
 import { useURLHistory } from '@/hooks/useURLHistory.ts';
 import { URLShortenerService } from '@/services/URLShortenerService.ts';
-import { Link2, History, BarChart3, AlertCircle, Tag, Sparkles, Settings } from 'lucide-react';
+import { Link2, History, BarChart3, AlertCircle, Tag, Sparkles } from 'lucide-react';
 import Header from '@/components/home/Header.tsx';
 import Footer from '@/components/home/Footer.tsx';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge.tsx";
 import { ScrollReveal } from "@/components/ui/scroll-reveal.tsx";
 import { MotionButton } from "@/components/ui/motion-button.tsx";
 
@@ -101,7 +99,6 @@ const URLShortenerPage: React.FC = () => {
   const [currentURL, setCurrentURL] = useState<ShortenedURL | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<UTMParams | null>(null);
   const { urlHistory, addToHistory, removeFromHistory } = useURLHistory();
-  const [showStorageSettings, setShowStorageSettings] = useState(false);
 
   // Reference to the tabs section for smooth scrolling
   const tabsSectionRef = useRef<HTMLDivElement>(null);
@@ -113,7 +110,6 @@ const URLShortenerPage: React.FC = () => {
   );
 
   // Simple analytics data
-  const analyticsData = currentURL?.analytics || null;
 
   // Memoize handlers to prevent unnecessary re-renders
   const handleURLShortened = useCallback((shortenedURL: ShortenedURL) => {
@@ -330,7 +326,7 @@ const URLShortenerPage: React.FC = () => {
               className="w-full"
             >
               <div className="bg-white/80 backdrop-blur-sm rounded-xl border border shadow-md p-1 mb-8 sm:mb-10 top-16 sm:top-20  z-20">
-                <TabsList className="grid w-full grid-cols-5 gap-1.5 bg-transparent">
+                <TabsList className="grid w-full grid-cols-4 gap-1.5 bg-transparent">
                   <TabsTrigger
                     value="shorten"
                     className="flex items-center justify-center gap-1.5 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white rounded-lg transition-all duration-300"
@@ -358,13 +354,6 @@ const URLShortenerPage: React.FC = () => {
                   >
                     <BarChart3 className="h-4 w-4 flex-shrink-0 mr-0 sm:mr-1" />
                     <span className="hidden xs:inline text-xs sm:text-sm">Analytics</span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="settings"
-                    className="flex items-center justify-center gap-1.5 sm:gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white rounded-lg transition-all duration-300"
-                  >
-                    <Settings className="h-4 w-4 flex-shrink-0 mr-0 sm:mr-1" />
-                    <span className="hidden xs:inline text-xs sm:text-sm">Settings</span>
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -603,16 +592,6 @@ const URLShortenerPage: React.FC = () => {
                       )}
                     </motion.div>
                   </TabsContent>
-
-                  <TabsContent value="settings" className="mt-0">
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <StorageSettings />
-                    </motion.div>
-                  </TabsContent>
                 </div>
 
                 <div className="lg:col-span-4">
@@ -663,10 +642,7 @@ const URLShortenerPage: React.FC = () => {
                             <span className="text-blue-600 font-medium flex-shrink-0 bg-blue-50 h-5 w-5 rounded-full flex items-center justify-center">✓</span>
                             <span>Analyze click patterns with time heatmaps</span>
                           </li>
-                          <li className="flex gap-2 p-2 sm:p-3 rounded-lg hover:bg-blue-50/70 transition-all shadow-sm hover:shadow border border-transparent hover:border-blue-100/50">
-                            <span className="text-blue-600 font-medium flex-shrink-0 bg-blue-50 h-5 w-5 rounded-full flex items-center justify-center">✓</span>
-                            <span>Export analytics data for reporting</span>
-                          </li>
+
                         </ul>
                       </CardContent>
                     </Card>

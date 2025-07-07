@@ -2,9 +2,53 @@
  * Optimized LocalStorageService using idb-keyval for better performance
  * Reduced from 6.2KB to ~1KB using IndexedDB with localStorage fallback
  */
-import { get, set, del, clear, keys } from 'idb-keyval';
+import { get, set, del, keys } from 'idb-keyval';
 import { User } from '../types/playground';
 import { v4 as uuidv4 } from 'uuid';
+
+// Error logging utility to prevent sensitive information exposure
+const logError = (message: string, error?: unknown): void => {
+  if (process.env.NODE_ENV === 'development') {
+    console.error(`[LocalStorageService] ${message}`, error);
+  }
+};
+
+const logWarning = (message: string, error?: unknown): void => {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(`[LocalStorageService] ${message}`, error);
+  }
+};
+
+// Input validation helpers
+const validateKey = (key: string): void => {
+  if (!key || typeof key !== 'string' || key.trim().length === 0) {
+    throw new Error('Storage key is required and must be a non-empty string');
+  }
+};
+
+const validateUser = (user: User): void => {
+  if (!user || typeof user !== 'object') {
+    throw new Error('User data is required and must be an object');
+  }
+  if (!user.id || typeof user.id !== 'string') {
+    throw new Error('User must have a valid ID');
+  }
+  if (!user.username || typeof user.username !== 'string') {
+    throw new Error('User must have a valid username');
+  }
+};
+
+const validatePoints = (points: number): void => {
+  if (typeof points !== 'number' || points < 0 || !Number.isInteger(points)) {
+    throw new Error('Points must be a non-negative integer');
+  }
+};
+
+const validateBadge = (badge: string): void => {
+  if (!badge || typeof badge !== 'string' || badge.trim().length === 0) {
+    throw new Error('Badge is required and must be a non-empty string');
+  }
+};
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -67,6 +111,8 @@ export class LocalStorageService {
    * Get storage value with automatic fallback to localStorage
    */
   private static async getStorageValue<T>(key: string): Promise<T | null> {
+    validateKey(key);
+
     try {
       return await get(key) || null;
     } catch (error) {
@@ -75,7 +121,7 @@ export class LocalStorageService {
         const item = localStorage.getItem(key);
         return item ? JSON.parse(item) : null;
       } catch (fallbackError) {
-        console.error('Both IndexedDB and localStorage failed:', error, fallbackError);
+        logError('Both IndexedDB and localStorage failed', { error, fallbackError });
         return null;
       }
     }
@@ -85,6 +131,11 @@ export class LocalStorageService {
    * Set storage value with automatic fallback to localStorage
    */
   private static async setStorageValue<T>(key: string, value: T): Promise<void> {
+    validateKey(key);
+    if (value === undefined) {
+      throw new Error('Value cannot be undefined');
+    }
+
     try {
       await set(key, value);
     } catch (error) {
@@ -92,7 +143,7 @@ export class LocalStorageService {
       try {
         localStorage.setItem(key, JSON.stringify(value));
       } catch (fallbackError) {
-        console.error('Both IndexedDB and localStorage failed:', error, fallbackError);
+        logError('Both IndexedDB and localStorage failed', { error, fallbackError });
         throw new Error('Failed to save data');
       }
     }
@@ -102,13 +153,15 @@ export class LocalStorageService {
    * Delete storage value with automatic fallback
    */
   private static async deleteStorageValue(key: string): Promise<void> {
+    validateKey(key);
+
     try {
       await del(key);
     } catch (error) {
       try {
         localStorage.removeItem(key);
       } catch (fallbackError) {
-        console.error('Both IndexedDB and localStorage failed:', error, fallbackError);
+        logError('Both IndexedDB and localStorage failed', { error, fallbackError });
       }
     }
   }
@@ -134,7 +187,7 @@ export class LocalStorageService {
       }
       
       // Create new guest user if validation fails
-      console.warn('Invalid user data detected, creating new guest user');
+      logWarning('Invalid user data detected, creating new guest user');
       const guestUser = createGuestUser();
       await this.setStorageValue(STORAGE_KEYS.USER, guestUser);
       
@@ -143,13 +196,13 @@ export class LocalStorageService {
       return guestUser;
       
     } catch (error) {
-      console.error('Error getting user:', error);
+      logError('Error getting user', error);
       const guestUser = createGuestUser();
-      
+
       try {
         await this.setStorageValue(STORAGE_KEYS.USER, guestUser);
       } catch (saveError) {
-        console.error('Failed to save guest user:', saveError);
+        logError('Failed to save guest user', saveError);
       }
       
       this.userCache = guestUser;
@@ -159,9 +212,16 @@ export class LocalStorageService {
   }
 
   /**
-   * Update user profile with optimistic caching
+   * Update user profile with optimistic caching and validation
    */
   static async updateProfile(updates: Partial<Pick<User, 'displayName' | 'avatar'>>): Promise<User> {
+    if (!updates || typeof updates !== 'object') {
+      throw new Error('Updates are required and must be an object');
+    }
+    if (Object.keys(updates).length === 0) {
+      throw new Error('At least one field must be updated');
+    }
+
     try {
       const user = await this.getCurrentUser();
       const updatedUser = { ...user, ...updates };
@@ -179,7 +239,7 @@ export class LocalStorageService {
       
       return updatedUser;
     } catch (error) {
-      console.error('Error updating user profile:', error);
+      logError('Error updating user profile', error);
       throw error;
     }
   }
@@ -241,7 +301,7 @@ export class LocalStorageService {
       
       return updatedUser;
     } catch (error) {
-      console.error('Error adding points:', error);
+      logError('Error adding points', error);
       if (error instanceof Error) {
         throw error;
       }
@@ -250,9 +310,11 @@ export class LocalStorageService {
   }
 
   /**
-   * Add badge to user (prevents duplicates)
+   * Add badge to user (prevents duplicates) with validation
    */
   static async addBadge(badge: string): Promise<User> {
+    validateBadge(badge);
+
     try {
       const user = await this.getCurrentUser();
       
@@ -270,31 +332,38 @@ export class LocalStorageService {
       
       return updatedUser;
     } catch (error) {
-      console.error('Error adding badge:', error);
+      logError('Error adding badge', error);
       throw error;
     }
   }
 
   /**
-   * Save user progress data
+   * Save user progress data with validation
    */
   static async saveUserProgress(key: string, data: unknown): Promise<void> {
+    validateKey(key);
+    if (data === undefined) {
+      throw new Error('Progress data cannot be undefined');
+    }
+
     try {
       await this.setStorageValue(key, data);
     } catch (error) {
-      console.error(`Error saving ${key}:`, error);
+      logError(`Error saving ${key}`, error);
       throw error;
     }
   }
 
   /**
-   * Get user progress data
+   * Get user progress data with validation
    */
   static async getUserProgress<T = unknown>(key: string): Promise<T | null> {
+    validateKey(key);
+
     try {
       return await this.getStorageValue<T>(key);
     } catch (error) {
-      console.error(`Error getting ${key}:`, error);
+      logError(`Error getting ${key}`, error);
       return null;
     }
   }
@@ -315,15 +384,25 @@ export class LocalStorageService {
       this.cacheTimestamp = 0;
       
     } catch (error) {
-      console.error('Error clearing user data:', error);
+      logError('Error clearing user data', error);
       throw error;
     }
   }
 
   /**
-   * Bulk operations for better performance
+   * Bulk operations for better performance with validation
    */
   static async bulkSave(data: Record<string, unknown>): Promise<void> {
+    if (!data || typeof data !== 'object') {
+      throw new Error('Data must be an object');
+    }
+    if (Object.keys(data).length === 0) {
+      throw new Error('At least one key-value pair must be provided');
+    }
+
+    // Validate all keys
+    Object.keys(data).forEach(key => validateKey(key));
+
     try {
       const savePromises = Object.entries(data).map(([key, value]) =>
         this.setStorageValue(key, value)
@@ -331,7 +410,7 @@ export class LocalStorageService {
       
       await Promise.all(savePromises);
     } catch (error) {
-      console.error('Error in bulk save:', error);
+      logError('Error in bulk save', error);
       throw error;
     }
   }
@@ -361,7 +440,7 @@ export class LocalStorageService {
         cacheStatus
       };
     } catch (error) {
-      console.error('Error getting storage stats:', error);
+      logError('Error getting storage stats', error);
       return {
         totalKeys: 0,
         userDataExists: false,

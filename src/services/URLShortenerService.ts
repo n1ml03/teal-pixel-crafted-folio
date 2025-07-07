@@ -15,7 +15,7 @@ import { RateLimiterService } from './RateLimiterService.ts';
 
 // Optimized constants
 const DEFAULT_CODE_LENGTH = 6;
-const BASE_URL = window.location.origin;
+const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8080';
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 const DEFAULT_EXPIRATION_DAYS = 365;
 const MAX_EXPIRATION_DAYS = 3650;
@@ -145,9 +145,15 @@ export class URLShortenerService {
   }
 
   // Optimized storage operations using idb-keyval
-  private static async getFromStorage<T>(key: string): Promise<T | null> {
+  static async getFromStorage<T>(key: string): Promise<T | null> {
     try {
-      return await get(key) || null;
+      const result = await get(key);
+
+      if (result === undefined || result === null) {
+        return null;
+      }
+
+      return result;
     } catch (error) {
       console.error(`Error getting ${key} from storage:`, error);
       return null;
@@ -173,14 +179,56 @@ export class URLShortenerService {
   // Core functionality
   static async initialize(): Promise<void> {
     if (this.isInitialized) return;
-    
+
     try {
+      // Ensure storage is properly initialized
+      await this.ensureStorageIntegrity();
+
       // Initialize storage and cleanup
       await this.performCleanup();
       this.startCacheCleanup();
       this.isInitialized = true;
     } catch (error) {
       console.error('Error initializing URLShortenerService:', error);
+    }
+  }
+
+  // Ensure storage integrity
+  private static async ensureStorageIntegrity(): Promise<void> {
+    try {
+      // Check if URLs storage exists and is valid
+      const urls = await this.getFromStorage<any>(STORAGE_KEYS.URLS);
+      if (urls !== null && !Array.isArray(urls)) {
+        console.warn('URLs storage is corrupted, resetting to empty array');
+        await this.setToStorage(STORAGE_KEYS.URLS, []);
+      } else if (urls === null) {
+        await this.setToStorage(STORAGE_KEYS.URLS, []);
+      }
+
+      // Check if clicks storage exists and is valid
+      const clicks = await this.getFromStorage<any>(STORAGE_KEYS.CLICKS);
+      if (clicks !== null && !Array.isArray(clicks)) {
+        console.warn('Clicks storage is corrupted, resetting to empty array');
+        await this.setToStorage(STORAGE_KEYS.CLICKS, []);
+      } else if (clicks === null) {
+        await this.setToStorage(STORAGE_KEYS.CLICKS, []);
+      }
+
+      // Check if permanent storage exists and is valid
+      const permanent = await this.getFromStorage<any>(STORAGE_KEYS.PERMANENT);
+      if (permanent !== null && !Array.isArray(permanent)) {
+        console.warn('Permanent storage is corrupted, resetting to empty array');
+        await this.setToStorage(STORAGE_KEYS.PERMANENT, []);
+      } else if (permanent === null) {
+        await this.setToStorage(STORAGE_KEYS.PERMANENT, []);
+      }
+    } catch (error) {
+      console.error('Error ensuring storage integrity:', error);
+      // If there's an error, clear all storage and start fresh
+      await this.clearAllData();
+      await this.setToStorage(STORAGE_KEYS.URLS, []);
+      await this.setToStorage(STORAGE_KEYS.CLICKS, []);
+      await this.setToStorage(STORAGE_KEYS.PERMANENT, []);
     }
   }
 
@@ -234,8 +282,27 @@ export class URLShortenerService {
 
   static async getURLs(): Promise<ShortenedURL[]> {
     try {
-      const urls = await this.getFromStorage<ShortenedURL[]>(STORAGE_KEYS.URLS) || [];
-      return urls.filter(url => !this.isExpired(url));
+      const urls = await this.getFromStorage<ShortenedURL[]>(STORAGE_KEYS.URLS);
+
+      // Ensure we always return an array
+      if (!urls || !Array.isArray(urls)) {
+        return [];
+      }
+
+      // Filter out expired URLs and invalid entries
+      const filteredUrls = urls.filter(url => {
+        try {
+          return url &&
+                 typeof url === 'object' &&
+                 typeof url.id === 'string' &&
+                 !this.isExpired(url);
+        } catch (error) {
+          console.warn('Error checking URL validity:', error, url);
+          return false;
+        }
+      });
+
+      return filteredUrls;
     } catch (error) {
       console.error('Error getting URLs:', error);
       return [];
@@ -665,7 +732,7 @@ export class URLShortenerService {
       const allUrls = await this.getFromStorage<ShortenedURL[]>(STORAGE_KEYS.URLS) || [];
       const clicks = await this.getFromStorage<URLClickData[]>(STORAGE_KEYS.CLICKS) || [];
       const activeUrls = allUrls.filter(url => !this.isExpired(url));
-      
+
       return {
         totalUrls: allUrls.length,
         totalClicks: clicks.length,
@@ -675,6 +742,49 @@ export class URLShortenerService {
     } catch (error) {
       console.error('Error getting storage stats:', error);
       return { totalUrls: 0, totalClicks: 0, activeUrls: 0, expiredUrls: 0 };
+    }
+  }
+
+  // Permanent storage methods
+  static async addToPermanentStorage(urlId: string): Promise<boolean> {
+    try {
+      const permanentUrls = await this.getFromStorage<string[]>(STORAGE_KEYS.PERMANENT) || [];
+      if (!permanentUrls.includes(urlId)) {
+        permanentUrls.push(urlId);
+        await this.setToStorage(STORAGE_KEYS.PERMANENT, permanentUrls);
+      }
+      return true;
+    } catch (error) {
+      console.error('Error adding to permanent storage:', error);
+      return false;
+    }
+  }
+
+  static async removeFromPermanentStorage(urlId: string): Promise<boolean> {
+    try {
+      const permanentUrls = await this.getFromStorage<string[]>(STORAGE_KEYS.PERMANENT) || [];
+      const filteredUrls = permanentUrls.filter(id => id !== urlId);
+      await this.setToStorage(STORAGE_KEYS.PERMANENT, filteredUrls);
+      return true;
+    } catch (error) {
+      console.error('Error removing from permanent storage:', error);
+      return false;
+    }
+  }
+
+  static isInPermanentStorage(urlId: string): boolean {
+    // This is a synchronous check, so we'll need to cache the permanent storage data
+    // For now, return false as a safe default
+    return false;
+  }
+
+  static async isInPermanentStorageAsync(urlId: string): Promise<boolean> {
+    try {
+      const permanentUrls = await this.getFromStorage<string[]>(STORAGE_KEYS.PERMANENT) || [];
+      return permanentUrls.includes(urlId);
+    } catch (error) {
+      console.error('Error checking permanent storage:', error);
+      return false;
     }
   }
 }

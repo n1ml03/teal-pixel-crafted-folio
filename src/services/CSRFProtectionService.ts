@@ -12,6 +12,19 @@ interface CSRFToken {
   createdAt: number;
 }
 
+// Error logging utility to prevent sensitive information exposure
+const logError = (message: string, error?: unknown): void => {
+  if (process.env.NODE_ENV === 'development') {
+    console.error(`[CSRFProtectionService] ${message}`, error);
+  }
+};
+
+const logWarning = (message: string): void => {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(`[CSRFProtectionService] ${message}`);
+  }
+};
+
 /**
  * Enhanced CSRFProtectionService with optimized token management
  */
@@ -42,7 +55,7 @@ export class CSRFProtectionService {
       // Combine multiple entropy sources for enhanced security
       return `${baseToken}-${timestamp}-${randomSuffix}`;
     } catch (error) {
-      console.error('Error generating secure token:', error);
+      logError('Error generating secure token', error);
       // Fallback to crypto API if uuid fails
       try {
         const array = new Uint8Array(32);
@@ -50,7 +63,7 @@ export class CSRFProtectionService {
         return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
       } catch (cryptoError) {
         // Final fallback (should never happen in modern browsers)
-        console.warn('Crypto API not available, using fallback method');
+        logWarning('Crypto API not available, using fallback method');
         const timestamp = Date.now().toString();
         const random = Math.random().toString(36).substring(2);
         return `fallback-${timestamp}-${random}`;
@@ -78,7 +91,7 @@ export class CSRFProtectionService {
 
       return cleanedTokens;
     } catch (error) {
-      console.error('Error getting CSRF tokens from localStorage:', error);
+      logError('Error getting CSRF tokens from localStorage', error);
       return {};
     }
   }
@@ -107,14 +120,14 @@ export class CSRFProtectionService {
         this.tokenCache.set(formId, token);
       });
     } catch (error) {
-      console.error('Error saving CSRF tokens to localStorage:', error);
-      
+      logError('Error saving CSRF tokens to localStorage', error);
+
       // If localStorage fails, try to clear old data and retry
       try {
         this.clearExpiredTokens();
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(tokens));
       } catch (retryError) {
-        console.error('Failed to save tokens even after cleanup:', retryError);
+        logError('Failed to save tokens even after cleanup', retryError);
       }
     }
   }
@@ -160,7 +173,7 @@ export class CSRFProtectionService {
           this.tokenCache.set(formId, token);
         });
       } catch (error) {
-        console.error('Error initializing CSRF protection service:', error);
+        logError('Error initializing CSRF protection service', error);
       }
     }
   }
@@ -184,7 +197,7 @@ export class CSRFProtectionService {
     // Sanitize form ID to prevent injection attacks
     const sanitizedFormId = formId.replace(/[^a-zA-Z0-9_-]/g, '');
     if (sanitizedFormId !== formId) {
-      console.warn('Form ID contained invalid characters and was sanitized');
+      logWarning('Form ID contained invalid characters and was sanitized');
     }
 
     try {
@@ -214,7 +227,7 @@ export class CSRFProtectionService {
 
       return token;
     } catch (error) {
-      console.error('Error generating CSRF token:', error);
+      logError('Error generating CSRF token', error);
       throw error;
     }
   }
@@ -229,18 +242,18 @@ export class CSRFProtectionService {
   static validateToken(formId: string, token: string): boolean {
     // Enhanced input validation
     if (!formId || typeof formId !== 'string') {
-      console.error('Invalid form ID provided for token validation');
+      logError('Invalid form ID provided for token validation');
       return false;
     }
 
     if (!token || typeof token !== 'string') {
-      console.error('Invalid token provided for validation');
+      logError('Invalid token provided for validation');
       return false;
     }
 
-    // Check token format (should be a valid uuid-based token)
-    if (!/^[a-f0-9-]{36,}$/i.test(token)) {
-      console.warn('Token format validation failed');
+    // Check token format (should be a valid uuid-based token with timestamp and suffix)
+    if (!/^[a-f0-9-]{36}-[a-z0-9]+-[a-z0-9]{6}$/i.test(token) && !/^[a-f0-9]{64}$/i.test(token) && !/^fallback-\d+-[a-z0-9]+$/i.test(token)) {
+      logWarning('Token format validation failed');
       return false;
     }
 
@@ -257,13 +270,13 @@ export class CSRFProtectionService {
       }
 
       if (!storedToken) {
-        console.warn(`No stored token found for form ID: ${formId}`);
+        logWarning(`No stored token found for form ID: ${formId}`);
         return false;
       }
 
       const now = Date.now();
       if (storedToken.expires < now) {
-        console.warn(`Token expired for form ID: ${formId}`);
+        logWarning(`Token expired for form ID: ${formId}`);
         this.removeToken(formId);
         return false;
       }
@@ -276,11 +289,11 @@ export class CSRFProtectionService {
         this.removeToken(formId);
         return true;
       } else {
-        console.warn(`Token validation failed for form ID: ${formId}`);
+        logWarning(`Token validation failed for form ID: ${formId}`);
         return false;
       }
     } catch (error) {
-      console.error('Error validating CSRF token:', error);
+      logError('Error validating CSRF token', error);
       return false;
     }
   }
@@ -295,7 +308,7 @@ export class CSRFProtectionService {
       this.tokenCache.delete(formId);
       this.saveTokens(tokens);
     } catch (error) {
-      console.error('Error removing token:', error);
+      logError('Error removing token', error);
     }
   }
 
@@ -329,7 +342,7 @@ export class CSRFProtectionService {
       localStorage.removeItem(this.STORAGE_KEY);
       this.tokenCache.clear();
     } catch (error) {
-      console.error('Error during CSRF service cleanup:', error);
+      logError('Error during CSRF service cleanup', error);
     }
   }
 
@@ -353,7 +366,7 @@ export class CSRFProtectionService {
         formId: storedToken.formId
       };
     } catch (error) {
-      console.error('Error getting token data:', error);
+      logError('Error getting token data', error);
       return null;
     }
   }
@@ -380,7 +393,7 @@ export class CSRFProtectionService {
         'data-expires-in': tokenData?.expiresIn.toString() || '0'
       };
     } catch (error) {
-      console.error('Error getting token attributes:', error);
+      logError('Error getting token attributes', error);
       // Return safe defaults
       return {
         type: 'hidden',
@@ -418,7 +431,7 @@ export class CSRFProtectionService {
         cleanupInterval: this.CLEANUP_INTERVAL
       };
     } catch (error) {
-      console.error('Error getting CSRF statistics:', error);
+      logError('Error getting CSRF statistics', error);
       return {
         activeTokens: 0,
         cacheSize: 0,

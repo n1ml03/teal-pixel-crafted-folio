@@ -39,8 +39,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
 
   useEffect(() => {
     if (url) {
-      const data = URLShortenerService.getURLAnalytics(url.id);
-      setAnalytics(data);
+      URLShortenerService.getURLAnalytics(url.id).then(setAnalytics);
     }
   }, [url]);
 

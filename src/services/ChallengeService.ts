@@ -5,6 +5,13 @@ import challengesMeta from '@/data/challengesMeta';
 import { get, set, del } from 'idb-keyval';
 import { v4 as uuidv4 } from 'uuid';
 
+// Error logging utility to prevent sensitive information exposure
+const logError = (message: string, error?: unknown): void => {
+  if (process.env.NODE_ENV === 'development') {
+    console.error(`[ChallengeService] ${message}`, error);
+  }
+};
+
 // Challenge progress interface
 export interface ChallengeProgress {
   id: string;
@@ -57,23 +64,64 @@ const generateId = (): string => {
   return uuidv4();
 };
 
+// Input validation helpers
+const validateChallengeId = (challengeId: string): void => {
+  if (!challengeId || typeof challengeId !== 'string' || challengeId.trim().length === 0) {
+    throw new Error('Challenge ID is required and must be a non-empty string');
+  }
+};
+
+const validateUserId = (userId: string): void => {
+  if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
+    throw new Error('User ID is required and must be a non-empty string');
+  }
+};
+
+const validateChallengeProgress = (progress: Partial<ChallengeProgress>): string[] => {
+  const errors: string[] = [];
+
+  if (!progress.challengeId || typeof progress.challengeId !== 'string') {
+    errors.push('Challenge ID is required and must be a string');
+  }
+
+  if (!progress.userId || typeof progress.userId !== 'string') {
+    errors.push('User ID is required and must be a string');
+  }
+
+  if (progress.timeSpent !== undefined && (typeof progress.timeSpent !== 'number' || progress.timeSpent < 0)) {
+    errors.push('Time spent must be a non-negative number');
+  }
+
+  if (progress.attempts !== undefined && (typeof progress.attempts !== 'number' || progress.attempts < 0)) {
+    errors.push('Attempts must be a non-negative number');
+  }
+
+  if (progress.score !== undefined && (typeof progress.score !== 'number' || progress.score < 0 || progress.score > 100)) {
+    errors.push('Score must be a number between 0 and 100');
+  }
+
+  return errors;
+};
+
 // ChallengeService class
 export class ChallengeService {
-  // Storage helper methods
+  // Storage helper methods with improved error handling
   private static async getStoredChallenges(): Promise<Record<string, ChallengeWithTests>> {
     try {
       return await get(STORAGE_KEYS.CHALLENGES) || {};
     } catch (error) {
-      console.error('Error getting stored challenges:', error);
+      logError('Error getting stored challenges', error);
       return {};
     }
   }
 
-  private static async saveStoredChallenges(challenges: Record<string, ChallengeWithTests>): Promise<void> {
+  private static async saveStoredChallenges(challenges: Record<string, ChallengeWithTests>): Promise<boolean> {
     try {
       await set(STORAGE_KEYS.CHALLENGES, challenges);
+      return true;
     } catch (error) {
-      console.error('Error saving stored challenges:', error);
+      logError('Error saving stored challenges', error);
+      return false;
     }
   }
 
@@ -81,16 +129,18 @@ export class ChallengeService {
     try {
       return await get(STORAGE_KEYS.PROGRESS) || {};
     } catch (error) {
-      console.error('Error getting stored progress:', error);
+      logError('Error getting stored progress', error);
       return {};
     }
   }
 
-  private static async saveStoredProgress(progress: Record<string, ChallengeProgress>): Promise<void> {
+  private static async saveStoredProgress(progress: Record<string, ChallengeProgress>): Promise<boolean> {
     try {
       await set(STORAGE_KEYS.PROGRESS, progress);
+      return true;
     } catch (error) {
-      console.error('Error saving stored progress:', error);
+      logError('Error saving stored progress', error);
+      return false;
     }
   }
 
@@ -99,25 +149,48 @@ export class ChallengeService {
     return challengesMeta;
   }
 
-  // Get challenge by ID - use dynamic loading
+  // Get challenge by ID - use dynamic loading with validation
   static async getChallenge(id: string): Promise<ChallengeWithTests | null> {
+    validateChallengeId(id);
     return ChallengeLoaderService.loadChallengeDetails(id);
   }
 
-  // Create a new challenge
+  // Create a new challenge with validation
   static async createChallenge(challenge: Omit<ChallengeWithTests, 'id'>): Promise<ChallengeWithTests> {
+    if (!challenge || typeof challenge !== 'object') {
+      throw new Error('Challenge data is required and must be an object');
+    }
+
+    if (!challenge.title || typeof challenge.title !== 'string') {
+      throw new Error('Challenge title is required and must be a string');
+    }
+
+    if (!challenge.difficulty || !['beginner', 'intermediate', 'advanced'].includes(challenge.difficulty)) {
+      throw new Error('Challenge difficulty must be one of: beginner, intermediate, advanced');
+    }
+
     const id = generateId();
     const newChallenge = { ...challenge, id };
-    
+
     const challenges = await this.getStoredChallenges();
     challenges[id] = newChallenge;
-    await this.saveStoredChallenges(challenges);
-    
+    const success = await this.saveStoredChallenges(challenges);
+
+    if (!success) {
+      throw new Error('Failed to save challenge to storage');
+    }
+
     return newChallenge;
   }
 
-  // Update a challenge
+  // Update a challenge with validation
   static async updateChallenge(id: string, challenge: Partial<ChallengeWithTests>): Promise<ChallengeWithTests | null> {
+    validateChallengeId(id);
+
+    if (!challenge || typeof challenge !== 'object') {
+      throw new Error('Challenge update data is required and must be an object');
+    }
+
     const challenges = await this.getStoredChallenges();
     if (!challenges[id]) return null;
 
@@ -126,22 +199,34 @@ export class ChallengeService {
       ...challenge
     };
 
-    await this.saveStoredChallenges(challenges);
+    const success = await this.saveStoredChallenges(challenges);
+    if (!success) {
+      throw new Error('Failed to save updated challenge to storage');
+    }
+
     return challenges[id];
   }
 
-  // Delete a challenge
+  // Delete a challenge with validation
   static async deleteChallenge(id: string): Promise<boolean> {
+    validateChallengeId(id);
+
     const challenges = await this.getStoredChallenges();
     if (!challenges[id]) return false;
 
     delete challenges[id];
-    await this.saveStoredChallenges(challenges);
+    const success = await this.saveStoredChallenges(challenges);
+    if (!success) {
+      throw new Error('Failed to save challenges after deletion');
+    }
     return true;
   }
 
-  // Start a challenge for a user
+  // Start a challenge for a user with validation
   static async startChallenge(userId: string, challengeId: string): Promise<ChallengeProgress> {
+    validateUserId(userId);
+    validateChallengeId(challengeId);
+
     const progressData = await this.getStoredProgress();
     
     // Check if the user has already started this challenge
@@ -158,7 +243,10 @@ export class ChallengeService {
       // If in progress, update the attempts
       existingProgress.attempts += 1;
       progressData[existingProgress.id] = existingProgress;
-      await this.saveStoredProgress(progressData);
+      const success = await this.saveStoredProgress(progressData);
+      if (!success) {
+        throw new Error('Failed to save updated progress');
+      }
       return existingProgress;
     }
 
@@ -175,16 +263,26 @@ export class ChallengeService {
     };
 
     progressData[progressId] = progress;
-    await this.saveStoredProgress(progressData);
+    const success = await this.saveStoredProgress(progressData);
+    if (!success) {
+      throw new Error('Failed to save new progress');
+    }
     return progress;
   }
 
-  // Update challenge progress
+  // Update challenge progress with validation
   static async updateProgress(
     userId: string,
     challengeId: string,
     updates: Partial<Omit<ChallengeProgress, 'id' | 'userId' | 'challengeId'>>
   ): Promise<ChallengeProgress | null> {
+    validateUserId(userId);
+    validateChallengeId(challengeId);
+
+    if (!updates || typeof updates !== 'object') {
+      throw new Error('Progress updates are required and must be an object');
+    }
+
     const progressData = await this.getStoredProgress();
     
     // Find the progress
@@ -194,6 +292,12 @@ export class ChallengeService {
 
     if (!progress) return null;
 
+    // Validate the updates
+    const validationErrors = validateChallengeProgress({ ...progress, ...updates });
+    if (validationErrors.length > 0) {
+      throw new Error(`Progress validation failed: ${validationErrors.join(', ')}`);
+    }
+
     // Update the progress
     const updatedProgress = {
       ...progress,
@@ -201,18 +305,28 @@ export class ChallengeService {
     };
 
     progressData[progress.id] = updatedProgress;
-    await this.saveStoredProgress(progressData);
+    const success = await this.saveStoredProgress(progressData);
+    if (!success) {
+      throw new Error('Failed to save updated progress');
+    }
     return updatedProgress;
   }
 
-  // Complete a challenge objective
+  // Complete a challenge objective with validation
   static async completeObjective(
     userId: string,
     challengeId: string,
     objectiveId: string
   ): Promise<ChallengeProgress | null> {
+    validateUserId(userId);
+    validateChallengeId(challengeId);
+
+    if (!objectiveId || typeof objectiveId !== 'string' || objectiveId.trim().length === 0) {
+      throw new Error('Objective ID is required and must be a non-empty string');
+    }
+
     const progressData = await this.getStoredProgress();
-    
+
     // Find the progress
     const progress = Object.values(progressData).find(
       p => p.userId === userId && p.challengeId === challengeId
@@ -234,12 +348,18 @@ export class ChallengeService {
     });
   }
 
-  // Submit challenge for completion
+  // Submit challenge for completion with validation
   static async submitChallenge(
     userId: string,
     challengeId: string,
     testResults: Record<string, TestResult>
   ): Promise<{ success: boolean; score: number; message: string }> {
+    validateUserId(userId);
+    validateChallengeId(challengeId);
+
+    if (!testResults || typeof testResults !== 'object') {
+      throw new Error('Test results are required and must be an object');
+    }
     // Find the challenge
     const challenges = await this.getStoredChallenges();
     const challenge = challenges[challengeId];
@@ -311,19 +431,24 @@ export class ChallengeService {
     };
   }
 
-  // Get user progress for a challenge
+  // Get user progress for a challenge with validation
   static async getUserProgress(
     userId: string,
     challengeId: string
   ): Promise<ChallengeProgress | null> {
+    validateUserId(userId);
+    validateChallengeId(challengeId);
+
     const progressData = await this.getStoredProgress();
     return Object.values(progressData).find(
       p => p.userId === userId && p.challengeId === challengeId
     ) || null;
   }
 
-  // Get all user progress
+  // Get all user progress with validation
   static async getUserProgressAll(userId: string): Promise<ChallengeProgress[]> {
+    validateUserId(userId);
+
     const progressData = await this.getStoredProgress();
     return Object.values(progressData).filter(
       p => p.userId === userId
