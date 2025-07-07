@@ -2,16 +2,9 @@
   "buildCommand": "bun run build",
   "installCommand": "bun install --frozen-lockfile",
   "framework": "vite",
+  "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "build": {
-    "env": {
-      "VITE_BUILD_TIME": "@now"
-    }
-  },
   "rewrites": [
     {
       "source": "/((?!.*\\..*).*)",
@@ -20,11 +13,13 @@
   ],
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/assets/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        { 
+          "key": "Cache-Control", 
+          "value": "public, max-age=31536000, immutable" 
+        }
       ]
     }
-  ],
-  "outputDirectory": "dist"
+  ]
 }
