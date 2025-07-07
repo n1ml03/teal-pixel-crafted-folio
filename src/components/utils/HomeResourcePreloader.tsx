@@ -13,34 +13,22 @@ export const HomeResourcePreloader = () => {
     // Only preload once
     if (hasPreloaded.current) return;
 
-    // Additional secondary images for Home page only
+    // Additional secondary resources for Home page only
+    // Note: Main critical resources are now handled by ResourceManager in main.tsx
     const secondaryResources = [
-      // Secondary images (non-LCP)
+      // Additional tech stack icons not in critical resources
       {
-        href: '/images/coding-preview.webp',
-        as: 'image' as const,
-        type: 'image/webp',
-        fetchPriority: 'low' as const
-      },
-      {
-        href: '/images/testing-preview.webp',
-        as: 'image' as const,
-        type: 'image/webp',
-        fetchPriority: 'low' as const
-      },
-      // Tech stack icons
-      {
-        href: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg',
+        href: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/jest/jest-plain.svg',
         as: 'image' as const,
         fetchPriority: 'low' as const
       },
       {
-        href: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg',
+        href: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/cypressio/cypressio-original.svg',
         as: 'image' as const,
         fetchPriority: 'low' as const
       },
       {
-        href: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg',
+        href: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/playwright/playwright-original.svg',
         as: 'image' as const,
         fetchPriority: 'low' as const
       }
@@ -51,9 +39,11 @@ export const HomeResourcePreloader = () => {
 
     // Preload secondary resources with delay
     const timeoutId = setTimeout(() => {
-      resourceManager.preloadMany(secondaryResources);
+      if (secondaryResources.length > 0) {
+        resourceManager.preloadMany(secondaryResources);
+      }
       hasPreloaded.current = true;
-    }, 2000); // Delay to not interfere with critical resources
+    }, 3000); // Increased delay to ensure critical resources load first
 
     return () => clearTimeout(timeoutId);
   }, []);

@@ -128,8 +128,8 @@ const URLShortenerPage: React.FC = () => {
     // The service now handles clearing the analytics cache internally
   }, [addToHistory, selectedTemplate]);
 
-  const handleDeleteURL = useCallback((id: string) => {
-    removeFromHistory(id);
+  const handleDeleteURL = useCallback(async (id: string) => {
+    await removeFromHistory(id);
     if (currentURL && currentURL.id === id) {
       setCurrentURL(null);
     }

@@ -18,30 +18,30 @@ import { AIConfigProvider } from "@/contexts/AIConfigContext";
 import GlobalAIConfig from "@/components/ai/GlobalAIConfig";
 
 
-// Lazy load pages for code splitting
-const Home = lazy(() => import("@/pages/home/Home"));
-const Blog = lazy(() => import("@/pages/home/Blog"));
-const BlogPost = lazy(() => import("@/pages/home/BlogPost"));
-const Resources = lazy(() => import("@/pages/home/Resources"));
-const Projects = lazy(() => import("@/pages/home/Projects"));
-const ProjectDetail = lazy(() => import("@/pages/home/ProjectDetail"));
-const ContactForm = lazy(() => import("@/pages/home/ContactForm"));
-const Services = lazy(() => import("@/pages/home/Services"));
-const ProfessionalTools = lazy(() => import("@/pages/home/ProfessionalTools"));
-const NotFound = lazy(() => import("@/pages/NotFound"));
+// Lazy load pages for code splitting with optimized chunk names
+const Home = lazy(() => import(/* webpackChunkName: "page-home" */ "@/pages/home/Home"));
+const Blog = lazy(() => import(/* webpackChunkName: "page-blog" */ "@/pages/home/Blog"));
+const BlogPost = lazy(() => import(/* webpackChunkName: "page-blog-post" */ "@/pages/home/BlogPost"));
+const Resources = lazy(() => import(/* webpackChunkName: "page-resources" */ "@/pages/home/Resources"));
+const Projects = lazy(() => import(/* webpackChunkName: "page-projects" */ "@/pages/home/Projects"));
+const ProjectDetail = lazy(() => import(/* webpackChunkName: "page-project-detail" */ "@/pages/home/ProjectDetail"));
+const ContactForm = lazy(() => import(/* webpackChunkName: "page-contact" */ "@/pages/home/ContactForm"));
+const Services = lazy(() => import(/* webpackChunkName: "page-services" */ "@/pages/home/Services"));
+const ProfessionalTools = lazy(() => import(/* webpackChunkName: "page-professional-tools" */ "@/pages/home/ProfessionalTools"));
+const NotFound = lazy(() => import(/* webpackChunkName: "page-not-found" */ "@/pages/NotFound"));
 
-// Individual tool pages
-const APITesterPage = lazy(() => import("@/pages/tools/APITesterPage"));
-const TestCaseGeneratorPage = lazy(() => import("@/pages/tools/TestCaseGeneratorPage"));
-const BugReportSimulatorPage = lazy(() => import("@/pages/tools/BugReportSimulatorPage"));
-const CodeReviewToolPage = lazy(() => import("@/pages/tools/CodeReviewToolPage"));
+// Individual tool pages - grouped for better caching
+const APITesterPage = lazy(() => import(/* webpackChunkName: "tools-api-tester" */ "@/pages/tools/APITesterPage"));
+const TestCaseGeneratorPage = lazy(() => import(/* webpackChunkName: "tools-test-generator" */ "@/pages/tools/TestCaseGeneratorPage"));
+const BugReportSimulatorPage = lazy(() => import(/* webpackChunkName: "tools-bug-simulator" */ "@/pages/tools/BugReportSimulatorPage"));
+const CodeReviewToolPage = lazy(() => import(/* webpackChunkName: "tools-code-review" */ "@/pages/tools/CodeReviewToolPage"));
 
 // URL Shortener pages
-const URLShortenerPage = lazy(() => import("@/pages/shorten/URLShortenerPage"));
-const URLRedirect = lazy(() => import("@/components/shorten/URLRedirect"));
+const URLShortenerPage = lazy(() => import(/* webpackChunkName: "shortener-main" */ "@/pages/shorten/URLShortenerPage"));
+const URLRedirect = lazy(() => import(/* webpackChunkName: "shortener-redirect" */ "@/components/shorten/URLRedirect"));
 
-// Testing Playground pages
-const PlaygroundRoutes = lazy(() => import("@/pages/playground/Playground"));
+// Testing Playground pages - largest feature, separate chunk
+const PlaygroundRoutes = lazy(() => import(/* webpackChunkName: "playground-main" */ "@/pages/playground/Playground"));
 import { AuthProvider } from "@/contexts/AuthContext";
 
 // Loading fallback with fixed dimensions to prevent layout shifts
@@ -58,7 +58,6 @@ const PageLoader = () => (
 
 const queryClient = new QueryClient();
 
-// Critical resources are now handled by ResourceManager in main.tsx
 
 // Create router with future flags to address warnings
 const router = createBrowserRouter(

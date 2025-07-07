@@ -34,7 +34,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useNavigateWithTransition } from '@/hooks/useNavigateWithTransition';import { helpContent, faqs } from '../../data/help-content';
-import { debounce } from 'lodash';
+import { useDebouncedCallback } from 'use-debounce';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Memoized components for better performance
@@ -250,46 +250,27 @@ const Help = () => {
   }, [recentSearches]);
 
   // Optimized scroll handler with throttling
-  useEffect(() => {
-    // Throttle scroll event to improve performance
-    const handleScroll = debounce(() => {
-      setShowScrollTop(window.scrollY > 300);
-    }, 100);
+  const handleScroll = useDebouncedCallback(() => {
+    setShowScrollTop(window.scrollY > 300);
+  }, 100);
 
+  useEffect(() => {
     // Initial check
     handleScroll();
 
     window.addEventListener('scroll', handleScroll);
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      // Ensure the debounced function is properly cleaned up
-      if (typeof handleScroll.cancel === 'function') {
-        handleScroll.cancel();
-      }
     };
-  }, []);
+  }, [handleScroll]);
 
   // Debounced search query handler to reduce processing on each keystroke
-  const debouncedSetSearchQuery = useMemo(
-    () => debounce((value: string) => {
-      setSearchQuery(value);
-      if (value.trim() === '') {
-        setSearchCategory(null);
-      }
-    }, 300),
-    [setSearchCategory]
-  );
-
-  // Cleanup debounce on unmount
-  useEffect(() => {
-    // Ensure the debounced function is properly initialized
-    if (typeof debouncedSetSearchQuery.cancel === 'function') {
-      return () => {
-        debouncedSetSearchQuery.cancel();
-      };
+  const debouncedSetSearchQuery = useDebouncedCallback((value: string) => {
+    setSearchQuery(value);
+    if (value.trim() === '') {
+      setSearchCategory(null);
     }
-    return undefined;
-  }, [debouncedSetSearchQuery]);
+  }, 300);
 
   // Function to improve search algorithm with partial word matching - memoized
   const matchesSearch = useCallback((text: string, query: string): boolean => {
@@ -523,8 +504,6 @@ const Help = () => {
                         // Clear search and reset state
                         setSearchQuery('');
                         setSearchCategory(null);
-                        debouncedSetSearchQuery.cancel();
-                        debouncedSetSearchQuery('');
                         searchInputRef.current?.focus();
                       }}
                       title="Clear search"

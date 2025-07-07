@@ -120,7 +120,8 @@ const BlogPostCard = memo(({ post, index, onTagClick }: BlogPostCardProps) => {
 
             <div className="flex items-center justify-between">
               <MotionLink
-                href={`/blog/${post.slug}`}
+                href={'/not-found'}
+                // href={`/blog/${post.slug}`}
                 className="inline-flex items-center text-teal-600 font-medium text-sm bg-teal-50 px-4 py-2 rounded-full group-hover:bg-teal-100 transition-colors"
                 whileHover={{ x: 5 }}
               >

@@ -4,42 +4,43 @@
  */
 
 // Resource management (replaces multiple preload utilities)
-export { 
-  resourceManager, 
-  initResourceManager, 
-  preloadCriticalImages, 
-  preloadFonts, 
+export {
+  resourceManager,
+  initResourceManager,
+  preloadCriticalImages,
+  preloadFonts,
   preloadCSS,
-  CRITICAL_RESOURCES
+  CRITICAL_RESOURCES,
+  setResourceCleanupEnabled
 } from './resource-manager';
 
 // Font loading utilities
 export { loadFonts } from './font-loading';
 
 // CSS optimization utilities
-export { 
-  loadCSS, 
-  inlineCriticalCSS, 
-  deferCSS, 
-  extractCriticalCSS, 
-  removeUnusedCSS, 
-  isInViewport, 
-  lazyLoadCSS 
+export {
+  loadOptimizedCSS,
+  loadCSSBatch,
+  inlineCriticalCSS,
+  cleanupUnusedCSS,
+  isElementInViewport,
+  loadCSSOnElementVisible,
+  loadCSSForMediaQuery,
+  getCSSLoadingMetrics
 } from './css-optimization';
 
 // Image optimization utilities (keeping non-duplicate functions)
-export { 
-  preloadImage, 
-  preloadImages, 
-  useLazyImage, 
-  checkImageExists, 
-  getImageDimensions, 
-  getResponsiveImageSources, 
-  getImageLoadingAttribute, 
-  generateSrcSet, 
-  supportsWebP, 
-  isImageCached, 
-  getDominantColor 
+export {
+  preloadImage,
+  preloadImages,
+  useLazyImage,
+  getImageDimensions,
+  getResponsiveImageSources,
+  getImageLoadingAttribute,
+  supportsWebP,
+  isImageCached,
+  getDominantColor,
+  clearImageCache
 } from './image-optimization';
 
 // Motion utilities
@@ -49,7 +50,6 @@ export * from './motion';
 export {
   useRenderOptimizer,
   useDebounce,
-  useThrottle,
   useMemoizedCalculation,
   useLazyLoad,
   useIdleCallback
@@ -59,13 +59,14 @@ export {
 export * from './scroll-optimization';
 
 // Essential performance hooks - specific exports to avoid conflicts
-export { 
-  useOptimizedState, 
-  useStableMemo, 
-  useIntersectionObserver, 
-  useMediaQuery, 
-  useWindowEvent, 
-  usePerformanceMetrics 
+export {
+  useOptimizedState,
+  useStableMemo,
+  useIntersectionObserver,
+  useMediaQuery,
+  useWindowEvent,
+  usePerformanceMetrics,
+  useOptimizedCallback
 } from './performance-hooks';
 
 // Component utilities

@@ -1,7 +1,8 @@
 /**
- * Centralized Resource Manager
- * Consolidates all resource preloading functionality to eliminate duplication
+ * Optimized Resource Manager using quicklink for intelligent preloading
+ * Replaced custom implementation with battle-tested library for better performance
  */
+import { listen } from 'quicklink';
 
 export interface PreloadResource {
   href: string;
@@ -17,6 +18,8 @@ class ResourceManager {
   private preloadedResources = new Set<string>();
   private preconnectedDomains = new Set<string>();
   private linkElements = new Map<string, HTMLLinkElement>();
+  private quicklinkInitialized = false;
+  private cleanupDisabled = true; // Disable cleanup by default to prevent removing used resources
 
   private constructor() {}
 
@@ -28,13 +31,33 @@ class ResourceManager {
   }
 
   /**
-   * Add preconnect for external domains
+   * Initialize intelligent link preloading using quicklink
+   */
+  initializeIntelligentPreloading(): void {
+    if (this.quicklinkInitialized || typeof window === 'undefined') return;
+
+    try {
+      listen({
+        limit: 2, // Limit concurrent prefetches
+        threshold: 0.5, // Prefetch when 50% of link is visible
+        timeout: 2000, // Timeout after 2 seconds
+        priority: true, // Use high priority fetch
+        origins: true, // Allow cross-origin prefetching
+      });
+      this.quicklinkInitialized = true;
+    } catch (error) {
+      console.error('Error initializing quicklink:', error);
+    }
+  }
+
+  /**
+   * Optimized preconnect for external domains
    */
   preconnect(url: string, crossorigin = true): void {
     try {
       const urlObj = new URL(url);
       const domain = urlObj.origin;
-      
+
       if (this.preconnectedDomains.has(domain)) return;
 
       const link = document.createElement('link');
@@ -43,7 +66,7 @@ class ResourceManager {
       if (crossorigin) {
         link.crossOrigin = 'anonymous';
       }
-      
+
       document.head.appendChild(link);
       this.preconnectedDomains.add(domain);
       this.linkElements.set(`preconnect:${domain}`, link);
@@ -141,20 +164,99 @@ class ResourceManager {
   }
 
   /**
-   * Remove unused preload links to prevent browser warnings
+   * Manual cleanup method - only removes truly unused non-critical resources
+   * This method should be called manually when needed, not automatically
    */
   cleanup(): void {
+    if (this.cleanupDisabled) {
+      console.log('Resource cleanup is disabled to prevent removing used resources');
+      return;
+    }
+
+    // Only remove non-critical preload links that are definitely unused
     this.linkElements.forEach((link, key) => {
       if (link.parentNode && key.startsWith('preload:')) {
-        // Check if resource was actually used
-        setTimeout(() => {
-          if (link.parentNode) {
-            console.warn(`Removing unused preload: ${link.href}`);
-            link.parentNode.removeChild(link);
-          }
-        }, 5000);
+        // Only remove if it's not a critical resource
+        if (!this.isCriticalResource(link.href)) {
+          // Additional check: only remove if the link has been in DOM for a very long time
+          // and we're sure it's not being used
+          setTimeout(() => {
+            if (link.parentNode && !this.isResourceCurrentlyUsed(link.href)) {
+              console.warn(`Removing unused non-critical preload: ${link.href}`);
+              link.parentNode.removeChild(link);
+              this.linkElements.delete(key);
+              this.preloadedResources.delete(key);
+            }
+          }, 30000); // Very long timeout - 30 seconds
+        }
       }
     });
+  }
+
+  /**
+   * Enable or disable automatic cleanup
+   */
+  setCleanupEnabled(enabled: boolean): void {
+    this.cleanupDisabled = !enabled;
+    console.log(`Resource cleanup ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * Check if a resource is critical and should never be removed
+   */
+  private isCriticalResource(href: string): boolean {
+    const criticalPatterns = [
+      '/images/developer-portrait.webp',
+      '/images/profile.webp',
+      '/images/coding-preview.webp',
+      '/images/testing-preview.webp',
+      'fonts.googleapis.com',
+      'fonts.gstatic.com',
+      'devicons/devicon',
+      'typescript-original.svg',
+      'react-original.svg',
+      'nodejs-original.svg',
+      'jest-plain.svg',
+      'cypressio-original.svg',
+      'playwright-original.svg'
+    ];
+
+    return criticalPatterns.some(pattern => href.includes(pattern));
+  }
+
+  /**
+   * Check if a resource is currently being used in the DOM
+   */
+  private isResourceCurrentlyUsed(href: string): boolean {
+    try {
+      // Check if the resource is used in img tags
+      const images = document.querySelectorAll('img');
+      for (const img of images) {
+        if (img.src === href || img.src.includes(href.split('/').pop() || '')) {
+          return true;
+        }
+      }
+
+      // Check if the resource is used in CSS background images
+      const elementsWithBg = document.querySelectorAll('*');
+      for (const element of elementsWithBg) {
+        const computedStyle = window.getComputedStyle(element);
+        const bgImage = computedStyle.backgroundImage;
+        if (bgImage && bgImage.includes(href)) {
+          return true;
+        }
+      }
+
+      // For fonts, always consider them as used if they're loaded
+      if (href.includes('font') || href.includes('.woff') || href.includes('fonts.g')) {
+        return true; // Always keep fonts
+      }
+
+      return false;
+    } catch (error) {
+      // If there's an error checking, consider it as used to be safe
+      return true;
+    }
   }
 
   /**
@@ -162,6 +264,13 @@ class ResourceManager {
    */
   isPreloaded(href: string): boolean {
     return this.preloadedResources.has(`preload:${href}`);
+  }
+
+  /**
+   * Get count of preloaded resources
+   */
+  getPreloadedCount(): number {
+    return this.preloadedResources.size;
   }
 
   /**
@@ -218,14 +327,33 @@ export function preloadCSS(urls: string[]): void {
 
 // Critical resources configuration
 export const CRITICAL_RESOURCES: PreloadResource[] = [
-  // Hero images
+  // Hero images - high priority for LCP
   {
     href: '/images/developer-portrait.webp',
     as: 'image',
     type: 'image/webp',
     fetchPriority: 'high'
   },
-  // Fonts
+  {
+    href: '/images/profile.webp',
+    as: 'image',
+    type: 'image/webp',
+    fetchPriority: 'high'
+  },
+  // Secondary images - lower priority
+  {
+    href: '/images/coding-preview.webp',
+    as: 'image',
+    type: 'image/webp',
+    fetchPriority: 'low'
+  },
+  {
+    href: '/images/testing-preview.webp',
+    as: 'image',
+    type: 'image/webp',
+    fetchPriority: 'low'
+  },
+  // Fonts - high priority for text rendering
   {
     href: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2',
     as: 'font',
@@ -245,6 +373,22 @@ export const CRITICAL_RESOURCES: PreloadResource[] = [
     href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
     as: 'style',
     crossorigin: 'anonymous'
+  },
+  // Tech stack icons - low priority
+  {
+    href: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg',
+    as: 'image',
+    fetchPriority: 'low'
+  },
+  {
+    href: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg',
+    as: 'image',
+    fetchPriority: 'low'
+  },
+  {
+    href: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg',
+    as: 'image',
+    fetchPriority: 'low'
   }
 ];
 
@@ -255,10 +399,18 @@ export function initResourceManager(): void {
   // Preload critical resources
   resourceManager.preloadMany(CRITICAL_RESOURCES);
 
-  // Setup cleanup on page load
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      resourceManager.cleanup();
-    }, 5000);
-  });
+  // Initialize intelligent preloading
+  resourceManager.initializeIntelligentPreloading();
+
+  // Ensure cleanup is disabled by default
+  resourceManager.setCleanupEnabled(false);
+
+  // DO NOT automatically cleanup resources - let them stay loaded
+  // Cleanup can be called manually if needed via resourceManager.cleanup()
+  console.log('Resource manager initialized with', CRITICAL_RESOURCES.length, 'critical resources');
+}
+
+// Export function to enable/disable cleanup if needed
+export function setResourceCleanupEnabled(enabled: boolean): void {
+  resourceManager.setCleanupEnabled(enabled);
 }

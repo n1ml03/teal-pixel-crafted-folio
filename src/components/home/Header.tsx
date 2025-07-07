@@ -148,7 +148,7 @@ const Header = () => {
           </MotionButton>
 
           <MotionButton
-            onClick={() => window.location.href = '/url-shortener'}
+            onClick={() => window.location.href = '/not-found'}
             className={`flex items-center text-gray-700 hover:text-teal-500 transition-all duration-300 text-sm font-medium ${location.pathname.includes('/url-shortener') ? 'text-teal-500' : ''}`}
             whileHover={{ y: -2, color: "rgb(20, 184, 166)" }}
             whileTap={{ scale: 0.95 }}

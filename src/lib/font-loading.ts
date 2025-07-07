@@ -21,7 +21,7 @@ export function loadFonts(): void {
     ];
 
     // Create promises for each font
-    const fontPromises: Promise<FontFace>[] = [];
+    const fontPromises: Promise<FontFace[]>[] = [];
 
     fontFamilies.forEach(font => {
       font.weights.forEach(weight => {

@@ -1,50 +1,64 @@
 /**
- * URLSanitizerService - Provides URL sanitization functionality
- * 
- * This service helps prevent XSS attacks by sanitizing URLs and other user inputs.
+ * Optimized URLSanitizerService using well-established security libraries
+ * Replaced custom implementations with battle-tested packages for better security
  */
+import DOMPurify from 'dompurify';
+import validator from 'validator';
+
 export class URLSanitizerService {
   /**
-   * Sanitize a URL to prevent XSS attacks
-   * 
+   * Sanitize a URL using validator library for better security
+   *
    * @param url The URL to sanitize
    * @returns The sanitized URL
    */
   static sanitizeURL(url: string): string {
+    if (!url) return '';
+
     try {
-      // Parse the URL to ensure it's valid
-      const parsedUrl = new URL(url);
-      
-      // Only allow http and https protocols
-      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        throw new Error('Invalid protocol');
+      // Use validator library for robust URL validation
+      if (!validator.isURL(url, {
+        protocols: ['http', 'https'],
+        require_protocol: true,
+        require_valid_protocol: true,
+        allow_underscores: false,
+        allow_trailing_dot: false,
+        allow_protocol_relative_urls: false
+      })) {
+        return '';
       }
-      
-      // Reconstruct the URL to ensure it's properly formatted
+
+      // Additional validation using native URL constructor
+      const parsedUrl = new URL(url);
+
+      // Only allow http and https protocols (double check)
+      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+        return '';
+      }
+
+      // Return the validated URL
       return parsedUrl.toString();
     } catch (error) {
-      // If the URL is invalid, return an empty string
       console.error('Error sanitizing URL:', error);
       return '';
     }
   }
 
   /**
-   * Sanitize a string to prevent XSS attacks
-   * 
+   * Sanitize HTML string using DOMPurify for better security
+   *
    * @param input The string to sanitize
    * @returns The sanitized string
    */
   static sanitizeString(input: string): string {
     if (!input) return '';
-    
-    // Replace HTML special characters with their entity equivalents
-    return input
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+
+    // Use DOMPurify for robust HTML sanitization
+    return DOMPurify.sanitize(input, {
+      ALLOWED_TAGS: [], // No HTML tags allowed
+      ALLOWED_ATTR: [], // No attributes allowed
+      KEEP_CONTENT: true // Keep text content
+    });
   }
 
   /**
@@ -149,5 +163,31 @@ export class URLSanitizerService {
       // If we can't parse the URL, consider it dangerous
       return true;
     }
+  }
+
+  /**
+   * Validate an email address using validator library
+   *
+   * @param email The email address to validate
+   * @returns Whether the email is valid
+   */
+  static isValidEmail(email: string): boolean {
+    if (!email) return false;
+    return validator.isEmail(email, {
+      allow_utf8_local_part: false,
+      require_tld: true,
+      allow_ip_domain: false
+    });
+  }
+
+  /**
+   * Validate a phone number using validator library
+   *
+   * @param phone The phone number to validate
+   * @returns Whether the phone number is valid
+   */
+  static isValidPhone(phone: string): boolean {
+    if (!phone) return false;
+    return validator.isMobilePhone(phone, 'any', { strictMode: false });
   }
 }

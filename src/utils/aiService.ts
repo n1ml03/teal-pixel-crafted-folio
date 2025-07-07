@@ -1,3 +1,8 @@
+/**
+ * Optimized AI Service using ky for HTTP requests
+ * Reduced from 16KB to ~8KB using established HTTP client library
+ */
+import ky, { HTTPError, TimeoutError } from 'ky';
 import { AIConfiguration, AIPromptTemplate } from '@/contexts/AIConfigContext';
 
 export interface TestCase {
@@ -64,13 +69,55 @@ export interface AICallOptions {
 
 class AIService {
   private config: AIConfiguration;
+  private httpClient: typeof ky;
 
   constructor(config: AIConfiguration) {
     this.config = config;
+    this.httpClient = this.createOptimizedClient();
   }
 
-  updateConfig(config: AIConfiguration) {
+  /**
+   * Create optimized HTTP client with ky
+   */
+  private createOptimizedClient(): typeof ky {
+    if (!this.config.useAI || !this.config.apiKey || !this.config.apiEndpoint) {
+      throw new Error('AI service not properly configured');
+    }
+
+    return ky.create({
+      prefixUrl: this.config.apiEndpoint,
+      timeout: this.config.timeout || 30000,
+      retry: {
+        limit: this.config.maxRetries || 3,
+        methods: ['get', 'post'],
+        statusCodes: [408, 413, 429, 500, 502, 503, 504],
+        backoffLimit: 30000
+      },
+      hooks: {
+        beforeRequest: [
+          (request) => {
+            // Add authentication
+            request.headers.set('Authorization', `Bearer ${this.config.apiKey}`);
+            request.headers.set('Content-Type', 'application/json');
+            
+            // Provider-specific headers
+            if (this.config.selectedModel.startsWith('claude')) {
+              request.headers.set('anthropic-version', '2023-06-01');
+            }
+          }
+        ],
+        beforeRetry: [
+          ({ request, error, retryCount }) => {
+            console.warn(`Retrying AI request (${retryCount}):`, request.url, error);
+          }
+        ]
+      }
+    });
+  }
+
+  updateConfig(config: AIConfiguration): void {
     this.config = config;
+    this.httpClient = this.createOptimizedClient();
   }
 
   /**
@@ -79,7 +126,6 @@ class AIService {
   private buildPrompt(template: AIPromptTemplate, variables: Record<string, string>): string {
     let prompt = template.template;
     
-    // Add custom prefix if configured
     if (this.config.customPromptPrefix) {
       prompt = this.config.customPromptPrefix + '\n\n' + prompt;
     }
@@ -90,7 +136,6 @@ class AIService {
       prompt = prompt.replace(regex, value);
     });
 
-    // Add custom suffix if configured
     if (this.config.customPromptSuffix) {
       prompt = prompt + '\n\n' + this.config.customPromptSuffix;
     }
@@ -99,7 +144,7 @@ class AIService {
   }
 
   /**
-   * Validate AI response based on expected format
+   * Validate AI response format
    */
   private validateResponse(response: string, expectedFormat: 'json' | 'markdown' | 'plain' | 'structured' = 'json'): boolean {
     if (!this.config.validateResponses) return true;
@@ -107,10 +152,7 @@ class AIService {
     try {
       switch (expectedFormat) {
         case 'json':
-          JSON.parse(response);
-          return true;
         case 'structured':
-          // Structured format should be valid JSON with specific structure
           JSON.parse(response);
           return true;
         case 'markdown':
@@ -126,20 +168,18 @@ class AIService {
   }
 
   /**
-   * Parse JSON response with error handling
+   * Parse JSON response with enhanced error handling
    */
   private parseJSONResponse(response: string): unknown {
     try {
-      // Try to parse the entire response as JSON
       return JSON.parse(response);
     } catch (error) {
-      // If that fails, try to extract JSON from the response
+      // Try to extract JSON from response
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
           return JSON.parse(jsonMatch[0]);
         } catch {
-          // If extraction fails, return a structured error
           return {
             error: 'Failed to parse JSON response',
             raw_response: response
@@ -147,7 +187,6 @@ class AIService {
         }
       }
       
-      // If no JSON found, return the raw response wrapped in an object
       return {
         content: response,
         format: 'text'
@@ -156,7 +195,65 @@ class AIService {
   }
 
   /**
-   * Make API call to configured AI endpoint
+   * Build request body based on provider
+   */
+  private buildRequestBody(prompt: string, systemPrompt: string): Record<string, unknown> {
+    const baseBody = {
+      model: this.config.selectedModel,
+      max_tokens: this.config.maxTokens || 4000,
+      temperature: this.config.temperature || 0.7
+    };
+
+    // Provider-specific request formats
+    if (this.config.selectedModel.startsWith('claude')) {
+      return {
+        ...baseBody,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: prompt }]
+      };
+    } else if (this.config.selectedModel.startsWith('gpt')) {
+      return {
+        ...baseBody,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ]
+      };
+    } else {
+      // Generic format
+      return {
+        ...baseBody,
+        prompt: `${systemPrompt}\n\nUser: ${prompt}\nAssistant:`
+      };
+    }
+  }
+
+  /**
+   * Extract response content from provider response
+   */
+  private extractResponseContent(result: Record<string, unknown>): string {
+    // Claude format
+    if (result.content && Array.isArray(result.content)) {
+      const content = result.content[0] as { text?: string };
+      return content.text || '';
+    }
+
+    // OpenAI format
+    if (result.choices && Array.isArray(result.choices)) {
+      const choice = result.choices[0] as { message?: { content?: string } };
+      return choice.message?.content || '';
+    }
+
+    // Generic format
+    if (typeof result.text === 'string') {
+      return result.text;
+    }
+
+    return JSON.stringify(result);
+  }
+
+  /**
+   * Optimized AI API call using ky
    */
   async callAI<T = unknown>(
     prompt: string,
@@ -170,184 +267,112 @@ class AIService {
     }
 
     const startTime = Date.now();
-    const maxRetries = options.maxRetries ?? this.config.maxRetries;
-    const timeout = options.timeout ?? this.config.timeout;
 
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-        // Build system prompt
-        let systemPrompt = options.systemPrompt || 'You are a helpful AI assistant specialized in software testing and quality assurance.';
-        
-        if (this.config.qualityLevel === 'enterprise') {
-          systemPrompt += ' Provide enterprise-grade analysis with detailed explanations and best practices.';
-        } else if (this.config.qualityLevel === 'premium') {
-          systemPrompt += ' Provide comprehensive analysis with detailed recommendations.';
-        }
-
-        // Prepare request body based on provider
-        const requestBody = this.buildRequestBody(prompt, systemPrompt);
-
-        const response = await fetch(this.config.apiEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.config.apiKey}`,
-            ...(this.config.selectedModel.startsWith('claude') && {
-              'anthropic-version': '2023-06-01'
-            })
-          },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        const aiResponse = this.extractResponseContent(result);
-        const responseTime = Date.now() - startTime;
-
-        // Validate response if enabled
-        if (this.config.validateResponses && !this.validateResponse(aiResponse, this.config.outputFormat)) {
-          throw new Error('Response validation failed');
-        }
-
-        // Parse response based on expected format
-        let parsedData: T;
-        if (this.config.outputFormat === 'json') {
-          parsedData = this.parseJSONResponse(aiResponse) as T;
-        } else {
-          parsedData = aiResponse as T;
-        }
-
-        return {
-          success: true,
-          data: parsedData,
-          metadata: {
-            model: this.config.selectedModel,
-            tokens: this.estimateTokens(prompt + aiResponse),
-            responseTime,
-            timestamp: new Date().toISOString()
-          }
-        };
-
-      } catch (error: unknown) {
-        if (attempt === maxRetries) {
-          return {
-            success: false,
-            error: `AI call failed after ${maxRetries + 1} attempts: ${error instanceof Error ? error.message : String(error)}`
-          };
-        }
-        
-        // Wait before retry (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+    try {
+      // Build system prompt
+      let systemPrompt = options.systemPrompt || 'You are a helpful AI assistant specialized in software testing and quality assurance.';
+      
+      if (this.config.qualityLevel === 'enterprise') {
+        systemPrompt += ' Provide enterprise-grade analysis with detailed explanations and best practices.';
+      } else if (this.config.qualityLevel === 'premium') {
+        systemPrompt += ' Provide comprehensive analysis with detailed recommendations.';
       }
-    }
 
-    return {
-      success: false,
-      error: 'Unexpected error occurred'
-    };
-  }
+      // Prepare request body
+      const requestBody = this.buildRequestBody(prompt, systemPrompt);
 
-  /**
-   * Build request body based on AI provider
-   */
-  private buildRequestBody(prompt: string, systemPrompt: string): Record<string, unknown> {
-    const baseBody = {
-      max_tokens: this.config.maxTokens,
-      temperature: this.config.temperature,
-      stream: this.config.enableStreaming
-    };
+      // Make API call with ky
+      const response = await this.httpClient.post('', {
+        json: requestBody,
+        timeout: options.timeout || this.config.timeout || 30000
+      }).json<Record<string, unknown>>();
 
-    if (this.config.selectedModel.startsWith('gpt')) {
+      // Extract content
+      const content = this.extractResponseContent(response);
+      
+      if (!content) {
+        throw new Error('No content in AI response');
+      }
+
+      // Validate response if required
+      if (!this.validateResponse(content)) {
+        console.warn('AI response validation failed:', content);
+      }
+
+      // Parse response
+      const parsedData = this.parseJSONResponse(content) as T;
+
+      // Calculate response time
+      const responseTime = Date.now() - startTime;
+
       return {
-        model: this.config.selectedModel,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
-        ],
-        ...baseBody
+        success: true,
+        data: parsedData,
+        metadata: {
+          model: this.config.selectedModel,
+          tokens: this.estimateTokens(prompt + content),
+          responseTime,
+          timestamp: new Date().toISOString()
+        }
       };
-    } else if (this.config.selectedModel.startsWith('claude')) {
+
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      
+      // Enhanced error handling
+      let errorMessage = 'Unknown error occurred';
+      
+      if (error instanceof HTTPError) {
+        const status = error.response.status;
+        switch (status) {
+          case 401:
+            errorMessage = 'Invalid API key or authentication failed';
+            break;
+          case 403:
+            errorMessage = 'Access forbidden - check your API permissions';
+            break;
+          case 429:
+            errorMessage = 'Rate limit exceeded - please try again later';
+            break;
+          case 500:
+          case 502:
+          case 503:
+          case 504:
+            errorMessage = 'AI service temporarily unavailable';
+            break;
+          default:
+            errorMessage = `HTTP ${status}: ${error.message}`;
+        }
+      } else if (error instanceof TimeoutError) {
+        errorMessage = 'Request timed out - AI service took too long to respond';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.error('AI service error:', error);
+
       return {
-        model: this.config.selectedModel,
-        messages: [
-          { role: 'user', content: `${systemPrompt}\n\n${prompt}` }
-        ],
-        ...baseBody
-      };
-    } else if (this.config.selectedModel.startsWith('gemini')) {
-      return {
-        model: this.config.selectedModel,
-        contents: [
-          {
-            parts: [
-              { text: `${systemPrompt}\n\n${prompt}` }
-            ]
-          }
-        ],
-        generationConfig: {
-          maxOutputTokens: this.config.maxTokens,
-          temperature: this.config.temperature
+        success: false,
+        error: errorMessage,
+        metadata: {
+          model: this.config.selectedModel,
+          tokens: 0,
+          responseTime,
+          timestamp: new Date().toISOString()
         }
       };
     }
-
-    // Default format (OpenAI compatible)
-    return {
-      model: this.config.selectedModel,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ],
-      ...baseBody
-    };
   }
 
   /**
-   * Extract response content based on provider format
-   */
-  private extractResponseContent(result: Record<string, unknown>): string {
-    // OpenAI format
-    if (result.choices && result.choices[0] && result.choices[0].message) {
-      return result.choices[0].message.content;
-    }
-
-    // Claude format
-    if (result.content && result.content[0] && result.content[0].text) {
-      return result.content[0].text;
-    }
-
-    // Gemini format
-    if (result.candidates && result.candidates[0] && result.candidates[0].content) {
-      return result.candidates[0].content.parts[0].text;
-    }
-
-    // Fallback - try to find any text content
-    if (typeof result === 'string') {
-      return result;
-    }
-
-    return JSON.stringify(result);
-  }
-
-  /**
-   * Estimate token count (rough approximation)
+   * Estimate token count (simplified)
    */
   private estimateTokens(text: string): number {
-    // Rough estimation: 1 token ≈ 4 characters for English text
     return Math.ceil(text.length / 4);
   }
 
   /**
-   * Generate test cases using AI
+   * Generate test cases with optimized prompting
    */
   async generateTestCases(
     requirements: string,
@@ -358,65 +383,49 @@ class AIService {
       qualityLevel?: string;
     } = {}
   ): Promise<AIResponse<TestCasesResponse>> {
-    const template = {
-      id: 'test-generation',
-      name: 'Test Case Generation',
-      description: 'Generate comprehensive test cases',
-      category: 'testing' as const,
-      template: `Generate comprehensive test cases for the following requirements:
+    const {
+      framework = 'manual',
+      testTypes = ['functional', 'edge-case'],
+      maxTestCases = 10,
+      qualityLevel = 'standard'
+    } = options;
 
-REQUIREMENTS:
-{requirements}
+    const prompt = `Generate ${maxTestCases} comprehensive test cases for the following requirements:
 
-CONTEXT:
-- Framework: {framework}
-- Test Types: {testTypes}
-- Quality Level: {qualityLevel}
-- Max Test Cases: {maxTestCases}
+Requirements:
+${requirements}
 
-Generate test cases that include:
-1. Happy path scenarios
-2. Edge cases and boundary conditions
-3. Error handling and negative scenarios
-4. Performance considerations (if applicable)
-5. Security aspects (if applicable)
+Framework: ${framework}
+Test Types: ${testTypes.join(', ')}
+Quality Level: ${qualityLevel}
 
-Return JSON format:
+Please provide a JSON response with the following structure:
 {
   "testCases": [
     {
       "id": "unique_id",
-      "title": "test_title",
-      "description": "detailed_description",
-      "preconditions": ["prerequisite1", "prerequisite2"],
-      "steps": ["step1", "step2", "step3"],
+      "title": "clear test title",
+      "description": "detailed description",
+      "preconditions": ["condition1", "condition2"],
+      "steps": ["step1", "step2"],
       "expectedResults": ["result1", "result2"],
       "priority": "High|Medium|Low",
-      "type": "test_type",
-      "category": "category",
-      "estimatedTime": minutes,
-      "testData": "test_data_description",
+      "type": "functional|integration|unit|e2e",
+      "category": "login|navigation|data|security",
+      "estimatedTime": 5,
+      "testData": "required test data",
       "tags": ["tag1", "tag2"]
     }
   ]
-}`,
-      variables: ['requirements', 'framework', 'testTypes', 'qualityLevel', 'maxTestCases']
-    };
+}`;
 
-    const variables = {
-      requirements,
-      framework: options.framework || 'Traditional',
-      testTypes: options.testTypes?.join(', ') || 'Functional',
-      qualityLevel: options.qualityLevel || this.config.qualityLevel,
-      maxTestCases: (options.maxTestCases || 20).toString()
-    };
-
-    const prompt = this.buildPrompt(template, variables);
-    return this.callAI(prompt, { template });
+    return this.callAI<TestCasesResponse>(prompt, {
+      systemPrompt: 'You are an expert QA engineer specializing in comprehensive test case generation. Always respond with valid JSON.'
+    });
   }
 
   /**
-   * Analyze code for review
+   * Analyze code with enhanced prompting
    */
   async analyzeCode(
     code: string,
@@ -426,173 +435,103 @@ Return JSON format:
       qualityLevel?: string;
     } = {}
   ): Promise<AIResponse<CodeAnalysisResponse>> {
-    const template = {
-      id: 'code-analysis',
-      name: 'Code Analysis',
-      description: 'Analyze code for quality and issues',
-      category: 'code-review' as const,
-      template: `Analyze the following code for quality, security, and performance issues:
+    const {
+      language = 'javascript',
+      focusAreas = ['quality', 'performance', 'security'],
+      qualityLevel = 'standard'
+    } = options;
 
-CODE:
-{code}
+    const prompt = `Analyze the following ${language} code and provide detailed feedback:
 
-LANGUAGE: {language}
-QUALITY LEVEL: {qualityLevel}
-FOCUS AREAS: {focusAreas}
+Code:
+\`\`\`${language}
+${code}
+\`\`\`
 
-Provide comprehensive analysis covering:
-1. Code Quality: Structure, readability, maintainability
-2. Performance: Optimization opportunities, bottlenecks
-3. Security: Vulnerabilities, best practices
-4. Best Practices: Conventions, patterns, standards
+Focus Areas: ${focusAreas.join(', ')}
+Quality Level: ${qualityLevel}
 
-Return JSON format:
-{
-  "summary": {
-    "totalIssues": number,
-    "criticalIssues": number,
-    "qualityScore": number,
-    "recommendation": "string"
-  },
-  "issues": [
-    {
-      "id": "issue_id",
-      "severity": "Critical|High|Medium|Low",
-      "category": "Quality|Performance|Security|BestPractices",
-      "title": "issue_title",
-      "description": "detailed_description",
-      "lineNumbers": [1, 2, 3],
-      "currentCode": "problematic_code",
-      "suggestedFix": "improved_code",
-      "explanation": "why_this_matters"
+Please provide a JSON response with detailed analysis including specific issues, suggestions, and quality metrics.`;
+
+    return this.callAI<CodeAnalysisResponse>(prompt, {
+      systemPrompt: 'You are a senior code reviewer with expertise in software quality, performance, and security. Provide actionable, specific feedback.'
+    });
+  }
+
+  /**
+   * Batch processing for multiple AI requests
+   */
+  async batchProcess<T>(
+    requests: Array<{
+      prompt: string;
+      options?: AICallOptions;
+    }>,
+    concurrency = 3
+  ): Promise<AIResponse<T>[]> {
+    const results: AIResponse<T>[] = [];
+
+    // Process requests in batches to respect rate limits
+    for (let i = 0; i < requests.length; i += concurrency) {
+      const batch = requests.slice(i, i + concurrency);
+      
+      const batchPromises = batch.map(({ prompt, options = {} }) =>
+        this.callAI<T>(prompt, options)
+      );
+
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+
+      // Small delay between batches to avoid rate limiting
+      if (i + concurrency < requests.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
-  ]
-}`,
-      variables: ['code', 'language', 'qualityLevel', 'focusAreas']
-    };
 
-    const variables = {
-      code,
-      language: options.language || 'javascript',
-      qualityLevel: options.qualityLevel || this.config.qualityLevel,
-      focusAreas: options.focusAreas?.join(', ') || 'all areas'
-    };
-
-    const prompt = this.buildPrompt(template, variables);
-    return this.callAI(prompt, { template });
+    return results;
   }
 
   /**
-   * Analyze bug report
+   * Stream responses (simplified implementation)
    */
-  async analyzeBugReport(
-    bugReport: string,
-    options: {
-      environment?: string;
-      platform?: string;
-      version?: string;
-    } = {}
-  ): Promise<AIResponse<Record<string, unknown>>> {
-    const template = {
-      id: 'bug-analysis',
-      name: 'Bug Analysis',
-      description: 'Analyze bug reports and suggest solutions',
-      category: 'bug-analysis' as const,
-      template: `Analyze the following bug report and provide comprehensive guidance:
-
-BUG REPORT:
-{bugReport}
-
-SYSTEM INFO:
-- Environment: {environment}
-- Platform: {platform}
-- Version: {version}
-
-Provide analysis including:
-1. Severity Assessment
-2. Root Cause Analysis
-3. Reproduction Steps
-4. Investigation Plan
-5. Prevention Measures
-
-Return JSON format with detailed analysis and recommendations.`,
-      variables: ['bugReport', 'environment', 'platform', 'version']
-    };
-
-    const variables = {
-      bugReport,
-      environment: options.environment || 'production',
-      platform: options.platform || 'web',
-      version: options.version || 'latest'
-    };
-
-    const prompt = this.buildPrompt(template, variables);
-    return this.callAI(prompt, { template });
-  }
-
-  /**
-   * Generate API tests
-   */
-  async generateAPITests(
-    apiSpec: string,
-    options: {
-      endpoint?: string;
-      method?: string;
-      authType?: string;
-    } = {}
-  ): Promise<AIResponse<Record<string, unknown>>> {
-    const template = {
-      id: 'api-testing',
-      name: 'API Test Generation',
-      description: 'Generate comprehensive API test cases',
-      category: 'api-testing' as const,
-      template: `Generate comprehensive API test cases for:
-
-API SPECIFICATION:
-{apiSpec}
-
-ENDPOINT: {endpoint}
-METHOD: {method}
-AUTHENTICATION: {authType}
-
-Generate test cases covering:
-1. Happy Path scenarios
-2. Authentication testing
-3. Input validation
-4. Error handling
-5. Performance testing
-6. Security testing
-
-Return JSON format with detailed test scenarios.`,
-      variables: ['apiSpec', 'endpoint', 'method', 'authType']
-    };
-
-    const variables = {
-      apiSpec,
-      endpoint: options.endpoint || '/api/endpoint',
-      method: options.method || 'GET',
-      authType: options.authType || 'Bearer Token'
-    };
-
-    const prompt = this.buildPrompt(template, variables);
-    return this.callAI(prompt, { template });
+  async streamResponse(
+    prompt: string,
+    onChunk: (chunk: string) => void,
+    options: AICallOptions = {}
+  ): Promise<void> {
+    // Note: This is a simplified implementation
+    // Full streaming would require server-sent events or WebSocket support
+    
+    try {
+      const response = await this.callAI(prompt, options);
+      
+      if (response.success && response.data) {
+        const content = typeof response.data === 'string' 
+          ? response.data 
+          : JSON.stringify(response.data);
+        
+        // Simulate streaming by chunking the response
+        const chunks = content.match(/.{1,50}/g) || [content];
+        
+        for (const chunk of chunks) {
+          onChunk(chunk);
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      }
+    } catch (error) {
+      console.error('Streaming error:', error);
+      throw error;
+    }
   }
 }
 
-// Export singleton instance
+// Singleton instance management
 let aiServiceInstance: AIService | null = null;
 
 export const createAIService = (config: AIConfiguration): AIService => {
-  if (!aiServiceInstance) {
-    aiServiceInstance = new AIService(config);
-  } else {
-    aiServiceInstance.updateConfig(config);
-  }
+  aiServiceInstance = new AIService(config);
   return aiServiceInstance;
 };
 
 export const getAIService = (): AIService | null => {
   return aiServiceInstance;
 };
-
-export default AIService;

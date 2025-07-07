@@ -1,8 +1,11 @@
-const CACHE_NAME = 'teal-pixel-portfolio-v1';
+const CACHE_NAME = 'teal-pixel-portfolio-v2';
 const CACHE_URLS = [
   '/',
   '/manifest.json',
   '/images/developer-portrait.webp',
+  '/images/profile.webp',
+  '/images/coding-preview.webp',
+  '/images/testing-preview.webp',
   '/css/animations.css',
   '/css/playground-extras.css',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',

@@ -1,4 +1,7 @@
 {
+  "buildCommand": "bun run build",
+  "installCommand": "bun install",
+  "framework": "vite",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [

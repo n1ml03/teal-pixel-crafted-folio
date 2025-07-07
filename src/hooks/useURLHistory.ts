@@ -6,11 +6,11 @@ export const useURLHistory = () => {
   const [urlHistory, setUrlHistory] = useState<ShortenedURL[]>([]);
 
   // Load URL history from localStorage on component mount
-  const loadHistory = useCallback(() => {
+  const loadHistory = useCallback(async () => {
     // Initialize the service if not already initialized
-    URLShortenerService.initialize();
+    await URLShortenerService.initialize();
 
-    const urls = URLShortenerService.getURLs();
+    const urls = await URLShortenerService.getURLs();
     // Sort by creation date (newest first)
     const sortedUrls = [...urls].sort((a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -48,9 +48,9 @@ export const useURLHistory = () => {
   }, []);
 
   // Remove a URL from history
-  const removeFromHistory = useCallback((id: string) => {
+  const removeFromHistory = useCallback(async (id: string) => {
     // Delete from service
-    const deleted = URLShortenerService.deleteURL(id);
+    const deleted = await URLShortenerService.deleteURL(id);
 
     if (deleted) {
       // Update state
@@ -59,8 +59,8 @@ export const useURLHistory = () => {
   }, []);
 
   // Update a URL in history
-  const updateInHistory = useCallback((id: string, updates: Partial<ShortenedURL>) => {
-    const updatedURL = URLShortenerService.updateURL(id, updates);
+  const updateInHistory = useCallback(async (id: string, updates: Partial<ShortenedURL>) => {
+    const updatedURL = await URLShortenerService.updateURL(id, updates);
 
     if (updatedURL) {
       setUrlHistory(prevHistory => {

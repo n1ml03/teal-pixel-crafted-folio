@@ -1,1540 +1,680 @@
-import { ShortenedURL, URLClickData, URLOptions, URLAnalytics } from '@/types/shorten.ts';
+/**
+ * Optimized URLShortenerService using well-established libraries
+ * Enhanced with additional optimization packages for better performance
+ */
+import { nanoid, customAlphabet } from 'nanoid';
+import { get, set, del, clear, keys } from 'idb-keyval';
+import { SHA256, PBKDF2 } from 'crypto-js';
+import validator from 'validator';
+import { LRUCache } from 'lru-cache';
+import { UAParser } from 'ua-parser-js';
+import { groupBy, countBy, sortBy, take, orderBy } from 'lodash-es';
+import { format, parseISO, isValid } from 'date-fns';
+import { ShortenedURL, URLClickData, URLOptions, URLAnalytics, GeoLocation } from '@/types/shorten.ts';
+import { RateLimiterService } from './RateLimiterService.ts';
 
-// Constants
-const URL_STORAGE_KEY = 'shortened_urls';
-const CLICK_STORAGE_KEY = 'url_clicks';
-const ANALYTICS_CACHE_KEY = 'url_analytics_cache';
-const URL_BACKUP_KEY = 'shortened_urls_backup';
-const STORAGE_SETTINGS_KEY = 'url_storage_settings';
+// Optimized constants
 const DEFAULT_CODE_LENGTH = 6;
 const BASE_URL = window.location.origin;
-const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+const DEFAULT_EXPIRATION_DAYS = 365;
+const MAX_EXPIRATION_DAYS = 3650;
 
-// Default expiration times (in days)
-const DEFAULT_EXPIRATION_DAYS = 365; // 1 year default
-const MAX_EXPIRATION_DAYS = 3650; // 10 years max
-const PERMANENT_STORAGE_KEY = 'permanent_urls';
+// Storage keys
+const STORAGE_KEYS = {
+  URLS: 'shortened_urls',
+  CLICKS: 'url_clicks', 
+  ANALYTICS: 'url_analytics_cache',
+  SETTINGS: 'url_storage_settings',
+  PERMANENT: 'permanent_urls'
+} as const;
+
+// Optimized ID generation using nanoid
+const generateId = (): string => nanoid();
+const generateShortCode = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', DEFAULT_CODE_LENGTH);
 
 // Storage settings interface
 interface StorageSettings {
   defaultExpirationDays: number;
   autoCleanup: boolean;
   enableBackup: boolean;
-  maxStorageSize: number; // in MB
+  maxStorageSize: number;
   compressionEnabled: boolean;
 }
 
-// Helper to generate a unique ID (using a more efficient method)
-const generateId = (): string => {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
-};
-
-/**
- * SECURITY IMPROVEMENTS FOR PRODUCTION:
- * 
- * Password Hashing Enhancements:
- * - Uses Web Crypto API with SHA-256 for strong cryptographic hashing
- * - Implements PBKDF2-like approach with 100,000 iterations for resistance against rainbow table attacks
- * - Generates unique random salt for each password using crypto.getRandomValues()
- * - Stores salt and hash together for proper verification
- * - Provides async methods for non-blocking operations
- * - Includes fallback sync methods for backward compatibility
- * 
- * Security Features:
- * - Random salt generation prevents rainbow table attacks
- * - High iteration count (100,000) slows down brute force attacks
- * - Constant-time comparison prevents timing attacks
- * - Proper error handling to avoid information leakage
- * - Base64 encoding for safe storage
- * 
- * For even higher security in production environments, consider:
- * - Using Argon2 or bcrypt libraries for password hashing
- * - Implementing server-side password hashing
- * - Adding rate limiting for password attempts
- * - Using HTTPS for all communications
- * - Implementing proper session management
- */
-
-// Helper to compress data for storage
-const compressData = (data: string): string => {
-  try {
-    // Simple compression using JSON.stringify with replacer
-    return btoa(data);
-  } catch (error) {
-    console.warn('Compression failed, storing uncompressed data');
-    return data;
-  }
-};
-
-// Helper to decompress data from storage
-const decompressData = (data: string): string => {
-  try {
-    return atob(data);
-  } catch (error) {
-    console.warn('Decompression failed, returning original data');
-    return data;
-  }
-};
-
-// Helper to calculate storage size in MB
-const getStorageSize = (): number => {
-  let total = 0;
-  for (const key in localStorage) {
-    if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
-      total += localStorage[key].length;
-    }
-  }
-  return total / (1024 * 1024); // Convert to MB
-};
-
-// Default storage settings
-const getDefaultStorageSettings = (): StorageSettings => ({
+const DEFAULT_SETTINGS: StorageSettings = {
   defaultExpirationDays: DEFAULT_EXPIRATION_DAYS,
   autoCleanup: true,
   enableBackup: true,
-  maxStorageSize: 50, // 50MB
+  maxStorageSize: 50,
   compressionEnabled: true
-});
-
-// Helper to generate a random short code
-const generateShortCode = (length: number = DEFAULT_CODE_LENGTH): string => {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  const charactersLength = characters.length;
-
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-
-  return result;
 };
 
-// Helper to hash a password using Web Crypto API (production-ready)
-const hashPassword = async (password: string): Promise<string> => {
-  try {
-    // Generate a random salt for each password
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    
-    // Encode password as UTF-8
-    const encoder = new TextEncoder();
-    const passwordData = encoder.encode(password);
-    
-    // Combine password and salt
-    const combined = new Uint8Array(passwordData.length + salt.length);
-    combined.set(passwordData, 0);
-    combined.set(salt, passwordData.length);
-    
-    // Hash using SHA-256 (multiple iterations for better security)
-    let hash = combined;
-    const iterations = 100000; // PBKDF2-like approach
-    
-    for (let i = 0; i < iterations; i++) {
-      hash = new Uint8Array(await crypto.subtle.digest('SHA-256', hash));
-    }
-    
-    // Combine salt and hash for storage
-    const result = new Uint8Array(salt.length + hash.length);
-    result.set(salt, 0);
-    result.set(hash, salt.length);
-    
-    // Convert to base64 for storage
-    return btoa(String.fromCharCode(...result));
-  } catch (error) {
-    console.error('Error hashing password:', error);
-    throw new Error('Failed to hash password');
-  }
-};
-
-// Helper to verify password against stored hash
-const verifyPasswordHash = async (password: string, storedHash: string): Promise<boolean> => {
-  try {
-    // Decode the stored hash
-    const hashData = new Uint8Array(atob(storedHash).split('').map(c => c.charCodeAt(0)));
-    
-    // Extract salt (first 16 bytes) and hash (remaining bytes)
-    const salt = hashData.slice(0, 16);
-    const originalHash = hashData.slice(16);
-    
-    // Encode password as UTF-8
-    const encoder = new TextEncoder();
-    const passwordData = encoder.encode(password);
-    
-    // Combine password and salt
-    const combined = new Uint8Array(passwordData.length + salt.length);
-    combined.set(passwordData, 0);
-    combined.set(salt, passwordData.length);
-    
-    // Hash using the same process
-    let hash = combined;
-    const iterations = 100000;
-    
-    for (let i = 0; i < iterations; i++) {
-      hash = new Uint8Array(await crypto.subtle.digest('SHA-256', hash));
-    }
-    
-    // Compare hashes
-    if (hash.length !== originalHash.length) {
-      return false;
-    }
-    
-    for (let i = 0; i < hash.length; i++) {
-      if (hash[i] !== originalHash[i]) {
-        return false;
-      }
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error verifying password:', error);
-    return false;
-  }
-};
-
-// Fallback synchronous hash function for compatibility (still improved from original)
-const hashPasswordSync = (password: string): string => {
-  console.warn('Using fallback synchronous password hashing. Consider upgrading to async version.');
-  
-  try {
-    // Generate a deterministic salt from password for compatibility
-    const encoder = new TextEncoder();
-    const passwordData = encoder.encode(password + 'url-shortener-v2-salt');
-    
-    // Use crypto.subtle.digest if available, otherwise fallback
-    if (crypto.subtle) {
-      // This is still synchronous fallback, but better than original
-      let hash = 0;
-      for (let i = 0; i < passwordData.length; i++) {
-        hash = ((hash << 5) - hash + passwordData[i]) & 0xffffffff;
-      }
-      
-      // Apply multiple rounds of hashing
-      for (let round = 0; round < 1000; round++) {
-        hash = ((hash << 5) - hash + round) & 0xffffffff;
-      }
-      
-      return Math.abs(hash).toString(16).padStart(8, '0');
-    }
-    
-    // Final fallback
-    return btoa(password + 'url-shortener-fallback-salt').replace(/[^a-zA-Z0-9]/g, '');
-  } catch (error) {
-    console.error('Error in fallback hash:', error);
-    throw new Error('Failed to hash password');
-  }
-};
-
-// URLShortenerService class
+/**
+ * Optimized URLShortenerService using established libraries
+ */
 export class URLShortenerService {
-  // Static initialization flag
   private static isInitialized = false;
+  
+  // Use LRU cache for better memory management and automatic cleanup
+  private static cache = new LRUCache<string, any>({
+    max: 200, // Maximum number of cached items
+    ttl: CACHE_EXPIRY, // Auto-expire after 5 minutes
+    updateAgeOnGet: true, // Reset TTL when accessed
+    updateAgeOnHas: false // Don't reset TTL on existence check
+  });
+  
+  private static cacheCleanupInterval: NodeJS.Timeout | null = null;
+  
+  // Initialize UAParser for device/browser detection
+  private static uaParser = new UAParser();
 
-  // List of potentially malicious TLDs and patterns
-  private static suspiciousTLDs = [
-    'xyz', 'top', 'club', 'gq', 'ml', 'cf', 'tk', 'ga'
-  ];
-
-  private static suspiciousDomainPatterns = [
-    'login', 'signin', 'account', 'secure', 'banking', 'verify', 'wallet',
-    'auth', 'confirm', 'update', 'payment', 'pay', 'billing', 'security'
-  ];
-
-  // Known phishing domains (this would be more extensive in a real application)
-  private static knownMaliciousDomains = [
-    'evil-site.com', 'phishing-example.com', 'malware-site.net'
-  ];
-
-  // Initialize the service
-  static initialize(): void {
-    if (this.isInitialized) return;
-
-    // Load storage settings
-    this.loadStorageSettings();
-
-    // Load caches from localStorage
-    this.getURLs(); // This will initialize URL cache
-    this.loadAnalyticsCache();
-
-    // Set initialization flag
-    this.isInitialized = true;
-
-    // Clean up expired URLs (only if auto cleanup is enabled)
-    const settings = this.getStorageSettings();
-    if (settings.autoCleanup) {
-      this.cleanupExpiredURLs();
-    }
-
-    // Create backup if enabled
-    if (settings.enableBackup) {
-      this.createBackup();
-    }
-
-    // Check storage size
-    this.checkStorageSize();
-  }
-
-  // Storage settings cache
-  private static storageSettings: StorageSettings | null = null;
-
-  // Get storage settings
-  static getStorageSettings(): StorageSettings {
-    if (this.storageSettings) {
-      return this.storageSettings;
-    }
-
+  // Optimized password hashing using crypto-js
+  static async hashPassword(password: string): Promise<string> {
     try {
-      const settingsJson = localStorage.getItem(STORAGE_SETTINGS_KEY);
-      if (settingsJson) {
-        this.storageSettings = JSON.parse(settingsJson);
-        return this.storageSettings!;
-      }
+      const salt = nanoid(16);
+      const hash = PBKDF2(password, salt, { 
+        keySize: 256/32, 
+        iterations: 100000 
+      }).toString();
+      return `${salt}:${hash}`;
     } catch (error) {
-      console.error('Error loading storage settings:', error);
+      console.error('Error hashing password:', error);
+      throw new Error('Failed to hash password');
     }
-
-    // Return default settings
-    this.storageSettings = getDefaultStorageSettings();
-    this.saveStorageSettings(this.storageSettings);
-    return this.storageSettings;
   }
 
-  // Save storage settings
-  static saveStorageSettings(settings: StorageSettings): void {
+  static async verifyPassword(password: string, storedHash: string): Promise<boolean> {
     try {
-      localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify(settings));
-      this.storageSettings = settings;
+      const [salt, hash] = storedHash.split(':');
+      const testHash = PBKDF2(password, salt, { 
+        keySize: 256/32, 
+        iterations: 100000 
+      }).toString();
+      return hash === testHash;
     } catch (error) {
-      console.error('Error saving storage settings:', error);
+      console.error('Error verifying password:', error);
+      return false;
     }
   }
 
-  // Load storage settings
-  private static loadStorageSettings(): void {
-    this.getStorageSettings(); // This will load and cache the settings
-  }
-
-  // Update storage settings
-  static updateStorageSettings(updates: Partial<StorageSettings>): StorageSettings {
-    const currentSettings = this.getStorageSettings();
-    const newSettings = { ...currentSettings, ...updates };
-    this.saveStorageSettings(newSettings);
-    return newSettings;
-  }
-
-  // Check storage size and warn if approaching limit
-  private static checkStorageSize(): void {
-    const settings = this.getStorageSettings();
-    const currentSize = getStorageSize();
-    
-    if (currentSize > settings.maxStorageSize * 0.8) {
-      console.warn(`Storage usage is at ${currentSize.toFixed(2)}MB (${((currentSize / settings.maxStorageSize) * 100).toFixed(1)}% of limit)`);
-      
-      if (currentSize > settings.maxStorageSize) {
-        console.error('Storage size limit exceeded. Consider cleaning up old URLs or increasing the limit.');
-        // Optionally trigger automatic cleanup
-        if (settings.autoCleanup) {
-          this.performStorageCleanup();
-        }
-      }
-    }
-  }
-
-  // Perform storage cleanup when approaching limits
-  private static performStorageCleanup(): void {
-    const urls = this.getURLs();
-    const now = new Date();
-    
-    // Sort URLs by creation date (oldest first)
-    const sortedUrls = urls.sort((a, b) => 
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-
-    // Remove oldest 20% of URLs or expired URLs
-    const removeCount = Math.floor(sortedUrls.length * 0.2);
-    const urlsToRemove = sortedUrls.slice(0, removeCount);
-    
-    // Also remove all expired URLs
-    const expiredUrls = urls.filter(url => 
-      url.expiresAt && new Date(url.expiresAt) <= now
-    );
-
-    const allUrlsToRemove = [...new Set([...urlsToRemove, ...expiredUrls])];
-    
-    if (allUrlsToRemove.length > 0) {
-      console.log(`Cleaning up ${allUrlsToRemove.length} URLs to free storage space`);
-      
-      // Remove URLs and their associated data
-      allUrlsToRemove.forEach(url => {
-        this.deleteURL(url.id);
-      });
-    }
-  }
-
-  // Create backup of URLs
-  private static createBackup(): void {
-    try {
-      const urls = this.getURLs();
-      const backup = {
-        timestamp: new Date().toISOString(),
-        urls: urls,
-        version: '1.0'
-      };
-
-      const settings = this.getStorageSettings();
-      const backupData = settings.compressionEnabled 
-        ? compressData(JSON.stringify(backup))
-        : JSON.stringify(backup);
-
-      localStorage.setItem(URL_BACKUP_KEY, backupData);
-    } catch (error) {
-      console.error('Error creating backup:', error);
-    }
-  }
-
-  // Restore from backup
-  static restoreFromBackup(): boolean {
-    try {
-      const backupData = localStorage.getItem(URL_BACKUP_KEY);
-      if (!backupData) {
-        return false;
-      }
-
-      const settings = this.getStorageSettings();
-      const backupJson = settings.compressionEnabled 
-        ? decompressData(backupData)
-        : backupData;
-
-      const backup = JSON.parse(backupJson);
-      
-      if (backup.urls && Array.isArray(backup.urls)) {
-        this.saveURLs(backup.urls);
-        console.log(`Restored ${backup.urls.length} URLs from backup created at ${backup.timestamp}`);
-        return true;
-      }
-    } catch (error) {
-      console.error('Error restoring from backup:', error);
-    }
-    return false;
-  }
-
-  // Clean up expired URLs to free up storage
-  private static cleanupExpiredURLs(): void {
-    const now = new Date();
-    const urls = this.getURLs();
-
-    const validURLs = urls.filter(url => {
-      // Keep URLs without expiration or with future expiration
-      return !url.expiresAt || new Date(url.expiresAt) > now;
-    });
-
-    // Only update if we removed some URLs
-    if (validURLs.length < urls.length) {
-      this.saveURLs(validURLs);
-      console.log(`Cleaned up ${urls.length - validURLs.length} expired URLs`);
-    }
-  }
-
-  // Validate URL
+  // Optimized URL validation using validator library
   static isValidURL(url: string): { valid: boolean; reason?: string; suspicious?: boolean } {
+    if (!url) return { valid: false, reason: 'URL is required' };
+
     try {
-      // Try to parse the URL
-      const parsedUrl = new URL(url);
-
-      // Check protocol
-      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        return {
-          valid: false,
-          reason: 'URL must use http:// or https:// protocol'
-        };
+      // Use validator for robust validation
+      if (!validator.isURL(url, {
+        protocols: ['http', 'https'],
+        require_protocol: true,
+        require_valid_protocol: true,
+        allow_underscores: false,
+        allow_trailing_dot: false,
+        allow_protocol_relative_urls: false
+      })) {
+        return { valid: false, reason: 'Invalid URL format' };
       }
 
-      // Check if hostname is valid (not empty and has at least one dot)
-      if (!parsedUrl.hostname || !parsedUrl.hostname.includes('.')) {
-        return {
-          valid: false,
-          reason: 'URL must contain a valid domain name'
-        };
+      const urlObj = new URL(url);
+      
+      // Security checks
+      const suspicious = this.checkSuspiciousURL(urlObj);
+      if (suspicious.isSuspicious) {
+        return { valid: false, reason: suspicious.reason, suspicious: true };
       }
 
-      // Check for common URL patterns that might be invalid
-      if (parsedUrl.hostname === 'localhost' ||
-          parsedUrl.hostname.startsWith('127.0.0.') ||
-          parsedUrl.hostname === '0.0.0.0') {
-        return {
-          valid: false,
-          reason: 'Local URLs cannot be shortened'
-        };
-      }
-
-      // Check for extremely long URLs (over 2000 chars is problematic for some browsers)
-      if (url.length > 2000) {
-        return {
-          valid: false,
-          reason: 'URL is too long (maximum 2000 characters)'
-        };
-      }
-
-      // Check for extremely long hostnames (potential IDN homograph attack)
-      if (parsedUrl.hostname.length > 100) {
-        return {
-          valid: false,
-          reason: 'Domain name is too long (maximum 100 characters)'
-        };
-      }
-
-      // Check for too many subdomains (potential for confusion)
-      const subdomainCount = parsedUrl.hostname.split('.').length - 1;
-      if (subdomainCount > 5) {
-        return {
-          valid: false,
-          reason: 'URL contains too many subdomains'
-        };
-      }
-
-      // Check for known malicious domains
-      if (this.knownMaliciousDomains.some(domain =>
-          parsedUrl.hostname === domain || parsedUrl.hostname.endsWith(`.${domain}`))) {
-        return {
-          valid: false,
-          reason: 'This URL has been identified as potentially malicious'
-        };
-      }
-
-      // Check for suspicious TLDs
-      const tld = parsedUrl.hostname.split('.').pop()?.toLowerCase();
-      const hasSuspiciousTLD = tld ? this.suspiciousTLDs.includes(tld) : false;
-
-      // Check for suspicious domain patterns
-      const hasSuspiciousDomainPattern = this.suspiciousDomainPatterns.some(pattern =>
-        parsedUrl.hostname.toLowerCase().includes(pattern));
-
-      // Check for IP address in hostname (often suspicious)
-      const isIPAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(parsedUrl.hostname);
-
-      // Check for encoded characters in hostname (potential IDN homograph attack)
-      const hasEncodedChars = parsedUrl.hostname.includes('%');
-
-      // Check for excessive number of query parameters (potential for abuse)
-      const queryParamCount = parsedUrl.searchParams.size;
-      const hasExcessiveParams = queryParamCount > 15;
-
-      // Check for suspicious URL patterns
-      const hasSuspiciousURLPattern = /\.(exe|dll|bat|sh|cmd|msi|vbs|ps1)$/i.test(parsedUrl.pathname);
-
-      // Flag as suspicious if any of the above checks are true
-      const isSuspicious = hasSuspiciousTLD ||
-                          hasSuspiciousDomainPattern ||
-                          isIPAddress ||
-                          hasEncodedChars ||
-                          hasExcessiveParams ||
-                          hasSuspiciousURLPattern;
-
-      return {
-        valid: true,
-        suspicious: isSuspicious
-      };
-    } catch (e) {
-      return {
-        valid: false,
-        reason: 'Invalid URL format'
-      };
+      return { valid: true };
+    } catch (error) {
+      return { valid: false, reason: 'Invalid URL' };
     }
   }
 
-  // Cache for URLs to avoid repeated localStorage access
-  private static urlCache: ShortenedURL[] | null = null;
-  private static urlCacheTimestamp: number = 0;
-  private static urlCacheByIdMap: Map<string, ShortenedURL> = new Map();
-  private static urlCacheByShortCodeMap: Map<string, ShortenedURL> = new Map();
-
-  // Get all shortened URLs with caching
-  static getURLs(): ShortenedURL[] {
-    const now = Date.now();
-
-    // If cache is valid and not expired, use it
-    if (this.urlCache !== null && (now - this.urlCacheTimestamp) < CACHE_EXPIRY) {
-      return [...this.urlCache]; // Return a copy to prevent mutation
+  private static checkSuspiciousURL(urlObj: URL): { isSuspicious: boolean; reason?: string } {
+    const suspiciousTLDs = ['tk', 'ml', 'ga', 'cf'];
+    const suspiciousPatterns = ['bit.ly', 'tinyurl.com', 'shorturl.at'];
+    
+    if (suspiciousTLDs.some(tld => urlObj.hostname.endsWith(`.${tld}`))) {
+      return { isSuspicious: true, reason: 'Suspicious domain' };
     }
+    
+    if (suspiciousPatterns.some(pattern => urlObj.hostname.includes(pattern))) {
+      return { isSuspicious: true, reason: 'URL shortener detected' };
+    }
+    
+    return { isSuspicious: false };
+  }
 
+  // Optimized storage operations using idb-keyval
+  private static async getFromStorage<T>(key: string): Promise<T | null> {
     try {
-      const urlsJson = localStorage.getItem(URL_STORAGE_KEY);
-      const urls = urlsJson ? JSON.parse(urlsJson) : [];
-
-      // Update cache
-      this.urlCache = urls;
-      this.urlCacheTimestamp = now;
-
-      // Update lookup maps for faster access
-      this.updateUrlLookupMaps(urls);
-
-      return [...urls]; // Return a copy to prevent mutation
+      return await get(key) || null;
     } catch (error) {
-      console.error('Error getting URLs from localStorage:', error);
+      console.error(`Error getting ${key} from storage:`, error);
+      return null;
+    }
+  }
+
+  private static async setToStorage<T>(key: string, value: T): Promise<void> {
+    try {
+      await set(key, value);
+    } catch (error) {
+      console.error(`Error setting ${key} to storage:`, error);
+    }
+  }
+
+  private static async removeFromStorage(key: string): Promise<void> {
+    try {
+      await del(key);
+    } catch (error) {
+      console.error(`Error removing ${key} from storage:`, error);
+    }
+  }
+
+  // Core functionality
+  static async initialize(): Promise<void> {
+    if (this.isInitialized) return;
+    
+    try {
+      // Initialize storage and cleanup
+      await this.performCleanup();
+      this.startCacheCleanup();
+      this.isInitialized = true;
+    } catch (error) {
+      console.error('Error initializing URLShortenerService:', error);
+    }
+  }
+
+  // Enhanced cache management using LRU cache
+  private static startCacheCleanup(): void {
+    // Periodic cleanup every 10 minutes (LRU cache handles most cleanup automatically)
+    this.cacheCleanupInterval = setInterval(() => {
+      this.performCacheCleanup();
+    }, 10 * 60 * 1000);
+  }
+
+  private static performCacheCleanup(): void {
+    // LRU cache automatically handles size limits and TTL
+    // This method can be used for additional cleanup logic if needed
+    console.debug('Cache statistics:', {
+      size: this.cache.size,
+      maxSize: this.cache.max
+    });
+    
+    // Force garbage collection of expired items
+    this.cache.purgeStale();
+  }
+
+  private static getFromCache<T>(key: string): T | null {
+    return this.cache.get(key) || null;
+  }
+
+  private static addToCache<T>(key: string, data: T): void {
+    this.cache.set(key, data);
+  }
+
+  private static removeFromCache(key: string): void {
+    this.cache.delete(key);
+  }
+
+  private static clearCache(): void {
+    this.cache.clear();
+  }
+
+  static cleanup(): void {
+    // Clear cache cleanup interval
+    if (this.cacheCleanupInterval) {
+      clearInterval(this.cacheCleanupInterval);
+      this.cacheCleanupInterval = null;
+    }
+    
+    // Clear cache
+    this.cache.clear();
+    this.isInitialized = false;
+  }
+
+  static async getURLs(): Promise<ShortenedURL[]> {
+    try {
+      const urls = await this.getFromStorage<ShortenedURL[]>(STORAGE_KEYS.URLS) || [];
+      return urls.filter(url => !this.isExpired(url));
+    } catch (error) {
+      console.error('Error getting URLs:', error);
       return [];
     }
   }
 
-  // Update lookup maps for faster URL retrieval
-  private static updateUrlLookupMaps(urls: ShortenedURL[]): void {
-    this.urlCacheByIdMap.clear();
-    this.urlCacheByShortCodeMap.clear();
-
-    for (const url of urls) {
-      this.urlCacheByIdMap.set(url.id, url);
-      this.urlCacheByShortCodeMap.set(url.shortCode, url);
-    }
-  }
-
-  // Add URL to permanent storage
-  static addToPermanentStorage(urlId: string): boolean {
-    try {
-      const url = this.getURLById(urlId);
-      if (!url) return false;
-
-      const permanentUrls = this.getPermanentURLs();
-      
-      // Check if already in permanent storage
-      if (permanentUrls.some(permUrl => permUrl.id === urlId)) {
-        return true;
-      }
-
-      // Remove expiration and add to permanent storage
-      const permanentUrl = { ...url, expiresAt: undefined };
-      permanentUrls.push(permanentUrl);
-      
-      localStorage.setItem(PERMANENT_STORAGE_KEY, JSON.stringify(permanentUrls));
-      
-      // Update the URL in regular storage to remove expiration
-      this.updateURL(urlId, { expiresAt: undefined });
-      
-      return true;
-    } catch (error) {
-      console.error('Error adding URL to permanent storage:', error);
-      return false;
-    }
-  }
-
-  // Get permanent URLs
-  private static getPermanentURLs(): ShortenedURL[] {
-    try {
-      const permanentJson = localStorage.getItem(PERMANENT_STORAGE_KEY);
-      return permanentJson ? JSON.parse(permanentJson) : [];
-    } catch (error) {
-      console.error('Error getting permanent URLs:', error);
-      return [];
-    }
-  }
-
-  // Remove URL from permanent storage
-  static removeFromPermanentStorage(urlId: string): boolean {
-    try {
-      const permanentUrls = this.getPermanentURLs();
-      const filteredUrls = permanentUrls.filter(url => url.id !== urlId);
-      
-      if (filteredUrls.length < permanentUrls.length) {
-        localStorage.setItem(PERMANENT_STORAGE_KEY, JSON.stringify(filteredUrls));
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Error removing URL from permanent storage:', error);
-      return false;
-    }
-  }
-
-  // Check if URL is in permanent storage
-  static isInPermanentStorage(urlId: string): boolean {
-    const permanentUrls = this.getPermanentURLs();
-    return permanentUrls.some(url => url.id === urlId);
-  }
-
-  // Export URLs to JSON
-  static exportURLs(includeAnalytics: boolean = false): string {
-    try {
-      const urls = this.getURLs();
-      const permanentUrls = this.getPermanentURLs();
-      const settings = this.getStorageSettings();
-      
-      const exportData = {
-        timestamp: new Date().toISOString(),
-        version: '1.0',
-        settings: settings,
-        urls: urls,
-        permanentUrls: permanentUrls,
-        analytics: includeAnalytics ? this.exportAnalytics() : null
-      };
-
-      return JSON.stringify(exportData, null, 2);
-    } catch (error) {
-      console.error('Error exporting URLs:', error);
-      throw new Error('Failed to export URLs');
-    }
-  }
-
-  // Import URLs from JSON
-  static importURLs(jsonData: string, mergeWithExisting: boolean = true): boolean {
-    try {
-      const importData = JSON.parse(jsonData);
-      
-      if (!importData.urls || !Array.isArray(importData.urls)) {
-        throw new Error('Invalid import data format');
-      }
-
-      const existingUrls = mergeWithExisting ? this.getURLs() : [];
-      const existingPermanentUrls = mergeWithExisting ? this.getPermanentURLs() : [];
-      
-      // Merge URLs, avoiding duplicates
-      const mergedUrls = [...existingUrls];
-      const mergedPermanentUrls = [...existingPermanentUrls];
-      
-      for (const importedUrl of importData.urls) {
-        if (!mergedUrls.some(url => url.id === importedUrl.id)) {
-          mergedUrls.push(importedUrl);
-        }
-      }
-
-      if (importData.permanentUrls && Array.isArray(importData.permanentUrls)) {
-        for (const importedUrl of importData.permanentUrls) {
-          if (!mergedPermanentUrls.some(url => url.id === importedUrl.id)) {
-            mergedPermanentUrls.push(importedUrl);
+  static async shortenURL(originalURL: string, options: URLOptions = {}): Promise<ShortenedURL> {
+    // Rate limiting for URL shortening
+    const rateLimitResult = await RateLimiterService.checkLimit(
+      'url_shortening',
+      async () => {
+        try {
+          // Input validation
+          if (!originalURL || typeof originalURL !== 'string') {
+            throw new Error('URL is required and must be a string');
           }
+          
+          return await this.performURLShortening(originalURL, options);
+        } catch (error) {
+          throw error;
         }
-      }
-
-      // Save merged data
-      this.saveURLs(mergedUrls);
-      localStorage.setItem(PERMANENT_STORAGE_KEY, JSON.stringify(mergedPermanentUrls));
-      
-      // Import settings if available
-      if (importData.settings) {
-        this.saveStorageSettings(importData.settings);
-      }
-
-      console.log(`Imported ${importData.urls.length} URLs and ${importData.permanentUrls?.length || 0} permanent URLs`);
-      return true;
-    } catch (error) {
-      console.error('Error importing URLs:', error);
-      throw new Error('Failed to import URLs: ' + error.message);
-    }
-  }
-
-  // Export analytics data
-  private static exportAnalytics(): Record<string, unknown> {
-    try {
-      const analyticsCache = JSON.parse(localStorage.getItem(ANALYTICS_CACHE_KEY) || '{}');
-      const clicksData = this.getAllClicks();
-      
-      return {
-        cache: analyticsCache,
-        clicks: clicksData
-      };
-    } catch (error) {
-      console.error('Error exporting analytics:', error);
-      return {};
-    }
-  }
-
-  // Get storage statistics
-  static getStorageStats(): {
-    totalUrls: number;
-    permanentUrls: number;
-    expiredUrls: number;
-    storageSizeMB: number;
-    settingsUsed: StorageSettings;
-  } {
-    const urls = this.getURLs();
-    const permanentUrls = this.getPermanentURLs();
-    const now = new Date();
-    const expiredUrls = urls.filter(url => 
-      url.expiresAt && new Date(url.expiresAt) <= now
+      },
+      { maxAttempts: 10, windowMs: 60 * 1000, showToast: true } // 10 URLs per minute
     );
 
-    return {
-      totalUrls: urls.length,
-      permanentUrls: permanentUrls.length,
-      expiredUrls: expiredUrls.length,
-      storageSizeMB: getStorageSize(),
-      settingsUsed: this.getStorageSettings()
-    };
-  }
-
-  // Save URLs to localStorage and update cache
-  private static saveURLs(urls: ShortenedURL[]): void {
-    localStorage.setItem(URL_STORAGE_KEY, JSON.stringify(urls));
-
-    // Update cache
-    this.urlCache = [...urls];
-    this.urlCacheTimestamp = Date.now();
-
-    // Update lookup maps
-    this.updateUrlLookupMaps(urls);
-  }
-
-  // Get URL by ID (optimized with Map lookup)
-  static getURLById(id: string): ShortenedURL | null {
-    // Try to get from cache first
-    if (this.urlCacheByIdMap.has(id)) {
-      return this.urlCacheByIdMap.get(id) || null;
+    if (!rateLimitResult.allowed) {
+      throw new Error(rateLimitResult.error || 'Rate limit exceeded');
     }
 
-    // If not in cache or cache expired, refresh cache and try again
-    const urls = this.getURLs();
-    return this.urlCacheByIdMap.get(id) || null;
+    return rateLimitResult.result;
   }
 
-  // Get URL by short code (optimized with Map lookup)
-  static getURLByShortCode(shortCode: string): ShortenedURL | null {
-    // Try to get from cache first
-    if (this.urlCacheByShortCodeMap.has(shortCode)) {
-      return this.urlCacheByShortCodeMap.get(shortCode) || null;
+  private static async performURLShortening(originalURL: string, options: URLOptions = {}): Promise<ShortenedURL> {
+    try {
+
+      const validation = this.isValidURL(originalURL);
+      if (!validation.valid) {
+        throw new Error(validation.reason || 'Invalid URL');
+      }
+
+      // Check custom alias availability
+      let shortCode: string;
+      if (options.customAlias) {
+        if (typeof options.customAlias !== 'string' || options.customAlias.length < 3) {
+          throw new Error('Custom alias must be at least 3 characters long');
+        }
+        
+        const aliasAvailable = await this.isAliasAvailable(options.customAlias);
+        if (!aliasAvailable) {
+          throw new Error('Custom alias is already in use');
+        }
+        shortCode = options.customAlias;
+      } else {
+        shortCode = generateShortCode();
+        
+        // Ensure generated code is unique
+        let attempts = 0;
+        while (!(await this.isAliasAvailable(shortCode)) && attempts < 10) {
+          shortCode = generateShortCode();
+          attempts++;
+        }
+        
+        if (attempts >= 10) {
+          throw new Error('Unable to generate unique short code. Please try again.');
+        }
+      }
+
+      // Validate expiration date
+      let expiresAt: string | undefined;
+      if (options.expiresAt) {
+        const expDate = new Date(options.expiresAt);
+        const now = new Date();
+        const maxDate = new Date(now.getTime() + MAX_EXPIRATION_DAYS * 24 * 60 * 60 * 1000);
+        
+        if (expDate <= now) {
+          throw new Error('Expiration date must be in the future');
+        }
+        if (expDate > maxDate) {
+          throw new Error(`Expiration date cannot be more than ${MAX_EXPIRATION_DAYS} days in the future`);
+        }
+        expiresAt = expDate.toISOString();
+      } else {
+        expiresAt = new Date(Date.now() + DEFAULT_EXPIRATION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+      }
+
+      const url: ShortenedURL = {
+        id: generateId(),
+        originalURL,
+        shortCode,
+        shortURL: `${BASE_URL}/${shortCode}`,
+        createdAt: new Date().toISOString(),
+        expiresAt,
+        clicks: 0,
+        password: options.password ? await this.hashPassword(options.password) : undefined,
+        utmParameters: options.utmParameters,
+        isSuspicious: validation.suspicious
+      };
+
+      // Save to storage
+      const urls = await this.getURLs();
+      urls.push(url);
+      await this.setToStorage(STORAGE_KEYS.URLS, urls);
+
+             return url;
+     } catch (error) {
+       console.error('Error in performURLShortening:', error);
+       throw error instanceof Error ? error : new Error('Failed to shorten URL');
+     }
+  }
+
+  static async getURLByShortCode(shortCode: string): Promise<ShortenedURL | null> {
+    const urls = await this.getURLs();
+    return urls.find(url => url.shortCode === shortCode) || null;
+  }
+
+  static async recordClick(shortCode: string, clickData: Partial<URLClickData> = {}): Promise<void> {
+    try {
+      // Input validation
+      if (!shortCode || typeof shortCode !== 'string') {
+        throw new Error('Short code is required and must be a string');
+      }
+
+      // Get the URL to get its ID
+      const url = await this.getURLByShortCode(shortCode);
+      if (!url) {
+        throw new Error(`URL not found for short code: ${shortCode}`);
+      }
+
+      // Check if URL is expired
+      if (this.isExpired(url)) {
+        throw new Error('URL has expired');
+      }
+
+      // Validate click data
+      if (clickData.conversionValue && (typeof clickData.conversionValue !== 'number' || clickData.conversionValue < 0)) {
+        throw new Error('Conversion value must be a non-negative number');
+      }
+
+      if (clickData.sessionDuration && (typeof clickData.sessionDuration !== 'number' || clickData.sessionDuration < 0)) {
+        throw new Error('Session duration must be a non-negative number');
+      }
+
+      const click: URLClickData = {
+        id: generateId(),
+        urlId: url.id,
+        timestamp: new Date().toISOString(),
+        referrer: clickData.referrer || document.referrer || undefined,
+        device: clickData.device || this.detectDevice(),
+        browser: clickData.browser || this.detectBrowser(),
+        location: clickData.location || undefined,
+        utmParameters: clickData.utmParameters,
+        isConversion: clickData.isConversion || false,
+        conversionType: clickData.conversionType,
+        conversionValue: clickData.conversionValue,
+        sessionDuration: clickData.sessionDuration,
+        exitPage: clickData.exitPage
+      };
+
+      // Save click data
+      const clicks = await this.getFromStorage<URLClickData[]>(STORAGE_KEYS.CLICKS) || [];
+      clicks.push(click);
+      await this.setToStorage(STORAGE_KEYS.CLICKS, clicks);
+
+      // Update URL click count
+      const urls = await this.getURLs();
+      const urlIndex = urls.findIndex(url => url.shortCode === shortCode);
+      if (urlIndex !== -1) {
+        urls[urlIndex].clicks++;
+        await this.setToStorage(STORAGE_KEYS.URLS, urls);
+      }
+    } catch (error) {
+      console.error('Error recording click:', error);
+      // Don't re-throw to avoid breaking user experience, but log the error
+      if (error instanceof Error && error.message.includes('expired')) {
+        console.warn(`Attempted to record click on expired URL: ${shortCode}`);
+      }
+    }
+  }
+
+  static async getURLAnalytics(urlId: string): Promise<URLAnalytics> {
+    const cacheKey = `analytics_${urlId}`;
+    const cached = this.cache.get(cacheKey);
+    
+    if (cached && (Date.now() - cached.timestamp) < CACHE_EXPIRY) {
+      return cached.data;
     }
 
-    // If not in cache or cache expired, refresh cache and try again
-    const urls = this.getURLs();
-    return this.urlCacheByShortCodeMap.get(shortCode) || null;
+    try {
+      const clicks = await this.getFromStorage<URLClickData[]>(STORAGE_KEYS.CLICKS) || [];
+      const url = (await this.getURLs()).find(u => u.id === urlId);
+      
+      if (!url) {
+        throw new Error('URL not found');
+      }
+
+      const urlClicks = clicks.filter(click => click.urlId === urlId);
+      
+      const analytics: URLAnalytics = {
+        urlId,
+        totalClicks: urlClicks.length,
+        clicksByDate: this.groupByDate(urlClicks),
+        clicksByReferrer: this.groupByField(urlClicks, 'referrer'),
+        clicksByDevice: this.groupByField(urlClicks, 'device'),
+        clicksByBrowser: this.groupByField(urlClicks, 'browser'),
+        clicksByCountry: this.groupByLocationField(urlClicks, 'country'),
+        clicksByRegion: this.groupByLocationField(urlClicks, 'region'),
+        clicksByCity: this.groupByLocationField(urlClicks, 'city'),
+        clicksByHour: this.groupByHour(urlClicks),
+        clicksByDayOfWeek: this.groupByDayOfWeek(urlClicks),
+        clicksByUtmSource: this.groupByUtmField(urlClicks, 'source'),
+        clicksByUtmMedium: this.groupByUtmField(urlClicks, 'medium'),
+        clicksByUtmCampaign: this.groupByUtmField(urlClicks, 'campaign'),
+        clicksByUtmTerm: this.groupByUtmField(urlClicks, 'term'),
+        clicksByUtmContent: this.groupByUtmField(urlClicks, 'content'),
+        clicksTimeline: this.getClicksTimeline(urlClicks),
+        totalConversions: urlClicks.filter(c => c.isConversion).length,
+        conversionRate: urlClicks.length > 0 ? (urlClicks.filter(c => c.isConversion).length / urlClicks.length) * 100 : 0,
+        conversionsByType: this.groupByField(urlClicks.filter(c => c.isConversion), 'conversionType'),
+        conversionsByDate: this.groupByDate(urlClicks.filter(c => c.isConversion)),
+        conversionValue: urlClicks.reduce((sum, click) => sum + (click.conversionValue || 0), 0)
+      };
+
+      this.addToCache(cacheKey, analytics);
+      return analytics;
+    } catch (error) {
+      console.error('Error getting analytics:', error);
+      throw error;
+    }
   }
 
-  // Check if a custom alias is available
-  static isAliasAvailable(alias: string): boolean {
-    const urls = this.getURLs();
+  // Utility methods
+  private static isExpired(url: ShortenedURL): boolean {
+    return url.expiresAt ? new Date(url.expiresAt) < new Date() : false;
+  }
+
+  private static async isAliasAvailable(alias: string): Promise<boolean> {
+    const urls = await this.getURLs();
     return !urls.some(url => url.shortCode === alias);
   }
 
-  // Validate a custom alias
-  static validateAlias(alias: string): { valid: boolean; reason?: string } {
-    // Check if alias is empty
-    if (!alias || alias.trim() === '') {
-      return { valid: false, reason: 'Custom alias cannot be empty' };
-    }
-
-    // Check if alias contains only allowed characters (alphanumeric, hyphens, and underscores)
-    if (!/^[a-zA-Z0-9_-]+$/.test(alias)) {
-      return { valid: false, reason: 'Custom alias can only contain letters, numbers, hyphens, and underscores' };
-    }
-
-    // Check if alias is too long (max 50 characters)
-    if (alias.length > 50) {
-      return { valid: false, reason: 'Custom alias is too long (maximum 50 characters)' };
-    }
-
-    // Check if alias is too short (min 3 characters)
-    if (alias.length < 3) {
-      return { valid: false, reason: 'Custom alias is too short (minimum 3 characters)' };
-    }
-
-    // Check if alias is available
-    if (!this.isAliasAvailable(alias)) {
-      return { valid: false, reason: 'This custom alias is already in use' };
-    }
-
-    return { valid: true };
-  }
-
-  // Validate a password
-  static validatePassword(password: string): { valid: boolean; reason?: string } {
-    // Check if password is empty
-    if (!password || password.trim() === '') {
-      return { valid: false, reason: 'Password cannot be empty' };
-    }
-
-    // Check if password is too short (min 6 characters)
-    if (password.length < 6) {
-      return { valid: false, reason: 'Password must be at least 6 characters long' };
-    }
-
-    return { valid: true };
-  }
-
-  // Verify a password against a stored hash (async for production security)
-  static async verifyPassword(password: string, hash: string): Promise<boolean> {
+  // Enhanced device/browser detection using UAParser
+  private static detectDevice(): string {
     try {
-      // Try new async verification first
-      return await verifyPasswordHash(password, hash);
+      this.uaParser.setUA(navigator.userAgent);
+      const result = this.uaParser.getResult();
+      
+      const deviceType = result.device.type;
+      if (deviceType === 'mobile') return 'Mobile';
+      if (deviceType === 'tablet') return 'Tablet';
+      if (deviceType === 'smarttv') return 'Smart TV';
+      if (deviceType === 'wearable') return 'Wearable';
+      if (deviceType === 'console') return 'Console';
+      
+      return 'Desktop';
     } catch (error) {
-      // Fallback to sync verification for backwards compatibility
-      try {
-        return hashPasswordSync(password) === hash;
-      } catch (fallbackError) {
-        console.error('Both async and sync password verification failed:', error, fallbackError);
-        return false;
+      console.warn('Error detecting device:', error);
+      return 'Unknown';
+    }
+  }
+
+  private static detectBrowser(): string {
+    try {
+      this.uaParser.setUA(navigator.userAgent);
+      const result = this.uaParser.getResult();
+      
+      const browserName = result.browser.name;
+      if (browserName) {
+        return browserName;
       }
+      
+      return 'Unknown';
+    } catch (error) {
+      console.warn('Error detecting browser:', error);
+      return 'Unknown';
     }
   }
 
-  // Synchronous password verification for backwards compatibility
-  static verifyPasswordSync(password: string, hash: string): boolean {
+  private static getDetailedUserAgent(): {
+    browser: { name?: string; version?: string };
+    os: { name?: string; version?: string };
+    device: { vendor?: string; model?: string; type?: string };
+  } {
     try {
-      return hashPasswordSync(password) === hash;
+      this.uaParser.setUA(navigator.userAgent);
+      const result = this.uaParser.getResult();
+      
+      return {
+        browser: {
+          name: result.browser.name,
+          version: result.browser.version
+        },
+        os: {
+          name: result.os.name,
+          version: result.os.version
+        },
+        device: {
+          vendor: result.device.vendor,
+          model: result.device.model,
+          type: result.device.type
+        }
+      };
     } catch (error) {
-      console.error('Sync password verification failed:', error);
+      console.warn('Error getting detailed user agent:', error);
+      return {
+        browser: {},
+        os: {},
+        device: {}
+      };
+    }
+  }
+
+  // Enhanced grouping functions using lodash-es for better performance
+  private static groupByField(clicks: URLClickData[], field: keyof URLClickData): Record<string, number> {
+    return countBy(clicks, click => String(click[field] || 'Unknown'));
+  }
+
+  private static groupByLocationField(clicks: URLClickData[], field: keyof GeoLocation): Record<string, number> {
+    return countBy(clicks, click => String(click.location?.[field] || 'Unknown'));
+  }
+
+  private static groupByUtmField(clicks: URLClickData[], field: string): Record<string, number> {
+    return countBy(clicks, click => String(click.utmParameters?.[field] || 'Unknown'));
+  }
+
+  private static groupByDate(clicks: URLClickData[]): Record<string, number> {
+    return countBy(clicks, click => {
+      try {
+        return format(parseISO(click.timestamp), 'yyyy-MM-dd');
+      } catch (error) {
+        return 'Invalid Date';
+      }
+    });
+  }
+
+  private static groupByHour(clicks: URLClickData[]): Record<string, number> {
+    return countBy(clicks, click => {
+      try {
+        return format(parseISO(click.timestamp), 'HH');
+      } catch (error) {
+        return 'Unknown';
+      }
+    });
+  }
+
+  private static groupByDayOfWeek(clicks: URLClickData[]): Record<string, number> {
+    return countBy(clicks, click => {
+      try {
+        return format(parseISO(click.timestamp), 'EEEE');
+      } catch (error) {
+        return 'Unknown';
+      }
+    });
+  }
+
+  private static getClicksTimeline(clicks: URLClickData[]): Array<{date: string, clicks: number}> {
+    const timeline = this.groupByDate(clicks);
+    return orderBy(
+      Object.entries(timeline).map(([date, clicks]) => ({ date, clicks })),
+      ['date'],
+      ['asc']
+    );
+  }
+
+  private static async performCleanup(): Promise<void> {
+    try {
+      const urls = await this.getFromStorage<ShortenedURL[]>(STORAGE_KEYS.URLS) || [];
+      const activeUrls = urls.filter(url => !this.isExpired(url));
+      
+      if (activeUrls.length !== urls.length) {
+        await this.setToStorage(STORAGE_KEYS.URLS, activeUrls);
+      }
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+    }
+  }
+
+  // Additional utility methods
+  static async deleteURL(id: string): Promise<boolean> {
+    try {
+      const urls = await this.getURLs();
+      const filteredUrls = urls.filter(url => url.id !== id);
+      
+      if (filteredUrls.length !== urls.length) {
+        await this.setToStorage(STORAGE_KEYS.URLS, filteredUrls);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error deleting URL:', error);
       return false;
     }
   }
 
-  // Helper to append UTM parameters to a URL
-  static appendUtmParameters(url: string, utmParams?: Record<string, string | Record<string, string>>): string {
-    if (!utmParams || Object.keys(utmParams).length === 0) {
-      return url;
-    }
-
+  static async updateURL(id: string, updates: Partial<ShortenedURL>): Promise<ShortenedURL | null> {
     try {
-      const parsedUrl = new URL(url);
-
-      // Add standard UTM parameters
-      if (utmParams.source && typeof utmParams.source === 'string')
-        parsedUrl.searchParams.set('utm_source', utmParams.source);
-
-      if (utmParams.medium && typeof utmParams.medium === 'string')
-        parsedUrl.searchParams.set('utm_medium', utmParams.medium);
-
-      if (utmParams.campaign && typeof utmParams.campaign === 'string')
-        parsedUrl.searchParams.set('utm_campaign', utmParams.campaign);
-
-      if (utmParams.term && typeof utmParams.term === 'string')
-        parsedUrl.searchParams.set('utm_term', utmParams.term);
-
-      if (utmParams.content && typeof utmParams.content === 'string')
-        parsedUrl.searchParams.set('utm_content', utmParams.content);
-
-      // Add custom UTM parameters
-      if (utmParams.custom && typeof utmParams.custom === 'object') {
-        Object.entries(utmParams.custom).forEach(([key, value]) => {
-          if (value) {
-            parsedUrl.searchParams.set(`utm_${key}`, value);
-          }
-        });
+      const urls = await this.getURLs();
+      const urlIndex = urls.findIndex(url => url.id === id);
+      
+      if (urlIndex !== -1) {
+        urls[urlIndex] = { ...urls[urlIndex], ...updates };
+        await this.setToStorage(STORAGE_KEYS.URLS, urls);
+        return urls[urlIndex];
       }
-
-      // Add any other UTM parameters (legacy support)
-      Object.entries(utmParams).forEach(([key, value]) => {
-        if (
-          !['source', 'medium', 'campaign', 'term', 'content', 'custom'].includes(key) &&
-          typeof value === 'string' &&
-          value
-        ) {
-          parsedUrl.searchParams.set(`utm_${key}`, value);
-        }
-      });
-
-      return parsedUrl.toString();
+      return null;
     } catch (error) {
-      console.error('Error appending UTM parameters:', error);
-      return url;
-    }
-  }
-
-  // Validate UTM parameters
-  static validateUtmParameters(utmParams: Record<string, string | Record<string, string>>): { valid: boolean; reason?: string } {
-    // Check if source is provided (required for UTM tracking)
-    if (!utmParams.source || (typeof utmParams.source === 'string' && utmParams.source.trim() === '')) {
-      return { valid: false, reason: 'UTM Source is required for campaign tracking' };
-    }
-
-    // Check for invalid characters in standard UTM parameters
-    const invalidCharsRegex = /[^\w\s\-_.]/;
-    const standardParams = ['source', 'medium', 'campaign', 'term', 'content'];
-
-    for (const key of standardParams) {
-      const value = utmParams[key];
-      if (value && typeof value === 'string' && invalidCharsRegex.test(value)) {
-        return {
-          valid: false,
-          reason: `UTM ${key} contains invalid characters. Use only letters, numbers, underscores, hyphens, and periods.`
-        };
-      }
-    }
-
-    // Check custom UTM parameters
-    if (utmParams.custom && typeof utmParams.custom === 'object') {
-      // Validate custom parameter names
-      for (const [key, value] of Object.entries(utmParams.custom)) {
-        // Check parameter name
-        if (invalidCharsRegex.test(key)) {
-          return {
-            valid: false,
-            reason: `Custom UTM parameter name "${key}" contains invalid characters. Use only letters, numbers, underscores, hyphens, and periods.`
-          };
-        }
-
-        // Check parameter value
-        if (value && invalidCharsRegex.test(value)) {
-          return {
-            valid: false,
-            reason: `Custom UTM parameter "${key}" contains invalid characters. Use only letters, numbers, underscores, hyphens, and periods.`
-          };
-        }
-
-        // Check for reserved parameter names
-        if (standardParams.includes(key)) {
-          return {
-            valid: false,
-            reason: `"${key}" is a standard UTM parameter and cannot be used as a custom parameter name.`
-          };
-        }
-      }
-    }
-
-    return { valid: true };
-  }
-
-  // Create a shortened URL (async for secure password hashing)
-  static async shortenURL(originalURL: string, options?: URLOptions): Promise<ShortenedURL> {
-    try {
-      // Sanitize the URL
-      const sanitizedURL = originalURL.trim();
-
-      // Validate URL
-      const validation = this.isValidURL(sanitizedURL);
-      if (!validation.valid) {
-        throw new Error(validation.reason || 'Invalid URL. Please enter a valid URL.');
-      }
-
-      // Check if URL is suspicious
-      if (validation.suspicious) {
-        // We'll still allow it but log a warning
-        console.warn('Potentially suspicious URL detected:', sanitizedURL);
-      }
-
-      // Generate a unique ID
-      const id = generateId();
-
-      // Handle custom alias if provided
-      let shortCode = generateShortCode();
-      if (options?.customAlias) {
-        // Sanitize the custom alias
-        const sanitizedAlias = options.customAlias.trim();
-
-        const aliasValidation = this.validateAlias(sanitizedAlias);
-        if (!aliasValidation.valid) {
-          throw new Error(`Invalid custom alias: ${aliasValidation.reason}`);
-        }
-        shortCode = sanitizedAlias;
-      }
-
-      // Create the short URL
-      const shortURL = `${BASE_URL}/s/${shortCode}`;
-
-      // Hash password if provided
-      let hashedPassword: string | undefined;
-      if (options?.password) {
-        const passwordValidation = this.validatePassword(options.password);
-        if (!passwordValidation.valid) {
-          throw new Error(`Invalid password: ${passwordValidation.reason}`);
-        }
-        try {
-          hashedPassword = await hashPassword(options.password);
-        } catch (hashError) {
-          console.warn('Async password hashing failed, falling back to sync method:', hashError);
-          hashedPassword = hashPasswordSync(options.password);
-        }
-      }
-
-      // Validate UTM parameters if provided
-      if (options?.utmParameters && Object.keys(options.utmParameters).length > 0) {
-        const utmValidation = this.validateUtmParameters(options.utmParameters);
-        if (!utmValidation.valid) {
-          throw new Error(`Invalid UTM parameters: ${utmValidation.reason}`);
-        }
-      }
-
-      // Set default expiration if not specified
-      let expiresAt = options?.expiresAt;
-      if (!expiresAt) {
-        const settings = this.getStorageSettings();
-        if (settings.defaultExpirationDays > 0) {
-          const expirationDate = new Date();
-          expirationDate.setDate(expirationDate.getDate() + settings.defaultExpirationDays);
-          expiresAt = expirationDate.toISOString();
-        }
-      }
-
-      // Create the shortened URL object
-      const shortenedURL: ShortenedURL = {
-        id,
-        originalURL: sanitizedURL,
-        shortCode,
-        shortURL,
-        createdAt: new Date().toISOString(),
-        expiresAt: expiresAt,
-        password: hashedPassword,
-        customAlias: options?.customAlias,
-        utmParameters: options?.utmParameters,
-        clicks: 0,
-        isSuspicious: validation.suspicious || false
-      };
-
-      // Save to localStorage
-      const urls = this.getURLs();
-      this.saveURLs([...urls, shortenedURL]);
-
-      return shortenedURL;
-    } catch (error) {
-      // Generic error handling to avoid exposing sensitive information
-      if (error instanceof Error) {
-        throw error; // Re-throw the original error with its message
-      } else {
-        // For unknown errors, provide a generic message
-        throw new Error('An error occurred while shortening the URL. Please try again.');
-      }
-    }
-  }
-
-  // Create a shortened URL (synchronous version for backward compatibility)
-  static shortenURLSync(originalURL: string, options?: URLOptions): ShortenedURL {
-    try {
-      // Sanitize the URL
-      const sanitizedURL = originalURL.trim();
-
-      // Validate URL
-      const validation = this.isValidURL(sanitizedURL);
-      if (!validation.valid) {
-        throw new Error(validation.reason || 'Invalid URL. Please enter a valid URL.');
-      }
-
-      // Check if URL is suspicious
-      if (validation.suspicious) {
-        // We'll still allow it but log a warning
-        console.warn('Potentially suspicious URL detected:', sanitizedURL);
-      }
-
-      // Generate a unique ID
-      const id = generateId();
-
-      // Handle custom alias if provided
-      let shortCode = generateShortCode();
-      if (options?.customAlias) {
-        // Sanitize the custom alias
-        const sanitizedAlias = options.customAlias.trim();
-
-        const aliasValidation = this.validateAlias(sanitizedAlias);
-        if (!aliasValidation.valid) {
-          throw new Error(`Invalid custom alias: ${aliasValidation.reason}`);
-        }
-        shortCode = sanitizedAlias;
-      }
-
-      // Create the short URL
-      const shortURL = `${BASE_URL}/s/${shortCode}`;
-
-      // Hash password if provided (using synchronous method)
-      let hashedPassword: string | undefined;
-      if (options?.password) {
-        const passwordValidation = this.validatePassword(options.password);
-        if (!passwordValidation.valid) {
-          throw new Error(`Invalid password: ${passwordValidation.reason}`);
-        }
-        hashedPassword = hashPasswordSync(options.password);
-      }
-
-      // Validate UTM parameters if provided
-      if (options?.utmParameters && Object.keys(options.utmParameters).length > 0) {
-        const utmValidation = this.validateUtmParameters(options.utmParameters);
-        if (!utmValidation.valid) {
-          throw new Error(`Invalid UTM parameters: ${utmValidation.reason}`);
-        }
-      }
-
-      // Set default expiration if not specified
-      let expiresAt = options?.expiresAt;
-      if (!expiresAt) {
-        const settings = this.getStorageSettings();
-        if (settings.defaultExpirationDays > 0) {
-          const expirationDate = new Date();
-          expirationDate.setDate(expirationDate.getDate() + settings.defaultExpirationDays);
-          expiresAt = expirationDate.toISOString();
-        }
-      }
-
-      // Create the shortened URL object
-      const shortenedURL: ShortenedURL = {
-        id,
-        originalURL: sanitizedURL,
-        shortCode,
-        shortURL,
-        createdAt: new Date().toISOString(),
-        expiresAt: expiresAt,
-        password: hashedPassword,
-        customAlias: options?.customAlias,
-        utmParameters: options?.utmParameters,
-        clicks: 0,
-        isSuspicious: validation.suspicious || false
-      };
-
-      // Save to localStorage
-      const urls = this.getURLs();
-      this.saveURLs([...urls, shortenedURL]);
-
-      return shortenedURL;
-    } catch (error) {
-      // Generic error handling to avoid exposing sensitive information
-      if (error instanceof Error) {
-        throw error; // Re-throw the original error with its message
-      } else {
-        // For unknown errors, provide a generic message
-        throw new Error('An error occurred while shortening the URL. Please try again.');
-      }
-    }
-  }
-
-  // Update a shortened URL
-  static updateURL(id: string, updates: Partial<ShortenedURL>): ShortenedURL | null {
-    const urls = this.getURLs();
-    const urlIndex = urls.findIndex(url => url.id === id);
-
-    if (urlIndex === -1) {
+      console.error('Error updating URL:', error);
       return null;
     }
-
-    // Create updated URL object
-    const updatedURL = {
-      ...urls[urlIndex],
-      ...updates
-    };
-
-    // Update in array
-    urls[urlIndex] = updatedURL;
-
-    // Save to localStorage
-    this.saveURLs(urls);
-
-    // Clear analytics cache for this URL
-    this.clearAnalyticsCache(id);
-
-    return updatedURL;
   }
 
-  // Delete a shortened URL
-  static deleteURL(id: string): boolean {
-    const urls = this.getURLs();
-    const filteredURLs = urls.filter(url => url.id !== id);
-
-    if (filteredURLs.length === urls.length) {
-      return false; // URL not found
-    }
-
-    // Save to localStorage
-    this.saveURLs(filteredURLs);
-
-    // Clear analytics cache for this URL
-    this.clearAnalyticsCache(id);
-
-    // Also remove click data for this URL to free up storage
+  static async clearAllData(): Promise<void> {
     try {
-      const clicksJson = localStorage.getItem(CLICK_STORAGE_KEY);
-      if (clicksJson) {
-        const clicks: URLClickData[] = JSON.parse(clicksJson);
-        const filteredClicks = clicks.filter(click => click.urlId !== id);
-
-        // Only update if we actually removed something
-        if (filteredClicks.length < clicks.length) {
-          localStorage.setItem(CLICK_STORAGE_KEY, JSON.stringify(filteredClicks));
-
-          // Update clicks cache
-          this.clicksCache = filteredClicks;
-          this.clicksCacheTimestamp = Date.now();
-        }
-      }
+      await clear();
+      this.cleanup(); // Use the new cleanup method
     } catch (error) {
-      console.error('Error removing click data from localStorage:', error);
-    }
-
-    return true;
-  }
-
-  // Record a click on a shortened URL
-  static recordClick(shortCode: string, clickData: Partial<URLClickData> = {}): void {
-    // Find the URL
-    const url = this.getURLByShortCode(shortCode);
-
-    if (!url) {
-      return;
-    }
-
-    // Update click count
-    this.updateURL(url.id, { clicks: url.clicks + 1 });
-
-    // Create click data
-    const click: URLClickData = {
-      id: generateId(),
-      urlId: url.id,
-      timestamp: new Date().toISOString(),
-      ...clickData
-    };
-
-    // Save click data
-    try {
-      // Batch update to reduce localStorage operations
-      const clicksJson = localStorage.getItem(CLICK_STORAGE_KEY);
-      const clicks: URLClickData[] = clicksJson ? JSON.parse(clicksJson) : [];
-
-      // Add new click
-      clicks.push(click);
-
-      // Save back to localStorage
-      localStorage.setItem(CLICK_STORAGE_KEY, JSON.stringify(clicks));
-
-      // Update clicks cache
-      this.clicksCache = clicks;
-      this.clicksCacheTimestamp = Date.now();
-
-      // Clear analytics cache for this URL to ensure fresh data
-      this.clearAnalyticsCache(url.id);
-    } catch (error) {
-      console.error('Error saving click data to localStorage:', error);
+      console.error('Error clearing data:', error);
     }
   }
 
-  // Cache for analytics data
-  private static analyticsCache: Map<string, { data: URLAnalytics, timestamp: number }> = new Map();
-  private static clicksCache: URLClickData[] | null = null;
-  private static clicksCacheTimestamp: number = 0;
-
-  // Get all clicks with caching
-  private static getAllClicks(): URLClickData[] {
-    const now = Date.now();
-
-    // If cache is valid and not expired, use it
-    if (this.clicksCache !== null && (now - this.clicksCacheTimestamp) < CACHE_EXPIRY) {
-      return [...this.clicksCache]; // Return a copy to prevent mutation
-    }
-
+  static async getStorageStats(): Promise<{
+    totalUrls: number;
+    totalClicks: number;
+    activeUrls: number;
+    expiredUrls: number;
+  }> {
     try {
-      const clicksJson = localStorage.getItem(CLICK_STORAGE_KEY);
-      const clicks = clicksJson ? JSON.parse(clicksJson) : [];
-
-      // Update cache
-      this.clicksCache = clicks;
-      this.clicksCacheTimestamp = now;
-
-      return [...clicks]; // Return a copy to prevent mutation
+      const allUrls = await this.getFromStorage<ShortenedURL[]>(STORAGE_KEYS.URLS) || [];
+      const clicks = await this.getFromStorage<URLClickData[]>(STORAGE_KEYS.CLICKS) || [];
+      const activeUrls = allUrls.filter(url => !this.isExpired(url));
+      
+      return {
+        totalUrls: allUrls.length,
+        totalClicks: clicks.length,
+        activeUrls: activeUrls.length,
+        expiredUrls: allUrls.length - activeUrls.length
+      };
     } catch (error) {
-      console.error('Error getting clicks from localStorage:', error);
-      return [];
-    }
-  }
-
-  // Get analytics for a URL with caching
-  static getURLAnalytics(urlId: string): URLAnalytics {
-    const now = Date.now();
-
-    // Check if we have a valid cached version
-    const cachedAnalytics = this.analyticsCache.get(urlId);
-    if (cachedAnalytics && (now - cachedAnalytics.timestamp) < CACHE_EXPIRY) {
-      return { ...cachedAnalytics.data }; // Return a copy to prevent mutation
-    }
-
-    // Get all clicks for this URL
-    const allClicks = this.getAllClicks();
-    const urlClicks = allClicks.filter(click => click.urlId === urlId);
-
-    // Initialize analytics object
-    const analytics: URLAnalytics = {
-      urlId,
-      totalClicks: urlClicks.length,
-      clicksByDate: {},
-      clicksByReferrer: {},
-      clicksByDevice: {},
-      clicksByBrowser: {},
-      clicksByCountry: {},
-      clicksByRegion: {},
-      clicksByCity: {},
-      clicksByHour: {},
-      clicksByDayOfWeek: {},
-      clicksByUtmSource: {},
-      clicksByUtmMedium: {},
-      clicksByUtmCampaign: {},
-      clicksByUtmTerm: {},
-      clicksByUtmContent: {},
-      clicksByCustomUtm: {},
-      clicksTimeline: [],
-      totalConversions: 0,
-      conversionRate: 0,
-      conversionsByType: {},
-      conversionsByDate: {},
-      conversionsByUtmSource: {},
-      conversionsByUtmMedium: {},
-      conversionsByUtmCampaign: {},
-      conversionValue: 0
-    };
-
-    // Process clicks more efficiently
-    for (const click of urlClicks) {
-      // Process by date
-      const date = click.timestamp.split('T')[0];
-      analytics.clicksByDate[date] = (analytics.clicksByDate[date] || 0) + 1;
-
-      // Process by hour and day of week more efficiently
-      const clickDate = new Date(click.timestamp);
-      const hour = clickDate.getHours();
-      const hourStr = hour.toString();
-      analytics.clicksByHour![hourStr] = (analytics.clicksByHour![hourStr] || 0) + 1;
-
-      const dayOfWeek = clickDate.getDay();
-      const dayStr = dayOfWeek.toString();
-      analytics.clicksByDayOfWeek![dayStr] = (analytics.clicksByDayOfWeek![dayStr] || 0) + 1;
-
-      // Process by referrer
-      if (click.referrer) {
-        analytics.clicksByReferrer[click.referrer] = (analytics.clicksByReferrer[click.referrer] || 0) + 1;
-      }
-
-      // Process by device
-      if (click.device) {
-        analytics.clicksByDevice[click.device] = (analytics.clicksByDevice[click.device] || 0) + 1;
-      }
-
-      // Process by browser
-      if (click.browser) {
-        analytics.clicksByBrowser[click.browser] = (analytics.clicksByBrowser[click.browser] || 0) + 1;
-      }
-
-      // Process by location more efficiently
-      if (click.location?.country) {
-        const country = click.location.country;
-        analytics.clicksByCountry[country] = (analytics.clicksByCountry[country] || 0) + 1;
-
-        // Process by region
-        if (click.location.region) {
-          const region = click.location.region;
-          analytics.clicksByRegion![region] = (analytics.clicksByRegion![region] || 0) + 1;
-        }
-
-        // Process by city
-        if (click.location.city) {
-          const city = click.location.city;
-          analytics.clicksByCity![city] = (analytics.clicksByCity![city] || 0) + 1;
-        }
-      }
-
-      // Process UTM parameters more efficiently
-      if (click.utmParameters) {
-        const utm = click.utmParameters;
-
-        // Process standard UTM parameters
-        if (utm.source && typeof utm.source === 'string') {
-          analytics.clicksByUtmSource![utm.source] = (analytics.clicksByUtmSource![utm.source] || 0) + 1;
-        }
-
-        if (utm.medium && typeof utm.medium === 'string') {
-          analytics.clicksByUtmMedium![utm.medium] = (analytics.clicksByUtmMedium![utm.medium] || 0) + 1;
-        }
-
-        if (utm.campaign && typeof utm.campaign === 'string') {
-          analytics.clicksByUtmCampaign![utm.campaign] = (analytics.clicksByUtmCampaign![utm.campaign] || 0) + 1;
-        }
-
-        if (utm.term && typeof utm.term === 'string') {
-          analytics.clicksByUtmTerm![utm.term] = (analytics.clicksByUtmTerm![utm.term] || 0) + 1;
-        }
-
-        if (utm.content && typeof utm.content === 'string') {
-          analytics.clicksByUtmContent![utm.content] = (analytics.clicksByUtmContent![utm.content] || 0) + 1;
-        }
-
-        // Process custom UTM parameters
-        if (utm.custom && typeof utm.custom === 'object') {
-          for (const [key, value] of Object.entries(utm.custom)) {
-            if (!analytics.clicksByCustomUtm![key]) {
-              analytics.clicksByCustomUtm![key] = {};
-            }
-            analytics.clicksByCustomUtm![key][value] = (analytics.clicksByCustomUtm![key][value] || 0) + 1;
-          }
-        }
-      }
-
-      // Process conversion data
-      if (click.isConversion) {
-        analytics.totalConversions!++;
-
-        // Add conversion value
-        if (click.conversionValue) {
-          analytics.conversionValue! += click.conversionValue;
-        }
-
-        // Process by conversion type
-        if (click.conversionType) {
-          analytics.conversionsByType![click.conversionType] =
-            (analytics.conversionsByType![click.conversionType] || 0) + 1;
-        }
-
-        // Process by date
-        analytics.conversionsByDate![date] = (analytics.conversionsByDate![date] || 0) + 1;
-
-        // Process by UTM parameters
-        if (click.utmParameters) {
-          const utm = click.utmParameters;
-
-          if (utm.source && typeof utm.source === 'string') {
-            analytics.conversionsByUtmSource![utm.source] =
-              (analytics.conversionsByUtmSource![utm.source] || 0) + 1;
-          }
-
-          if (utm.medium && typeof utm.medium === 'string') {
-            analytics.conversionsByUtmMedium![utm.medium] =
-              (analytics.conversionsByUtmMedium![utm.medium] || 0) + 1;
-          }
-
-          if (utm.campaign && typeof utm.campaign === 'string') {
-            analytics.conversionsByUtmCampaign![utm.campaign] =
-              (analytics.conversionsByUtmCampaign![utm.campaign] || 0) + 1;
-          }
-        }
-      }
-    }
-
-    // No time heatmap or geo data processing needed
-
-    // Calculate conversion rate
-    analytics.conversionRate = urlClicks.length > 0
-      ? (analytics.totalConversions! / urlClicks.length) * 100
-      : 0;
-
-    // Create timeline data
-    const dates = Object.keys(analytics.clicksByDate).sort();
-    analytics.clicksTimeline = dates.map(date => ({
-      date,
-      clicks: analytics.clicksByDate[date]
-    }));
-
-    // Cache the result
-    this.analyticsCache.set(urlId, { data: analytics, timestamp: now });
-
-    // Also save to localStorage for persistence across sessions
-    try {
-      const analyticsCache = JSON.parse(localStorage.getItem(ANALYTICS_CACHE_KEY) || '{}');
-      analyticsCache[urlId] = { data: analytics, timestamp: now };
-      localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(analyticsCache));
-    } catch (error) {
-      console.error('Error saving analytics cache to localStorage:', error);
-    }
-
-    return analytics;
-  }
-
-  // Clear analytics cache for a specific URL
-  static clearAnalyticsCache(urlId: string): void {
-    this.analyticsCache.delete(urlId);
-
-    try {
-      const analyticsCache = JSON.parse(localStorage.getItem(ANALYTICS_CACHE_KEY) || '{}');
-      delete analyticsCache[urlId];
-      localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(analyticsCache));
-    } catch (error) {
-      console.error('Error updating analytics cache in localStorage:', error);
-    }
-  }
-
-  // Load analytics cache from localStorage
-  static loadAnalyticsCache(): void {
-    try {
-      const analyticsCache = JSON.parse(localStorage.getItem(ANALYTICS_CACHE_KEY) || '{}');
-
-      for (const [urlId, cacheEntry] of Object.entries(analyticsCache)) {
-        // Type assertion to help TypeScript understand the structure
-        const entry = cacheEntry as { data: URLAnalytics, timestamp: number };
-        this.analyticsCache.set(urlId, entry);
-      }
-    } catch (error) {
-      console.error('Error loading analytics cache from localStorage:', error);
+      console.error('Error getting storage stats:', error);
+      return { totalUrls: 0, totalClicks: 0, activeUrls: 0, expiredUrls: 0 };
     }
   }
 }

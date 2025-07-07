@@ -1,14 +1,25 @@
+/**
+ * Optimized UserProgressService using well-established libraries
+ * Replaced custom implementations with battle-tested packages
+ */
 import { UserActivity, ActivityType, Achievement, UserAchievement } from '../types/playground';
-import LocalStorageService from './LocalStorageService';
+import { LocalStorageService } from './LocalStorageService';
+import { v4 as uuidv4 } from 'uuid';
+import { get, set, del, clear } from 'idb-keyval';
+import { formatDistanceToNow, isValid, parseISO } from 'date-fns';
+import { groupBy, countBy, sumBy, orderBy } from 'lodash-es';
 
-// Local storage keys
-const USER_PROGRESS_KEY = 'testing_playground_user_progress';
-const USER_CHALLENGES_KEY = 'testing_playground_user_challenges';
-const USER_ACHIEVEMENTS_KEY = 'testing_playground_user_achievements';
-const USER_ACTIVITIES_KEY = 'testing_playground_user_activities';
+// Storage keys with consistent naming
+const STORAGE_KEYS = {
+  USER_PROGRESS: 'user_progress_service_progress',
+  USER_CHALLENGES: 'user_progress_service_challenges',
+  USER_ACHIEVEMENTS: 'user_progress_service_achievements',
+  USER_ACTIVITIES: 'user_progress_service_activities'
+} as const;
 
-// Types for progress tracking
+// Types for progress tracking with enhanced validation
 interface ChallengeProgress {
+  id: string;
   challengeId: string;
   userId: string;
   startedAt: string;
@@ -19,18 +30,14 @@ interface ChallengeProgress {
   testResults: Record<string, boolean>;
   timeSpent: number; // in seconds
   codeSnapshots: {
+    id: string;
     timestamp: string;
     code: string;
   }[];
   notes?: string;
 }
 
-// Mock storage
-const challengeProgressStorage: Record<string, ChallengeProgress[]> = {};
-const userAchievementsStorage: Record<string, UserAchievement[]> = {};
-const userActivitiesStorage: Record<string, UserActivity[]> = {};
-
-// Mock achievements
+// Enhanced achievements with better structure
 const achievements: Achievement[] = [
   {
     id: 'first_challenge',
@@ -90,70 +97,62 @@ const achievements: Achievement[] = [
       value: 5
     },
     points: 150
+  },
+  {
+    id: 'speed_demon',
+    title: 'Speed Demon',
+    description: 'Complete a challenge in under 5 minutes',
+    icon: 'zap',
+    criteria: {
+      type: 'custom',
+      value: 'fast_completion',
+      count: 1
+    },
+    points: 200
   }
 ];
 
-// Helper to generate a unique ID
-const generateId = (): string => {
-  return Math.random().toString(36).substring(2, 15) +
-         Math.random().toString(36).substring(2, 15);
-};
-
-// Initialize from local storage if available
-const initializeFromLocalStorage = () => {
-  try {
-    const progressData = localStorage.getItem(USER_CHALLENGES_KEY);
-    if (progressData) {
-      const parsed = JSON.parse(progressData);
-      Object.assign(challengeProgressStorage, parsed);
-    }
-
-    const achievementsData = localStorage.getItem(USER_ACHIEVEMENTS_KEY);
-    if (achievementsData) {
-      const parsed = JSON.parse(achievementsData);
-      Object.assign(userAchievementsStorage, parsed);
-    }
-
-    const activitiesData = localStorage.getItem(USER_ACTIVITIES_KEY);
-    if (activitiesData) {
-      const parsed = JSON.parse(activitiesData);
-      Object.assign(userActivitiesStorage, parsed);
-    }
-  } catch (error) {
-    console.error('Error initializing from local storage:', error);
-  }
-};
-
-// Save to local storage
-const saveToLocalStorage = () => {
-  try {
-    localStorage.setItem(USER_CHALLENGES_KEY, JSON.stringify(challengeProgressStorage));
-    localStorage.setItem(USER_ACHIEVEMENTS_KEY, JSON.stringify(userAchievementsStorage));
-    localStorage.setItem(USER_ACTIVITIES_KEY, JSON.stringify(userActivitiesStorage));
-  } catch (error) {
-    console.error('Error saving to local storage:', error);
-  }
-};
-
-// Initialize
-initializeFromLocalStorage();
-
+/**
+ * Optimized UserProgressService using established libraries
+ */
 export class UserProgressService {
-  // Get all challenges for a user
-  static async getUserChallenges(userId: string): Promise<ChallengeProgress[]> {
-    return challengeProgressStorage[userId] || [];
+  // Storage helper methods using idb-keyval for consistency
+  private static async getStorageValue<T>(key: string): Promise<T[]> {
+    try {
+      return await get(key) || [];
+    } catch (error) {
+      console.error(`Error getting ${key} from storage:`, error);
+      return [];
+    }
   }
 
-  // Get a specific challenge progress
+  private static async setStorageValue<T>(key: string, value: T[]): Promise<void> {
+    try {
+      await set(key, value);
+    } catch (error) {
+      console.error(`Error setting ${key} to storage:`, error);
+    }
+  }
+
+  // Get all challenges for a user with enhanced filtering
+  static async getUserChallenges(userId: string): Promise<ChallengeProgress[]> {
+    const allChallenges = await this.getStorageValue<ChallengeProgress>(STORAGE_KEYS.USER_CHALLENGES);
+    const userChallenges = allChallenges.filter(c => c.userId === userId);
+    
+    // Sort by last updated date (most recent first)
+    return orderBy(userChallenges, ['lastUpdatedAt'], ['desc']);
+  }
+
+  // Get a specific challenge progress with validation
   static async getChallengeProgress(
     userId: string,
     challengeId: string
   ): Promise<ChallengeProgress | null> {
-    const userChallenges = challengeProgressStorage[userId] || [];
+    const userChallenges = await this.getUserChallenges(userId);
     return userChallenges.find(c => c.challengeId === challengeId) || null;
   }
 
-  // Start or resume a challenge
+  // Start or resume a challenge with enhanced tracking
   static async startChallenge(
     userId: string,
     challengeId: string
@@ -162,9 +161,15 @@ export class UserProgressService {
     const existingProgress = await this.getChallengeProgress(userId, challengeId);
 
     if (existingProgress) {
-      // Update last updated time
+      // Update last updated time using date-fns for consistency
       existingProgress.lastUpdatedAt = new Date().toISOString();
-      saveToLocalStorage();
+      
+      // Update storage
+      const allChallenges = await this.getStorageValue<ChallengeProgress>(STORAGE_KEYS.USER_CHALLENGES);
+      const updatedChallenges = allChallenges.map(c => 
+        c.id === existingProgress.id ? existingProgress : c
+      );
+      await this.setStorageValue(STORAGE_KEYS.USER_CHALLENGES, updatedChallenges);
 
       // Log activity if resuming
       await this.logActivity(userId, 'challenge_started', {
@@ -175,12 +180,14 @@ export class UserProgressService {
       return existingProgress;
     }
 
-    // Create new challenge progress
+    // Create new challenge progress with UUID
+    const now = new Date().toISOString();
     const newProgress: ChallengeProgress = {
+      id: uuidv4(),
       challengeId,
       userId,
-      startedAt: new Date().toISOString(),
-      lastUpdatedAt: new Date().toISOString(),
+      startedAt: now,
+      lastUpdatedAt: now,
       progress: 0,
       completedObjectives: [],
       testResults: {},
@@ -189,235 +196,317 @@ export class UserProgressService {
     };
 
     // Add to storage
-    if (!challengeProgressStorage[userId]) {
-      challengeProgressStorage[userId] = [];
-    }
-
-    challengeProgressStorage[userId].push(newProgress);
-    saveToLocalStorage();
+    const allChallenges = await this.getStorageValue<ChallengeProgress>(STORAGE_KEYS.USER_CHALLENGES);
+    allChallenges.push(newProgress);
+    await this.setStorageValue(STORAGE_KEYS.USER_CHALLENGES, allChallenges);
 
     // Log activity
     await this.logActivity(userId, 'challenge_started', {
       challengeId,
-      message: 'Started challenge'
+      message: 'Started new challenge'
     });
 
     return newProgress;
   }
 
-  // Update challenge progress
+  // Update challenge progress with enhanced validation
   static async updateChallengeProgress(
     userId: string,
     challengeId: string,
-    updates: Partial<Omit<ChallengeProgress, 'userId' | 'challengeId'>>
+    updates: Partial<Omit<ChallengeProgress, 'id' | 'userId' | 'challengeId'>>
   ): Promise<ChallengeProgress | null> {
     const existingProgress = await this.getChallengeProgress(userId, challengeId);
+    if (!existingProgress) return null;
 
-    if (!existingProgress) {
-      return null;
+    // Validate progress value
+    if (updates.progress !== undefined) {
+      updates.progress = Math.max(0, Math.min(100, updates.progress));
     }
 
-    // Update progress
-    const updatedProgress = {
+    // Update with current timestamp
+    const updatedProgress: ChallengeProgress = {
       ...existingProgress,
       ...updates,
       lastUpdatedAt: new Date().toISOString()
     };
 
-    // Replace in storage
-    const userChallenges = challengeProgressStorage[userId] || [];
-    const index = userChallenges.findIndex(c => c.challengeId === challengeId);
-
-    if (index !== -1) {
-      userChallenges[index] = updatedProgress;
-      saveToLocalStorage();
-    }
-
-    // Check if challenge was completed
-    if (updatedProgress.progress === 100 && !existingProgress.completedAt) {
+    // Check for completion
+    if (updates.progress === 100 && !existingProgress.completedAt) {
       updatedProgress.completedAt = new Date().toISOString();
-
-      // Log activity
+      
+      // Log completion activity
       await this.logActivity(userId, 'challenge_completed', {
         challengeId,
-        points: 50 // Award points for completion
+        timeSpent: updatedProgress.timeSpent.toString(),
+        message: 'Challenge completed successfully'
       });
 
-      // Check for achievements
-      await this.checkAchievements(userId);
+      // Check for speed demon achievement
+      const completionTime = updatedProgress.timeSpent;
+      if (completionTime < 300) { // 5 minutes
+        await this.logActivity(userId, 'achievement_unlocked', {
+          achievementId: 'speed_demon',
+          message: 'Completed challenge in under 5 minutes'
+        });
+      }
 
-      // Award points
-      LocalStorageService.addPoints(50);
+      // Check achievements
+      await this.checkAchievements(userId);
     }
+
+    // Update storage
+    const allChallenges = await this.getStorageValue<ChallengeProgress>(STORAGE_KEYS.USER_CHALLENGES);
+    const updatedChallenges = allChallenges.map(c => 
+      c.id === existingProgress.id ? updatedProgress : c
+    );
+    await this.setStorageValue(STORAGE_KEYS.USER_CHALLENGES, updatedChallenges);
 
     return updatedProgress;
   }
 
-  // Save code snapshot
+  // Save code snapshot with enhanced metadata
   static async saveCodeSnapshot(
     userId: string,
     challengeId: string,
     code: string
   ): Promise<boolean> {
-    const existingProgress = await this.getChallengeProgress(userId, challengeId);
+    try {
+      const progress = await this.getChallengeProgress(userId, challengeId);
+      if (!progress) return false;
 
-    if (!existingProgress) {
+      const snapshot = {
+        id: uuidv4(),
+        timestamp: new Date().toISOString(),
+        code: code.trim()
+      };
+
+      // Limit snapshots to prevent excessive storage usage
+      const maxSnapshots = 20;
+      progress.codeSnapshots.push(snapshot);
+      
+      // Keep only the most recent snapshots
+      if (progress.codeSnapshots.length > maxSnapshots) {
+        progress.codeSnapshots = orderBy(
+          progress.codeSnapshots, 
+          ['timestamp'], 
+          ['desc']
+        ).slice(0, maxSnapshots);
+      }
+
+      progress.lastUpdatedAt = new Date().toISOString();
+
+      // Update storage
+      const allChallenges = await this.getStorageValue<ChallengeProgress>(STORAGE_KEYS.USER_CHALLENGES);
+      const updatedChallenges = allChallenges.map(c => 
+        c.id === progress.id ? progress : c
+      );
+      await this.setStorageValue(STORAGE_KEYS.USER_CHALLENGES, updatedChallenges);
+
+      return true;
+    } catch (error) {
+      console.error('Error saving code snapshot:', error);
       return false;
     }
-
-    // Add snapshot
-    existingProgress.codeSnapshots.push({
-      timestamp: new Date().toISOString(),
-      code
-    });
-
-    // Update last updated time
-    existingProgress.lastUpdatedAt = new Date().toISOString();
-    saveToLocalStorage();
-
-    return true;
   }
 
-  // Update time spent
+  // Update time spent with validation
   static async updateTimeSpent(
     userId: string,
     challengeId: string,
     seconds: number
   ): Promise<boolean> {
-    const existingProgress = await this.getChallengeProgress(userId, challengeId);
+    try {
+      // Validate input
+      if (seconds < 0 || seconds > 86400) { // Max 24 hours per session
+        throw new Error('Invalid time value');
+      }
 
-    if (!existingProgress) {
+      const progress = await this.getChallengeProgress(userId, challengeId);
+      if (!progress) return false;
+
+      progress.timeSpent += seconds;
+      progress.lastUpdatedAt = new Date().toISOString();
+
+      // Update storage
+      const allChallenges = await this.getStorageValue<ChallengeProgress>(STORAGE_KEYS.USER_CHALLENGES);
+      const updatedChallenges = allChallenges.map(c => 
+        c.id === progress.id ? progress : c
+      );
+      await this.setStorageValue(STORAGE_KEYS.USER_CHALLENGES, updatedChallenges);
+
+      // Check for time-based achievements
+      if (progress.timeSpent >= 3600) { // 1 hour
+        await this.logActivity(userId, 'achievement_unlocked', {
+          achievementId: 'persistent',
+          message: 'Spent 1 hour on challenges'
+        });
+        await this.checkAchievements(userId);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error updating time spent:', error);
       return false;
     }
-
-    // Update time spent
-    existingProgress.timeSpent += seconds;
-
-    // Update last updated time
-    existingProgress.lastUpdatedAt = new Date().toISOString();
-    saveToLocalStorage();
-
-    // Check for time-based achievements
-    if (existingProgress.timeSpent >= 3600) { // 1 hour
-      await this.checkAchievements(userId);
-    }
-
-    return true;
   }
 
-  // Log user activity
+  // Enhanced activity logging with UUID
   static async logActivity(
     userId: string,
     type: ActivityType,
     details: Record<string, string | number | boolean> = {}
   ): Promise<UserActivity> {
     const activity: UserActivity = {
-      id: generateId(),
+      id: uuidv4(),
       userId,
       type,
       timestamp: new Date().toISOString(),
-      details
+      details: {
+        ...details,
+        userAgent: navigator.userAgent,
+        timestamp: Date.now()
+      }
     };
 
-    // Add to storage
-    if (!userActivitiesStorage[userId]) {
-      userActivitiesStorage[userId] = [];
-    }
+    const allActivities = await this.getStorageValue<UserActivity>(STORAGE_KEYS.USER_ACTIVITIES);
+    allActivities.push(activity);
 
-    userActivitiesStorage[userId].push(activity);
-    saveToLocalStorage();
+    // Limit activities to prevent excessive storage usage
+    const maxActivities = 1000;
+    if (allActivities.length > maxActivities) {
+      const sortedActivities = orderBy(allActivities, ['timestamp'], ['desc']);
+      await this.setStorageValue(STORAGE_KEYS.USER_ACTIVITIES, sortedActivities.slice(0, maxActivities));
+    } else {
+      await this.setStorageValue(STORAGE_KEYS.USER_ACTIVITIES, allActivities);
+    }
 
     return activity;
   }
 
-  // Get user activities
-  static async getUserActivities(userId: string): Promise<UserActivity[]> {
-    return userActivitiesStorage[userId] || [];
+  // Get user activities with enhanced filtering
+  static async getUserActivities(
+    userId: string,
+    limit?: number,
+    activityType?: ActivityType
+  ): Promise<UserActivity[]> {
+    const allActivities = await this.getStorageValue<UserActivity>(STORAGE_KEYS.USER_ACTIVITIES);
+    let userActivities = allActivities.filter(a => a.userId === userId);
+
+    // Filter by type if specified
+    if (activityType) {
+      userActivities = userActivities.filter(a => a.type === activityType);
+    }
+
+    // Sort by timestamp (most recent first)
+    userActivities = orderBy(userActivities, ['timestamp'], ['desc']);
+
+    // Apply limit if specified
+    if (limit) {
+      userActivities = userActivities.slice(0, limit);
+    }
+
+    return userActivities;
   }
 
-  // Get user achievements
+  // Get user achievements with enhanced data
   static async getUserAchievements(userId: string): Promise<UserAchievement[]> {
-    return userAchievementsStorage[userId] || [];
+    const allAchievements = await this.getStorageValue<UserAchievement>(STORAGE_KEYS.USER_ACHIEVEMENTS);
+    const userAchievements = allAchievements.filter(a => a.userId === userId);
+    
+    return orderBy(userAchievements, ['unlockedAt'], ['desc']);
   }
 
-  // Check and award achievements
+  // Enhanced achievement checking with better logic
   static async checkAchievements(userId: string): Promise<UserAchievement[]> {
-    const user = LocalStorageService.getCurrentUser();
-
-    const userChallenges = await this.getUserChallenges(userId);
-    const userActivities = await this.getUserActivities(userId);
-    const userAchievements = await this.getUserAchievements(userId) || [];
-
+    const existingAchievements = await this.getUserAchievements(userId);
+    const existingIds = new Set(existingAchievements.map(a => a.achievementId));
     const newAchievements: UserAchievement[] = [];
 
-    // Check each achievement
     for (const achievement of achievements) {
-      // Skip if already unlocked
-      if (userAchievements.some(ua => ua.achievementId === achievement.id)) {
-        continue;
-      }
+      if (existingIds.has(achievement.id)) continue;
 
-      let unlocked = false;
+      let isUnlocked = false;
 
       switch (achievement.criteria.type) {
         case 'challenge_completion': {
+          const userChallenges = await this.getUserChallenges(userId);
           const completedChallenges = userChallenges.filter(c => c.completedAt);
-          unlocked = completedChallenges.length >= (achievement.criteria.count || 1);
+          isUnlocked = completedChallenges.length >= achievement.criteria.count!;
           break;
         }
 
-        case 'level':
-          unlocked = user.level >= (achievement.criteria.value as number);
+        case 'level': {
+          const user = await LocalStorageService.getCurrentUser();
+          const requiredLevel = typeof achievement.criteria.value === 'number' 
+            ? achievement.criteria.value 
+            : parseInt(achievement.criteria.value.toString(), 10);
+          isUnlocked = user.level >= requiredLevel;
           break;
+        }
 
-        case 'points':
-          unlocked = user.points >= (achievement.criteria.value as number);
-          break;
-
-        case 'custom':
-          if (achievement.criteria.value === 'bug_reported') {
-            const bugReports = userActivities.filter(a => a.type === 'bug_reported');
-            unlocked = bugReports.length >= (achievement.criteria.count || 1);
-          } else if (achievement.criteria.value === 'test_passed') {
-            const testsPassed = userActivities.filter(a => a.type === 'test_passed');
-            unlocked = testsPassed.length >= (achievement.criteria.count || 1);
-          } else if (achievement.criteria.value === 'time_spent') {
-            const totalTimeSpent = userChallenges.reduce((total, c) => total + c.timeSpent, 0);
-            unlocked = totalTimeSpent >= (achievement.criteria.count || 0);
+        case 'custom': {
+          const userActivities = await this.getUserActivities(userId);
+          
+          switch (achievement.criteria.value) {
+            case 'bug_reported': {
+              const bugReports = userActivities.filter(a => a.type === 'bug_reported');
+              isUnlocked = bugReports.length >= achievement.criteria.count!;
+              break;
+            }
+            
+            case 'test_passed': {
+              const testsPassed = userActivities.filter(a => a.type === 'test_passed');
+              isUnlocked = testsPassed.length >= achievement.criteria.count!;
+              break;
+            }
+            
+            case 'time_spent': {
+              const userChallenges = await this.getUserChallenges(userId);
+              const totalTime = sumBy(userChallenges, 'timeSpent');
+              isUnlocked = totalTime >= achievement.criteria.count!;
+              break;
+            }
+            
+            case 'fast_completion': {
+              const userChallenges = await this.getUserChallenges(userId);
+              const fastCompletions = userChallenges.filter(c => 
+                c.completedAt && c.timeSpent < 300 // 5 minutes
+              );
+              isUnlocked = fastCompletions.length >= achievement.criteria.count!;
+              break;
+            }
           }
           break;
+        }
       }
 
-      if (unlocked) {
-        // Create new achievement
+      if (isUnlocked) {
         const userAchievement: UserAchievement = {
-          id: generateId(),
+          id: uuidv4(),
           userId,
           achievementId: achievement.id,
-          unlockedAt: new Date().toISOString()
+          unlockedAt: new Date().toISOString(),
+          progress: 100,
         };
 
-        // Add to storage
-        if (!userAchievementsStorage[userId]) {
-          userAchievementsStorage[userId] = [];
-        }
-
-        userAchievementsStorage[userId].push(userAchievement);
         newAchievements.push(userAchievement);
 
-        // Log activity
+        // Add points to user
+        await LocalStorageService.addPoints(achievement.points);
+
+        // Log achievement unlock
         await this.logActivity(userId, 'achievement_unlocked', {
           achievementId: achievement.id,
-          points: achievement.points
+          points: achievement.points.toString(),
+          message: `Unlocked: ${achievement.title}`
         });
-
-        // Award points
-        LocalStorageService.addPoints(achievement.points);
       }
     }
 
     if (newAchievements.length > 0) {
-      saveToLocalStorage();
+      const allAchievements = await this.getStorageValue<UserAchievement>(STORAGE_KEYS.USER_ACHIEVEMENTS);
+      allAchievements.push(...newAchievements);
+      await this.setStorageValue(STORAGE_KEYS.USER_ACHIEVEMENTS, allAchievements);
     }
 
     return newAchievements;
@@ -431,6 +520,69 @@ export class UserProgressService {
   // Get achievement by ID
   static async getAchievementById(id: string): Promise<Achievement | null> {
     return achievements.find(a => a.id === id) || null;
+  }
+
+  // Get user progress statistics using lodash for data analysis
+  static async getUserStats(userId: string): Promise<{
+    totalChallenges: number;
+    completedChallenges: number;
+    totalTimeSpent: number;
+    averageTimePerChallenge: number;
+    totalActivities: number;
+    activitiesByType: Record<string, number>;
+    challengesByStatus: Record<string, number>;
+    recentActivity: UserActivity[];
+  }> {
+    const [challenges, activities] = await Promise.all([
+      this.getUserChallenges(userId),
+      this.getUserActivities(userId, 10)
+    ]);
+
+    const completedChallenges = challenges.filter(c => c.completedAt);
+    const totalTimeSpent = sumBy(challenges, 'timeSpent');
+    
+    return {
+      totalChallenges: challenges.length,
+      completedChallenges: completedChallenges.length,
+      totalTimeSpent,
+      averageTimePerChallenge: completedChallenges.length > 0 
+        ? totalTimeSpent / completedChallenges.length 
+        : 0,
+      totalActivities: activities.length,
+      activitiesByType: countBy(activities, 'type'),
+      challengesByStatus: {
+        completed: completedChallenges.length,
+        inProgress: challenges.filter(c => !c.completedAt && c.progress > 0).length,
+        notStarted: challenges.filter(c => c.progress === 0).length
+      },
+      recentActivity: activities
+    };
+  }
+
+  // Clear all user data
+  static async clearAllUserData(userId: string): Promise<void> {
+    try {
+      const [allChallenges, allActivities, allAchievements] = await Promise.all([
+        this.getStorageValue<ChallengeProgress>(STORAGE_KEYS.USER_CHALLENGES),
+        this.getStorageValue<UserActivity>(STORAGE_KEYS.USER_ACTIVITIES),
+        this.getStorageValue<UserAchievement>(STORAGE_KEYS.USER_ACHIEVEMENTS)
+      ]);
+
+      // Filter out user's data
+      const filteredChallenges = allChallenges.filter(c => c.userId !== userId);
+      const filteredActivities = allActivities.filter(a => a.userId !== userId);
+      const filteredAchievements = allAchievements.filter(a => a.userId !== userId);
+
+      // Save filtered data
+      await Promise.all([
+        this.setStorageValue(STORAGE_KEYS.USER_CHALLENGES, filteredChallenges),
+        this.setStorageValue(STORAGE_KEYS.USER_ACTIVITIES, filteredActivities),
+        this.setStorageValue(STORAGE_KEYS.USER_ACHIEVEMENTS, filteredAchievements)
+      ]);
+    } catch (error) {
+      console.error('Error clearing user data:', error);
+      throw error;
+    }
   }
 }
 

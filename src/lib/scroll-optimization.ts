@@ -1,85 +1,44 @@
 /**
- * Utility functions for optimizing scroll performance
+ * Optimized scroll performance utilities using well-established libraries
  */
+import React, { useCallback, useEffect } from 'react';
+import { useDebouncedCallback, useThrottledCallback } from 'use-debounce';
+
+// Re-export optimized throttle from well-tested library
+export { throttle } from 'lodash-es';
 
 /**
- * Throttle function to limit the rate at which a function can fire
- * @param func The function to throttle
- * @param limit The time limit in milliseconds
- * @returns A throttled function
- */
-export function throttle<T extends (...args: unknown[]) => unknown>(
-  func: T,
-  limit: number
-): (...args: Parameters<T>) => void {
-  let inThrottle: boolean = false;
-  let lastFunc: ReturnType<typeof setTimeout>;
-  let lastRan: number;
-
-  return function(this: unknown, ...args: Parameters<T>): void {
-    if (!inThrottle) {
-      func.apply(this, args);
-      lastRan = Date.now();
-      inThrottle = true;
-
-      setTimeout(() => {
-        inThrottle = false;
-      }, limit);
-    } else {
-      clearTimeout(lastFunc);
-      lastFunc = setTimeout(() => {
-        if (Date.now() - lastRan >= limit) {
-          func.apply(this, args);
-          lastRan = Date.now();
-        }
-      }, limit - (Date.now() - lastRan));
-    }
-  };
-}
-
-/**
- * Creates a scroll handler that uses requestAnimationFrame for better performance
- * @param callback The callback function to execute on scroll
- * @returns A scroll handler function
+ * Optimized scroll handler using RAF and throttling
  */
 export function createOptimizedScrollHandler(
   callback: (scrollY: number) => void
 ): () => void {
-  let ticking = false;
+  const throttledCallback = useThrottledCallback((scrollY: number) => {
+    callback(scrollY);
+  }, 16); // ~60fps
 
-  return () => {
+  return useCallback(() => {
     const scrollY = window.scrollY;
-
-    if (!ticking) {
-      window.requestAnimationFrame(() => {
-        callback(scrollY);
-        ticking = false;
-      });
-
-      ticking = true;
-    }
-  };
+    throttledCallback(scrollY);
+  }, [throttledCallback]);
 }
 
 /**
- * Hook to add a passive scroll listener for better performance
- * @param element The element to attach the scroll listener to (defaults to window)
- * @param callback The callback function to execute on scroll
- * @param deps Dependencies array for the useEffect hook
+ * Optimized passive scroll listener hook
  */
 export function usePassiveScroll(
   callback: (e: Event) => void,
   element: HTMLElement | Window = window
 ): void {
-  React.useEffect(() => {
-    const throttledCallback = throttle(callback, 16); // ~60fps
+  const throttledCallback = useThrottledCallback(callback, 16); // ~60fps
 
+  useEffect(() => {
     element.addEventListener('scroll', throttledCallback, { passive: true });
 
     return () => {
       element.removeEventListener('scroll', throttledCallback);
     };
-  }, [callback, element]);
+  }, [throttledCallback, element]);
 }
 
 /**
@@ -115,5 +74,4 @@ export function cleanupAnimationOptimization(selector: string): void {
   });
 }
 
-// Add React import for the hook
-import React from 'react';
+

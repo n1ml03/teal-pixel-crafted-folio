@@ -2,6 +2,8 @@ import { Challenge } from '@/components/playground/ChallengeCard';
 import { TestResult } from '../types/playground';
 import { ChallengeLoaderService } from './ChallengeLoaderService';
 import challengesMeta from '@/data/challengesMeta';
+import { get, set, del } from 'idb-keyval';
+import { v4 as uuidv4 } from 'uuid';
 
 // Challenge progress interface
 export interface ChallengeProgress {
@@ -44,18 +46,54 @@ export interface ChallengeWithTests extends Challenge {
   passingScore: number; // minimum score to pass the challenge (0-100)
 }
 
-// Mock storage for challenges and progress
-const challengesStorage: Record<string, ChallengeWithTests> = {};
-const progressStorage: Record<string, ChallengeProgress> = {};
+// Storage keys
+const STORAGE_KEYS = {
+  CHALLENGES: 'challenge_service_challenges',
+  PROGRESS: 'challenge_service_progress'
+} as const;
 
-// Helper to generate a unique ID
+// Helper to generate a unique ID using uuid
 const generateId = (): string => {
-  return Math.random().toString(36).substring(2, 15) +
-         Math.random().toString(36).substring(2, 15);
+  return uuidv4();
 };
 
 // ChallengeService class
 export class ChallengeService {
+  // Storage helper methods
+  private static async getStoredChallenges(): Promise<Record<string, ChallengeWithTests>> {
+    try {
+      return await get(STORAGE_KEYS.CHALLENGES) || {};
+    } catch (error) {
+      console.error('Error getting stored challenges:', error);
+      return {};
+    }
+  }
+
+  private static async saveStoredChallenges(challenges: Record<string, ChallengeWithTests>): Promise<void> {
+    try {
+      await set(STORAGE_KEYS.CHALLENGES, challenges);
+    } catch (error) {
+      console.error('Error saving stored challenges:', error);
+    }
+  }
+
+  private static async getStoredProgress(): Promise<Record<string, ChallengeProgress>> {
+    try {
+      return await get(STORAGE_KEYS.PROGRESS) || {};
+    } catch (error) {
+      console.error('Error getting stored progress:', error);
+      return {};
+    }
+  }
+
+  private static async saveStoredProgress(progress: Record<string, ChallengeProgress>): Promise<void> {
+    try {
+      await set(STORAGE_KEYS.PROGRESS, progress);
+    } catch (error) {
+      console.error('Error saving stored progress:', error);
+    }
+  }
+
   // Get all challenges - use lightweight metadata
   static async getChallenges(): Promise<Challenge[]> {
     return challengesMeta;
@@ -70,34 +108,44 @@ export class ChallengeService {
   static async createChallenge(challenge: Omit<ChallengeWithTests, 'id'>): Promise<ChallengeWithTests> {
     const id = generateId();
     const newChallenge = { ...challenge, id };
-    challengesStorage[id] = newChallenge;
+    
+    const challenges = await this.getStoredChallenges();
+    challenges[id] = newChallenge;
+    await this.saveStoredChallenges(challenges);
+    
     return newChallenge;
   }
 
   // Update a challenge
   static async updateChallenge(id: string, challenge: Partial<ChallengeWithTests>): Promise<ChallengeWithTests | null> {
-    if (!challengesStorage[id]) return null;
+    const challenges = await this.getStoredChallenges();
+    if (!challenges[id]) return null;
 
-    challengesStorage[id] = {
-      ...challengesStorage[id],
+    challenges[id] = {
+      ...challenges[id],
       ...challenge
     };
 
-    return challengesStorage[id];
+    await this.saveStoredChallenges(challenges);
+    return challenges[id];
   }
 
   // Delete a challenge
   static async deleteChallenge(id: string): Promise<boolean> {
-    if (!challengesStorage[id]) return false;
+    const challenges = await this.getStoredChallenges();
+    if (!challenges[id]) return false;
 
-    delete challengesStorage[id];
+    delete challenges[id];
+    await this.saveStoredChallenges(challenges);
     return true;
   }
 
   // Start a challenge for a user
   static async startChallenge(userId: string, challengeId: string): Promise<ChallengeProgress> {
+    const progressData = await this.getStoredProgress();
+    
     // Check if the user has already started this challenge
-    const existingProgress = Object.values(progressStorage).find(
+    const existingProgress = Object.values(progressData).find(
       p => p.userId === userId && p.challengeId === challengeId
     );
 
@@ -109,6 +157,8 @@ export class ChallengeService {
 
       // If in progress, update the attempts
       existingProgress.attempts += 1;
+      progressData[existingProgress.id] = existingProgress;
+      await this.saveStoredProgress(progressData);
       return existingProgress;
     }
 
@@ -124,7 +174,8 @@ export class ChallengeService {
       attempts: 1
     };
 
-    progressStorage[progressId] = progress;
+    progressData[progressId] = progress;
+    await this.saveStoredProgress(progressData);
     return progress;
   }
 
@@ -134,8 +185,10 @@ export class ChallengeService {
     challengeId: string,
     updates: Partial<Omit<ChallengeProgress, 'id' | 'userId' | 'challengeId'>>
   ): Promise<ChallengeProgress | null> {
+    const progressData = await this.getStoredProgress();
+    
     // Find the progress
-    const progress = Object.values(progressStorage).find(
+    const progress = Object.values(progressData).find(
       p => p.userId === userId && p.challengeId === challengeId
     );
 
@@ -147,7 +200,8 @@ export class ChallengeService {
       ...updates
     };
 
-    progressStorage[progress.id] = updatedProgress;
+    progressData[progress.id] = updatedProgress;
+    await this.saveStoredProgress(progressData);
     return updatedProgress;
   }
 
@@ -157,8 +211,10 @@ export class ChallengeService {
     challengeId: string,
     objectiveId: string
   ): Promise<ChallengeProgress | null> {
+    const progressData = await this.getStoredProgress();
+    
     // Find the progress
-    const progress = Object.values(progressStorage).find(
+    const progress = Object.values(progressData).find(
       p => p.userId === userId && p.challengeId === challengeId
     );
 
@@ -185,7 +241,8 @@ export class ChallengeService {
     testResults: Record<string, TestResult>
   ): Promise<{ success: boolean; score: number; message: string }> {
     // Find the challenge
-    const challenge = challengesStorage[challengeId];
+    const challenges = await this.getStoredChallenges();
+    const challenge = challenges[challengeId];
     if (!challenge) {
       return {
         success: false,
@@ -195,7 +252,8 @@ export class ChallengeService {
     }
 
     // Find the progress
-    const progress = Object.values(progressStorage).find(
+    const progressData = await this.getStoredProgress();
+    const progress = Object.values(progressData).find(
       p => p.userId === userId && p.challengeId === challengeId
     );
 
@@ -258,14 +316,16 @@ export class ChallengeService {
     userId: string,
     challengeId: string
   ): Promise<ChallengeProgress | null> {
-    return Object.values(progressStorage).find(
+    const progressData = await this.getStoredProgress();
+    return Object.values(progressData).find(
       p => p.userId === userId && p.challengeId === challengeId
     ) || null;
   }
 
   // Get all user progress
   static async getUserProgressAll(userId: string): Promise<ChallengeProgress[]> {
-    return Object.values(progressStorage).filter(
+    const progressData = await this.getStoredProgress();
+    return Object.values(progressData).filter(
       p => p.userId === userId
     );
   }

@@ -1,14 +1,13 @@
+/**
+ * Optimized RateLimiterService using the 'limiter' package
+ * Replaced custom token bucket implementation with battle-tested library
+ */
+import { RateLimiter } from 'limiter';
+import pLimit from 'p-limit';
 import { toast } from "sonner";
+import { LRUCache } from 'lru-cache';
 
-// Types
-interface RateLimitRecord {
-  count: number;
-  firstAttempt: number;
-  lastAttempt: number;
-  blocked: boolean;
-  blockExpires?: number;
-}
-
+// Rate limit configuration
 interface RateLimitOptions {
   maxAttempts: number;
   windowMs: number;
@@ -24,187 +23,273 @@ const DEFAULT_OPTIONS: RateLimitOptions = {
   showToast: true
 };
 
+// Enhanced limiter wrapper with blocking capability
+class EnhancedRateLimiter {
+  private limiter: RateLimiter;
+  private blockedUntil: number = 0;
+  private readonly blockDuration: number;
+  private readonly options: RateLimitOptions;
+
+  constructor(options: RateLimitOptions) {
+    this.options = options;
+    this.blockDuration = options.blockDurationMs || 0;
+    
+    // Create RateLimiter with tokensPerInterval and interval
+    this.limiter = new RateLimiter({
+      tokensPerInterval: options.maxAttempts,
+      interval: options.windowMs
+    });
+  }
+
+  async consume(): Promise<{ allowed: boolean; remaining: number; error?: string }> {
+    const now = Date.now();
+
+    // Check if still blocked
+    if (this.blockedUntil > now) {
+      return {
+        allowed: false,
+        remaining: 0,
+        error: 'Rate limit exceeded - blocked'
+      };
+    }
+
+    // Try to remove a token (synchronous method)
+    const allowed = this.limiter.tryRemoveTokens(1);
+
+    if (allowed) {
+      return {
+        allowed: true,
+        remaining: this.limiter.getTokensRemaining()
+      };
+    } else {
+      // Block for the specified duration if configured
+      if (this.blockDuration > 0) {
+        this.blockedUntil = now + this.blockDuration;
+      }
+
+      return {
+        allowed: false,
+        remaining: 0,
+        error: 'Rate limit exceeded'
+      };
+    }
+  }
+
+  async reset(): Promise<void> {
+    // Reset the limiter by creating a new one
+    this.limiter = new RateLimiter({
+      tokensPerInterval: this.options.maxAttempts,
+      interval: this.options.windowMs
+    });
+    this.blockedUntil = 0;
+  }
+
+  getTokensRemaining(): number {
+    return this.limiter.getTokensRemaining();
+  }
+
+  isBlocked(): boolean {
+    return this.blockedUntil > Date.now();
+  }
+}
+
 /**
- * RateLimiterService - Provides rate limiting functionality
- *
- * This service helps prevent abuse by limiting how frequently actions can be performed.
- * It uses localStorage to track attempts and implements blocking when limits are exceeded.
+ * Optimized RateLimiterService using the 'limiter' package and LRU cache
  */
 export class RateLimiterService {
-  private static STORAGE_KEY = 'rate_limits';
+  // Use LRU cache to prevent unlimited memory growth
+  private static limiters = new LRUCache<string, EnhancedRateLimiter>({
+    max: 1000, // Maximum number of limiters to cache
+    ttl: 1000 * 60 * 60 // 1 hour TTL
+  });
+
+  private static concurrencyLimiters = new LRUCache<string, ReturnType<typeof pLimit>>({
+    max: 100,
+    ttl: 1000 * 60 * 30 // 30 minutes TTL
+  });
 
   /**
-   * Get all rate limit records from localStorage
+   * Create or get a rate limiter for a specific key
    */
-  private static getLimits(): Record<string, RateLimitRecord> {
-    try {
-      const limitsJson = localStorage.getItem(this.STORAGE_KEY);
-      return limitsJson ? JSON.parse(limitsJson) : {};
-    } catch (error) {
-      console.error('Error getting rate limits from localStorage:', error);
-      return {};
+  private static getLimiter(key: string, options: RateLimitOptions): EnhancedRateLimiter {
+    let limiter = this.limiters.get(key);
+    
+    if (!limiter) {
+      limiter = new EnhancedRateLimiter(options);
+      this.limiters.set(key, limiter);
     }
+
+    return limiter;
   }
 
   /**
-   * Save rate limit records to localStorage
+   * Create or get a concurrency limiter for a specific key
    */
-  private static saveLimits(limits: Record<string, RateLimitRecord>): void {
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(limits));
-    } catch (error) {
-      console.error('Error saving rate limits to localStorage:', error);
+  private static getConcurrencyLimiter(key: string, concurrency: number = 1): ReturnType<typeof pLimit> {
+    let limiter = this.concurrencyLimiters.get(key);
+    
+    if (!limiter) {
+      limiter = pLimit(concurrency);
+      this.concurrencyLimiters.set(key, limiter);
     }
+
+    return limiter;
   }
 
   /**
-   * Clean up expired rate limit records
+   * Check if an action is rate limited and execute if allowed
    */
-  private static cleanupExpiredLimits(): void {
-    const limits = this.getLimits();
-    const now = Date.now();
-    let hasChanges = false;
+  static async checkLimit(
+    key: string,
+    action: () => Promise<any> | any,
+    options: Partial<RateLimitOptions> = {}
+  ): Promise<{ allowed: boolean; result?: any; remaining?: number; error?: string }> {
+    const opts = { ...DEFAULT_OPTIONS, ...options };
+    const limiter = this.getLimiter(key, opts);
 
-    // Remove expired records
-    Object.keys(limits).forEach(key => {
-      const record = limits[key];
+    try {
+      // Check if we can consume a token
+      const consumeResult = await limiter.consume();
 
-      // Remove if block has expired
-      if (record.blocked && record.blockExpires && record.blockExpires < now) {
-        delete limits[key];
-        hasChanges = true;
-        return;
+      if (!consumeResult.allowed) {
+        if (opts.showToast) {
+          if (limiter.isBlocked()) {
+            const minutes = Math.ceil((opts.blockDurationMs || 0) / 60000);
+            toast.error(`Rate limit exceeded. Please try again in ${minutes} minutes.`);
+          } else {
+            toast.error('Too many attempts. Please try again later.');
+          }
+        }
+
+        return {
+          allowed: false,
+          remaining: consumeResult.remaining,
+          error: consumeResult.error
+        };
       }
 
-      // Remove if window has expired and not blocked
-      if (!record.blocked && (now - record.firstAttempt) > DEFAULT_OPTIONS.windowMs * 2) {
-        delete limits[key];
-        hasChanges = true;
-      }
-    });
+      // Execute the action
+      const result = await action();
 
-    if (hasChanges) {
-      this.saveLimits(limits);
+      return {
+        allowed: true,
+        result,
+        remaining: consumeResult.remaining
+      };
+    } catch (error) {
+      return {
+        allowed: true,
+        remaining: limiter.getTokensRemaining(),
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 
   /**
-   * Check if an action is rate limited
-   *
-   * @param key Unique identifier for the action being rate limited
-   * @param options Rate limiting options
-   * @returns Object containing whether the action is allowed and remaining attempts
+   * Check if a key is currently rate limited without consuming tokens
    */
-  static checkLimit(
+  static async isAllowed(
     key: string,
     options: Partial<RateLimitOptions> = {}
-  ): { allowed: boolean; remaining: number; blockedUntil?: number } {
-    // Merge options with defaults
+  ): Promise<{ allowed: boolean; remaining: number }> {
     const opts = { ...DEFAULT_OPTIONS, ...options };
+    const limiter = this.getLimiter(key, opts);
 
-    // Clean up expired limits periodically
-    this.cleanupExpiredLimits();
-
-    // Get current limits
-    const limits = this.getLimits();
-    const now = Date.now();
-
-    // If no record exists for this key, create one
-    if (!limits[key]) {
-      limits[key] = {
-        count: 0,
-        firstAttempt: now,
-        lastAttempt: now,
-        blocked: false
-      };
+    // Check if blocked
+    if (limiter.isBlocked()) {
+      return { allowed: false, remaining: 0 };
     }
 
-    const record = limits[key];
+    const remaining = limiter.getTokensRemaining();
+    return { allowed: remaining > 0, remaining };
+  }
 
-    // Check if currently blocked
-    if (record.blocked) {
-      if (record.blockExpires && record.blockExpires < now) {
-        // Block has expired, reset the record
-        record.blocked = false;
-        record.count = 1;
-        record.firstAttempt = now;
-        record.lastAttempt = now;
-        delete record.blockExpires;
+  /**
+   * Execute an action with concurrency limiting
+   */
+  static async withConcurrencyLimit<T>(
+    key: string,
+    action: () => Promise<T> | T,
+    concurrency: number = 1
+  ): Promise<T> {
+    const limiter = this.getConcurrencyLimiter(key, concurrency);
+    return limiter(action);
+  }
 
-        this.saveLimits(limits);
-        return { allowed: true, remaining: opts.maxAttempts - 1 };
-      }
-
-      // Still blocked
-      if (opts.showToast) {
-        toast.error(`Too many attempts. Please try again later.`);
-      }
-
-      return {
-        allowed: false,
-        remaining: 0,
-        blockedUntil: record.blockExpires
-      };
+  /**
+   * Reset rate limiting for a specific key
+   */
+  static async resetLimit(key: string): Promise<void> {
+    const limiter = this.limiters.get(key);
+    if (limiter) {
+      await limiter.reset();
     }
+  }
 
-    // Check if the time window has reset
-    if ((now - record.firstAttempt) > opts.windowMs) {
-      // Reset the window
-      record.count = 1;
-      record.firstAttempt = now;
-      record.lastAttempt = now;
-
-      this.saveLimits(limits);
-      return { allowed: true, remaining: opts.maxAttempts - 1 };
-    }
-
-    // Increment the counter
-    record.count += 1;
-    record.lastAttempt = now;
-
-    // Check if limit exceeded
-    if (record.count > opts.maxAttempts) {
-      record.blocked = true;
-      record.blockExpires = now + (opts.blockDurationMs || 0);
-
-      if (opts.showToast) {
-        const minutes = Math.ceil((opts.blockDurationMs || 0) / 60000);
-        toast.error(`Rate limit exceeded. Please try again in ${minutes} minutes.`);
-      }
-
-      this.saveLimits(limits);
-      return {
-        allowed: false,
-        remaining: 0,
-        blockedUntil: record.blockExpires
-      };
-    }
-
-    // Update the record
-    this.saveLimits(limits);
-
-    // Show warning toast when approaching limit
-    if (opts.showToast && (opts.maxAttempts - record.count <= 1)) {
-      toast.warning(`You are approaching the rate limit. ${opts.maxAttempts - record.count + 1} attempts remaining.`);
+  /**
+   * Get current status of a rate limiter
+   */
+  static async getLimitStatus(key: string): Promise<{
+    hasLimiter: boolean;
+    remaining?: number;
+    isBlocked?: boolean;
+  }> {
+    const limiter = this.limiters.get(key);
+    
+    if (!limiter) {
+      return { hasLimiter: false };
     }
 
     return {
-      allowed: true,
-      remaining: opts.maxAttempts - record.count
+      hasLimiter: true,
+      remaining: limiter.getTokensRemaining(),
+      isBlocked: limiter.isBlocked()
     };
   }
 
   /**
-   * Reset rate limit for a specific key
-   *
-   * @param key Unique identifier for the action being rate limited
+   * Clean up all limiters and reset caches
    */
-  static resetLimit(key: string): void {
-    const limits = this.getLimits();
+  static async cleanup(): Promise<void> {
+    this.limiters.clear();
+    this.concurrencyLimiters.clear();
+  }
 
-    if (limits[key]) {
-      delete limits[key];
-      this.saveLimits(limits);
+  /**
+   * Execute multiple actions with rate limiting
+   */
+  static async batchExecute<T>(
+    key: string,
+    actions: (() => Promise<T> | T)[],
+    options: Partial<RateLimitOptions> = {}
+  ): Promise<Array<{ success: boolean; result?: T; error?: string }>> {
+    const results: Array<{ success: boolean; result?: T; error?: string }> = [];
+
+    for (const action of actions) {
+      const result = await this.checkLimit(key, action, { ...options, showToast: false });
+      
+      if (result.allowed) {
+        results.push({ success: true, result: result.result });
+      } else {
+        results.push({ success: false, error: result.error || 'Rate limit exceeded' });
+      }
     }
+
+    return results;
+  }
+
+  /**
+   * Create a rate-limited version of a function
+   */
+  static createRateLimitedFunction<T extends (...args: any[]) => any>(
+    key: string,
+    fn: T,
+    options: Partial<RateLimitOptions> = {}
+  ): (...args: Parameters<T>) => Promise<ReturnType<T> | null> {
+    return async (...args: Parameters<T>): Promise<ReturnType<T> | null> => {
+      const result = await this.checkLimit(key, () => fn(...args), options);
+      return result.allowed ? result.result : null;
+    };
   }
 }
+
