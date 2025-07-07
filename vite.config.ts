@@ -11,6 +11,8 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       port: 8080,
     },
+    // Clear cache on restart to prevent initialization issues
+    force: mode === 'development',
   },
   plugins: [
     react(),
@@ -26,6 +28,21 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'framer-motion',
+      'zod',
+      '@hookform/resolvers/zod',
+      'react-hook-form',
+      'sonner',
+      'lucide-react'
+    ],
+    // Force rebuild deps if having issues
+    force: mode === 'development',
   },
   build: {
     chunkSizeWarningLimit: 1000,
