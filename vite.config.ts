@@ -39,8 +39,14 @@ export default defineConfig(({ mode }) => ({
       '@hookform/resolvers/zod',
       'react-hook-form',
       'sonner',
-      'lucide-react'
+      'lucide-react',
+      'date-fns',
+      'lodash-es',
+      'clsx',
+      'tailwind-merge'
     ],
+    // Exclude problematic packages that should be bundled separately
+    exclude: ['fsevents'],
     // Force rebuild deps if having issues
     force: mode === 'development',
   },
@@ -48,7 +54,15 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 1000,
     minify: 'esbuild',
     target: 'esnext',
+    // Add specific optimizations for Vercel
+    outDir: 'dist',
+    emptyOutDir: true,
     rollupOptions: {
+      // Ensure external dependencies are handled correctly
+      external: (id) => {
+        // Don't externalize anything for browser builds
+        return false;
+      },
       // Optimize tree-shaking
       treeshake: {
         moduleSideEffects: false,
@@ -92,8 +106,13 @@ export default defineConfig(({ mode }) => ({
               return 'vendor-codemirror';
             }
 
+            // Form validation - separate chunk for zod to prevent init issues
+            if (id.includes('zod') || id.includes('@hookform/resolvers')) {
+              return 'vendor-validation';
+            }
+
             // Utility libraries - stable
-            if (id.includes('lodash') || id.includes('date-fns') || id.includes('zod') ||
+            if (id.includes('lodash') || id.includes('date-fns') ||
                 id.includes('validator') || id.includes('dompurify') || id.includes('use-debounce')) {
               return 'vendor-utils';
             }
@@ -114,7 +133,22 @@ export default defineConfig(({ mode }) => ({
               return 'vendor-charts';
             }
 
-            // All other vendor libraries
+            // Large icon libraries
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+
+            // Form and input handling
+            if (id.includes('react-hook-form') && !id.includes('@hookform/resolvers')) {
+              return 'vendor-forms';
+            }
+
+            // Crypto and security
+            if (id.includes('crypto-js') || id.includes('nanoid') || id.includes('uuid')) {
+              return 'vendor-crypto';
+            }
+
+            // All other vendor libraries (smaller now)
             return 'vendor-misc';
           }
 

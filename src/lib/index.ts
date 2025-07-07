@@ -75,5 +75,8 @@ export {
   createOptimizedLazyComponent 
 } from './component-optimization';
 
+// Form validation utilities
+export { z, initializeZod } from './zod-init';
+
 // Common utilities
 export * from './utils'; 

@@ -9,7 +9,7 @@ import Footer from '@/components/home/Footer.tsx';
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { z } from "@/lib/zod-init";
 import {
   Form,
   FormControl,

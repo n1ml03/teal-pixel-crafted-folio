@@ -1,9 +1,18 @@
 {
   "buildCommand": "bun run build",
-  "installCommand": "bun install",
+  "installCommand": "bun install --frozen-lockfile",
   "framework": "vite",
+  "nodeVersion": "20.x",
   "cleanUrls": true,
   "trailingSlash": false,
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "VITE_BUILD_TIME": "@now"
+    }
+  },
   "rewrites": [
     {
       "source": "/((?!.*\\..*).*)",
