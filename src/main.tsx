@@ -1,27 +1,25 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { loadFonts, initResourceManager, resourceManager } from './lib'
+import { initResourceManager, resourceManager } from './lib'
 
 // Register service worker for caching
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('SW registered: ', registration);
-      })
-      .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError);
-      });
-  });
-}
+// if ('serviceWorker' in navigator) {
+//   window.addEventListener('load', () => {
+//     navigator.serviceWorker.register('/sw.js')
+//       .then((registration) => {
+//         console.log('Resource cleanup disabled: ', registration);
+//       })
+//       .catch((registrationError) => {
+//         console.log('SW registration failed: ', registrationError);
+//       });
+//   });
+// }
 
 // Initialize centralized resource manager
 initResourceManager();
 
-// Start loading fonts immediately before DOM is fully loaded
-// This helps improve LCP by getting fonts ready earlier
-loadFonts();
+
 
 // Defer loading of non-critical CSS using ResourceManager
 const nonCriticalResources = [

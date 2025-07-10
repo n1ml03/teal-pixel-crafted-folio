@@ -5,7 +5,7 @@ import ValueBanner from '@/components/home/ValueBanner';
 import Footer from '@/components/home/Footer';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import SectionBackground from '@/components/utils/SectionBackground';
-import HomeResourcePreloader from '@/components/utils/HomeResourcePreloader';
+
 import EnhancedErrorBoundary from '@/components/ui/enhanced-error-boundary';
 import { SectionLoading, MinimalLoading } from '@/components/ui/enhanced-loading';
 import { useStableMemo, useMediaQuery } from '@/lib';
@@ -52,7 +52,7 @@ const Home = () => {
           Chuyển đến nội dung chính
         </a>
 
-        <HomeResourcePreloader />
+
 
         {/* Simple background */}
         <div className="fixed top-0 left-0 right-0 bottom-0 -z-10 bg-gradient-to-br from-gray-50 via-blue-50 to-teal-50" />

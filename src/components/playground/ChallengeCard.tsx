@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { MotionButton } from "@/components/ui/motion-button";
 import { useIsMobile } from '@/hooks/use-mobile';
-import LazyImage from '@/components/ui/lazy-image';
+
 
 export interface Challenge {
   id: string;
@@ -98,13 +98,11 @@ export const ChallengeCard = ({
         featured && "ring-2 ring-gradient-to-r from-purple-400 to-blue-400 shadow-purple-200/50"
       )}>
         <div className="relative overflow-hidden aspect-video group">
-          <LazyImage
+          <img
             src={thumbnail}
             alt={title}
             className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
-            optimizeResponsive={true}
-            blurEffect={true}
-            loadingStrategy="lazy"
+            loading="lazy"
           />
           
           {/* Gradient overlay on hover */}

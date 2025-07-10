@@ -12,7 +12,7 @@ import { MotionLink } from "@/components/ui/motion-link";
 import { Badge } from "@/components/ui/badge";
 import { useRef, useState, useEffect } from 'react';
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
-import OptimizedImage from "@/components/ui/optimized-image";
+
 
 const Hero = () => {
   // Reference for scroll animations
@@ -365,12 +365,11 @@ const Hero = () => {
                 whileHover={!isLowPerformanceDevice && !prefersReducedMotion ? { scale: 1.02 } : {}}
                 transition={{ duration: 0.3 }}
               >
-                <OptimizedImage
+                <img
                   src="/images/profile.webp"
                   alt="Nam Le - Full-stack Developer & QA Engineer"
                   className="w-full h-full object-cover"
                   loading="eager"
-                  sizes="(max-width: 640px) 320px, (max-width: 768px) 384px, 448px"
                 />
 
                   {/* Simplified hover overlay */}
@@ -462,7 +461,7 @@ const Hero = () => {
                   whileHover={!isLowPerformanceDevice && !prefersReducedMotion ? { y: -4, scale: 1.02 } : {}}
                 >
                   <div className="w-12 h-12 mb-3 rounded-xl bg-white shadow-sm flex items-center justify-center group-hover:shadow-md transition-shadow">
-                    <OptimizedImage
+                    <img
                       src={tech.icon}
                       alt={tech.name}
                       className="w-8 h-8"

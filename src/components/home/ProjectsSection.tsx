@@ -168,14 +168,6 @@ const ProjectCard = ({
             <Calendar className="w-4 h-4 mr-2" />
             <span>{year}</span>
           </div>
-          <motion.div
-            className="flex items-center text-sm text-teal-600 font-medium"
-            animate={isHovered ? { x: 5 } : { x: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Play className="w-4 h-4 mr-1" />
-            View Details
-          </motion.div>
         </div>
 
         <motion.h3 

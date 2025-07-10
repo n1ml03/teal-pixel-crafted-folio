@@ -1,19 +1,9 @@
 /* Import focus styles for accessibility */
 @import './components/ui/focus-styles.css';
 
-/* Font fallback system to prevent layout shifts */
+/* Base font system */
 :root {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-}
-
-/* Apply system fonts first to prevent layout shifts */
-.fonts-loaded {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-}
-
-/* Apply custom fonts only after they're fully loaded */
-.custom-fonts-loaded {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 @tailwind base;
@@ -107,7 +97,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground relative;
   }
 }
 

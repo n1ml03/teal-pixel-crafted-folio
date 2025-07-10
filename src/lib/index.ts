@@ -7,15 +7,12 @@
 export {
   resourceManager,
   initResourceManager,
-  preloadCriticalImages,
-  preloadFonts,
   preloadCSS,
   CRITICAL_RESOURCES,
   setResourceCleanupEnabled
 } from './resource-manager';
 
-// Font loading utilities
-export { loadFonts } from './font-loading';
+
 
 // CSS optimization utilities
 export {
@@ -29,19 +26,7 @@ export {
   getCSSLoadingMetrics
 } from './css-optimization';
 
-// Image optimization utilities (keeping non-duplicate functions)
-export {
-  preloadImage,
-  preloadImages,
-  useLazyImage,
-  getImageDimensions,
-  getResponsiveImageSources,
-  getImageLoadingAttribute,
-  supportsWebP,
-  isImageCached,
-  getDominantColor,
-  clearImageCache
-} from './image-optimization';
+
 
 // Motion utilities
 export * from './motion';

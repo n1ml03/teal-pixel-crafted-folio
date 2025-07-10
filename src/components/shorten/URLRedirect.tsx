@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useNavigateWithTransition } from '@/hooks/useNavigateWithTransition';import { URLShortenerService } from '@/services/URLShortenerService.ts';
+import { useParams } from 'react-router-dom';
+import { useNavigateWithTransition } from '@/hooks/useNavigateWithTransition';
+import { URLShortenerService } from '@/services/URLShortenerService.ts';
 import { URLSanitizerService } from '@/services/URLSanitizerService.ts';
-import { RateLimiterService } from '@/services/RateLimiterService.ts';
 import { SecureHeadersService } from '@/services/SecureHeadersService.ts';
 import { ShortenedURL, UTMParams } from '@/types/shorten.ts';
 import { MotionButton } from '@/components/ui/motion-button.tsx';
@@ -30,9 +30,35 @@ const isTrustedDomain = (domain: string): boolean => {
   );
 };
 
+// Utility function to append UTM parameters to a URL
+const appendUtmParameters = (url: string, utmParams: any): string => {
+  try {
+    const urlObj = new URL(url);
+
+    if (utmParams.source) urlObj.searchParams.set('utm_source', utmParams.source);
+    if (utmParams.medium) urlObj.searchParams.set('utm_medium', utmParams.medium);
+    if (utmParams.campaign) urlObj.searchParams.set('utm_campaign', utmParams.campaign);
+    if (utmParams.term) urlObj.searchParams.set('utm_term', utmParams.term);
+    if (utmParams.content) urlObj.searchParams.set('utm_content', utmParams.content);
+
+    // Handle custom UTM parameters
+    if (utmParams.custom) {
+      Object.entries(utmParams.custom).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          urlObj.searchParams.set(`utm_${key}`, value);
+        }
+      });
+    }
+
+    return urlObj.toString();
+  } catch (error) {
+    console.error('Error appending UTM parameters:', error);
+    return url;
+  }
+};
+
 const URLRedirect: React.FC = () => {
   const { shortCode } = useParams<{ shortCode: string }>();
-  const navigate = useNavigate();
   const navigateWithTransition = useNavigateWithTransition();
   const prefersReducedMotion = useReducedMotion();
   const [error, setError] = useState<string | null>(null);
@@ -57,149 +83,147 @@ const URLRedirect: React.FC = () => {
       return;
     }
 
-    try {
-      // Check rate limiting for redirect requests
-      const rateLimit = RateLimiterService.checkLimit(`redirect-${shortCode}`, {
-        maxAttempts: 20,
-        windowMs: 60 * 1000, // 1 minute
-        showToast: false
-      });
+    let timer: NodeJS.Timeout | null = null;
 
-      // If rate limited, prevent redirect
-      if (!rateLimit.allowed) {
-        setError('Too many redirect attempts. Please try again later.');
-        return;
-      }
-
-      // Look up the short code
-      const url = URLShortenerService.getURLByShortCode(shortCode);
-
-      if (!url) {
-        setError('This shortened URL does not exist or has expired');
-        return;
-      }
-
-      // Check if URL has expired
-      if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
-        setError('This shortened URL has expired');
-        return;
-      }
-
-      // Save the shortened URL
-      setShortenedURL(url);
-
-      // Check if URL is password protected
-      if (url.password && !passwordVerified) {
-        setNeedsPassword(true);
-        return;
-      }
-
-      // Get the final URL with UTM parameters if present
-      const finalURL = url.utmParameters
-        ? URLShortenerService.appendUtmParameters(url.originalURL, url.utmParameters)
-        : url.originalURL;
-
-      // Sanitize and validate the URL
-      const sanitizedURLData = URLSanitizerService.getSafeDisplayURL(finalURL);
-      setSanitizedURL(sanitizedURLData);
-
-      // Check if URL is potentially dangerous
-      const isDangerous = URLSanitizerService.isPotentiallyDangerous(finalURL);
-      setIsDangerousURL(isDangerous);
-
-      if (isDangerous) {
-        setShowWarning(true);
-        setError('This URL may be dangerous and has been blocked for your safety.');
-        return;
-      }
-
-      // Check if URL is suspicious (from the shortened URL metadata)
-      if (url.isSuspicious && !redirectConfirmed) {
-        setShowWarning(true);
-        setOriginalURL(finalURL);
-        return;
-      }
-
-      // Check if domain is trusted
+    const processURL = async () => {
       try {
-        const domain = new URL(finalURL).hostname;
-        const isTrusted = isTrustedDomain(domain);
+        // Look up the short code
+        const url = await URLShortenerService.getURLByShortCode(shortCode);
 
-        // If not trusted and not confirmed, show warning
-        if (!isTrusted && !redirectConfirmed) {
+        if (!url) {
+          setError('This shortened URL does not exist or has expired');
+          return;
+        }
+
+        // Check if URL has expired
+        if (url.expiresAt && new Date(url.expiresAt) < new Date()) {
+          setError('This shortened URL has expired');
+          return;
+        }
+
+        // Save the shortened URL
+        setShortenedURL(url);
+
+        // Check if URL is password protected
+        if (url.password && !passwordVerified) {
+          setNeedsPassword(true);
+          return;
+        }
+
+        // Get the final URL with UTM parameters if present
+        const finalURL = url.utmParameters
+          ? appendUtmParameters(url.originalURL, url.utmParameters)
+          : url.originalURL;
+
+        // Sanitize and validate the URL
+        const sanitizedURLData = URLSanitizerService.getSafeDisplayURL(finalURL);
+        setSanitizedURL(sanitizedURLData);
+
+        // Check if URL is potentially dangerous
+        const isDangerous = URLSanitizerService.isPotentiallyDangerous(finalURL);
+        setIsDangerousURL(isDangerous);
+
+        if (isDangerous) {
+          setShowWarning(true);
+          setError('This URL may be dangerous and has been blocked for your safety.');
+          return;
+        }
+
+        // Check if URL is suspicious (from the shortened URL metadata)
+        if (url.isSuspicious && !redirectConfirmed) {
           setShowWarning(true);
           setOriginalURL(finalURL);
           return;
         }
-      } catch (e) {
-        console.error('Error parsing URL domain:', e);
-        setError('Invalid URL format');
-        return;
-      }
 
-      // If we get here, the URL is safe to redirect to or has been confirmed
-      setOriginalURL(finalURL);
+        // Check if domain is trusted
+        try {
+          const domain = new URL(finalURL).hostname;
+          const isTrusted = isTrustedDomain(domain);
 
-      // Record the click only if we're actually redirecting
-      if (redirectConfirmed || !showWarning) {
-        // Extract UTM parameters from the current URL if they exist
-        const currentUrlParams = new URLSearchParams(window.location.search);
-        const extractedUtmParams: UTMParams = {};
-
-        // Check for UTM parameters in the current URL
-        ['source', 'medium', 'campaign', 'term', 'content'].forEach(param => {
-          const value = currentUrlParams.get(`utm_${param}`);
-          if (value) {
-            extractedUtmParams[param] = value;
+          // If not trusted and not confirmed, show warning
+          if (!isTrusted && !redirectConfirmed) {
+            setShowWarning(true);
+            setOriginalURL(finalURL);
+            return;
           }
-        });
+        } catch (e) {
+          console.error('Error parsing URL domain:', e);
+          setError('Invalid URL format');
+          return;
+        }
 
-        // Check for custom UTM parameters
-        currentUrlParams.forEach((value, key) => {
-          if (key.startsWith('utm_') && !['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].includes(key)) {
-            const customParam = key.replace('utm_', '');
-            if (!extractedUtmParams.custom) {
-              extractedUtmParams.custom = {};
+        // If we get here, the URL is safe to redirect to or has been confirmed
+        setOriginalURL(finalURL);
+
+        // Record the click only if we're actually redirecting
+        if (redirectConfirmed || !showWarning) {
+          // Extract UTM parameters from the current URL if they exist
+          const currentUrlParams = new URLSearchParams(window.location.search);
+          const extractedUtmParams: UTMParams = {};
+
+          // Check for UTM parameters in the current URL
+          ['source', 'medium', 'campaign', 'term', 'content'].forEach(param => {
+            const value = currentUrlParams.get(`utm_${param}`);
+            if (value) {
+              extractedUtmParams[param] = value;
             }
-            extractedUtmParams.custom[customParam] = value;
-          }
-        });
-
-        // Use extracted UTM parameters if available, otherwise use the ones from the shortened URL
-        const utmParameters = Object.keys(extractedUtmParams).length > 0
-          ? extractedUtmParams
-          : url.utmParameters;
-
-        URLShortenerService.recordClick(shortCode, {
-          referrer: document.referrer || undefined,
-          device: navigator.userAgent || undefined,
-          browser: navigator.userAgent ? navigator.userAgent.split(' ').pop() || undefined : undefined,
-          location: { country: 'Unknown' }, // In a real app, this would be determined server-side
-          utmParameters: utmParameters
-        });
-      }
-
-      // Only start countdown if redirect is confirmed or no warning is needed
-      if (redirectConfirmed || !showWarning) {
-        // Start countdown for automatic redirect
-        const timer = setInterval(() => {
-          setCountdown((prev) => {
-            if (prev <= 1) {
-              clearInterval(timer);
-              window.location.href = finalURL;
-              return 0;
-            }
-            return prev - 1;
           });
-        }, 1000);
 
-        return () => clearInterval(timer);
+          // Check for custom UTM parameters
+          currentUrlParams.forEach((value, key) => {
+            if (key.startsWith('utm_') && !['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].includes(key)) {
+              const customParam = key.replace('utm_', '');
+              if (!extractedUtmParams.custom) {
+                extractedUtmParams.custom = {};
+              }
+              extractedUtmParams.custom[customParam] = value;
+            }
+          });
+
+          // Use extracted UTM parameters if available, otherwise use the ones from the shortened URL
+          const utmParameters = Object.keys(extractedUtmParams).length > 0
+            ? extractedUtmParams
+            : url.utmParameters;
+
+          await URLShortenerService.recordClick(shortCode, {
+            referrer: document.referrer || undefined,
+            device: navigator.userAgent || undefined,
+            browser: navigator.userAgent ? navigator.userAgent.split(' ').pop() || undefined : undefined,
+            location: { country: 'Unknown' }, // In a real app, this would be determined server-side
+            utmParameters: utmParameters
+          });
+        }
+
+        // Only start countdown if redirect is confirmed or no warning is needed
+        if (redirectConfirmed || !showWarning) {
+          // Start countdown for automatic redirect
+          timer = setInterval(() => {
+            setCountdown((prev) => {
+              if (prev <= 1) {
+                if (timer) clearInterval(timer);
+                window.location.href = finalURL;
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        }
+      } catch (error) {
+        console.error('Error redirecting:', error);
+        setError('An error occurred while processing this URL');
       }
-    } catch (error) {
-      console.error('Error redirecting:', error);
-      setError('An error occurred while processing this URL');
-    }
-  }, [shortCode, passwordVerified, redirectConfirmed, showWarning]);
+    };
+
+    processURL();
+
+    // Cleanup function
+    return () => {
+      if (timer) {
+        clearInterval(timer);
+      }
+    };
+  }, [shortCode, passwordVerified, redirectConfirmed]);
 
   const handleManualRedirect = () => {
     if (originalURL && (redirectConfirmed || !showWarning)) {

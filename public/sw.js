@@ -2,15 +2,8 @@ const CACHE_NAME = 'teal-pixel-portfolio-v2';
 const CACHE_URLS = [
   '/',
   '/manifest.json',
-  '/images/developer-portrait.webp',
-  '/images/profile.webp',
-  '/images/coding-preview.webp',
-  '/images/testing-preview.webp',
   '/css/animations.css',
-  '/css/playground-extras.css',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-  'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2',
-  'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2JL7SUc.woff2'
+  '/css/playground-extras.css'
 ];
 
 // Install event - cache resources

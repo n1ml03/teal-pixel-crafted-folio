@@ -11,12 +11,12 @@ import { Calendar } from '@/components/ui/calendar.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select.tsx';
 import { format } from 'date-fns';
-import { CalendarIcon, Sparkles, BarChart3, Eye, EyeOff, AlertTriangle, Shield } from 'lucide-react';
+import { CalendarIcon, Sparkles, BarChart3, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
 import { ShortenedURL, URLOptions, UTMParams } from '@/types/shorten.ts';
 import { URLShortenerService } from '@/services/URLShortenerService.ts';
 import { URLSanitizerService } from '@/services/URLSanitizerService.ts';
-import { RateLimiterService } from '@/services/RateLimiterService.ts';
+
 import { CSRFProtectionService } from '@/services/CSRFProtectionService.ts';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
@@ -79,8 +79,7 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
   const [csrfToken, setCsrfToken] = useState('');
   const [showSuspiciousWarning, setShowSuspiciousWarning] = useState(false);
   const [suspiciousURL, setSuspiciousURL] = useState('');
-  const [isRateLimited, setIsRateLimited] = useState(false);
-  const [rateLimitRemaining, setRateLimitRemaining] = useState(5);
+
   const [showPassword, setShowPassword] = useState(false);
 
   // Generate CSRF token on component mount
@@ -227,27 +226,11 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
   const handleSubmit = async (values: FormValues) => {
     try {
       setIsLoading(true);
-      setIsRateLimited(false);
+
 
       // Additional client-side validation
       if (!values.url || values.url.trim().length === 0) {
         throw new Error('URL is required');
-      }
-
-      // Check rate limiting
-      const rateLimit = RateLimiterService.checkLimit('url-shortener', {
-        maxAttempts: 10,
-        windowMs: 60 * 1000, // 1 minute
-        showToast: false
-      });
-
-      // Update rate limit state
-      setRateLimitRemaining(rateLimit.remaining);
-
-      // If rate limited, prevent submission
-      if (!rateLimit.allowed) {
-        setIsRateLimited(true);
-        throw new Error(`Rate limit exceeded. Please try again later.`);
       }
 
       // Validate CSRF token
@@ -350,27 +333,7 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
           </Alert>
         )}
 
-        {/* Rate limit warning */}
-        {isRateLimited && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Rate Limit Exceeded</AlertTitle>
-            <AlertDescription>
-              You've made too many requests. Please try again later.
-            </AlertDescription>
-          </Alert>
-        )}
 
-        {/* Rate limit indicator */}
-        {!isRateLimited && rateLimitRemaining < 3 && (
-          <Alert className="mb-4 bg-blue-50 border-blue-200">
-            <Shield className="h-4 w-4 text-blue-600" />
-            <AlertTitle className="text-blue-800">Rate Limit Warning</AlertTitle>
-            <AlertDescription className="text-blue-700">
-              You have {rateLimitRemaining} requests remaining. Please slow down to avoid being temporarily blocked.
-            </AlertDescription>
-          </Alert>
-        )}
 
         <FormField
           control={form.control}
@@ -388,7 +351,7 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
                   <Button
                     type="submit"
                     className="sm:rounded-l-none min-h-10"
-                    disabled={isLoading || isRateLimited}
+                    disabled={isLoading}
                   >
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2 w-full">

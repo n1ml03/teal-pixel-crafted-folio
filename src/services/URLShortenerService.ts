@@ -310,29 +310,16 @@ export class URLShortenerService {
   }
 
   static async shortenURL(originalURL: string, options: URLOptions = {}): Promise<ShortenedURL> {
-    // Rate limiting for URL shortening
-    const rateLimitResult = await RateLimiterService.checkLimit(
-      'url_shortening',
-      async () => {
-        try {
-          // Input validation
-          if (!originalURL || typeof originalURL !== 'string') {
-            throw new Error('URL is required and must be a string');
-          }
-          
-          return await this.performURLShortening(originalURL, options);
-        } catch (error) {
-          throw error;
-        }
-      },
-      { maxAttempts: 10, windowMs: 60 * 1000, showToast: true } // 10 URLs per minute
-    );
+    try {
+      // Input validation
+      if (!originalURL || typeof originalURL !== 'string') {
+        throw new Error('URL is required and must be a string');
+      }
 
-    if (!rateLimitResult.allowed) {
-      throw new Error(rateLimitResult.error || 'Rate limit exceeded');
+      return await this.performURLShortening(originalURL, options);
+    } catch (error) {
+      throw error;
     }
-
-    return rateLimitResult.result;
   }
 
   private static async performURLShortening(originalURL: string, options: URLOptions = {}): Promise<ShortenedURL> {

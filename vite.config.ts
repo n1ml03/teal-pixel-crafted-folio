@@ -154,7 +154,7 @@ export default defineConfig(({ mode }) => ({
             }
 
             // Data fetching and state management
-            if (id.includes('@tanstack/react-query') || id.includes('quicklink')) {
+            if (id.includes('@tanstack/react-query')) {
               return 'vendor-data';
             }
 
@@ -191,7 +191,7 @@ export default defineConfig(({ mode }) => ({
 
             // Performance and optimization utilities
             if (id.includes('limiter') || id.includes('throttles') || id.includes('p-limit') ||
-                id.includes('quicklink') || id.includes('loadcss')) {
+                id.includes('loadcss')) {
               return 'vendor-performance';
             }
 

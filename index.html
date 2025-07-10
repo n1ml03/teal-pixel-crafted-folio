@@ -15,9 +15,6 @@
     <link rel="manifest" href="/manifest.json" />
 
     <!-- Critical resources are now managed by ResourceManager -->
-    <!-- Only keep essential preconnects for earliest network requests -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <!-- Inline critical CSS to prevent render blocking -->
     <style>
@@ -33,9 +30,7 @@
       #root {
         min-height: 100vh;
       }
-      .fonts-loaded {
-        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      }
+
     </style>
   </head>
 
