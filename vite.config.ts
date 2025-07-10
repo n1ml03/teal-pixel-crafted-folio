@@ -30,226 +30,26 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      'framer-motion',
-      'zod',
-      '@hookform/resolvers/zod',
-      'react-hook-form',
-      'sonner',
-      'lucide-react',
-      'date-fns',
-      'lodash-es',
-      'clsx',
-      'tailwind-merge',
-      // Pre-bundle markdown dependencies to avoid circular deps
-      'react-markdown',
-      'remark-gfm',
-      'rehype-slug',
-      'rehype-autolink-headings',
-      'rehype-highlight'
-    ],
-    // Exclude problematic packages that should be bundled separately
-    exclude: ['fsevents'],
-    // Force rebuild deps if having issues
+    // Let Vite handle dependency optimization automatically
     force: mode === 'development',
   },
   build: {
-    chunkSizeWarningLimit: 500, // Reduced from 1000 to encourage smaller chunks
     minify: 'esbuild',
     target: 'esnext',
-    // Add specific optimizations for Vercel
     outDir: 'dist',
     emptyOutDir: true,
-    // Additional optimizations for smaller bundles
     reportCompressedSize: true,
     rollupOptions: {
-      // Ensure external dependencies are handled correctly
-      external: (id) => {
-        // Don't externalize anything for browser builds
-        return false;
-      },
-      // Optimize tree-shaking for maximum bundle reduction
-      treeshake: {
-        moduleSideEffects: (id) => {
-          // Allow side effects for CSS and certain libraries that need them
-          return id.includes('.css') ||
-                 id.includes('polyfill') ||
-                 id.includes('core-js') ||
-                 id.includes('regenerator-runtime') ||
-                 // Allow side effects for markdown ecosystem to prevent initialization issues
-                 id.includes('micromark') ||
-                 id.includes('unist') ||
-                 id.includes('unified');
-        },
-        propertyReadSideEffects: false,
-        tryCatchDeoptimization: false,
-        unknownGlobalSideEffects: false
-      },
       output: {
         assetFileNames: 'assets/[name].[hash].[ext]',
         chunkFileNames: 'assets/[name].[hash].js',
         entryFileNames: 'assets/[name].[hash].js',
         format: 'es',
-        // Ensure proper module initialization order
-        preserveModules: false,
-        // Optimize chunk splitting for better caching and to prevent circular deps
-        manualChunks(id) {
-          // Vendor chunks - optimized for better caching
-          if (id.includes('node_modules')) {
-            // React core - most stable, cache longest
-            if (id.includes('react/') || id.includes('react-dom/')) {
-              return 'vendor-react-core';
-            }
-
-            // Markdown processing - KEEP ALL TOGETHER to prevent circular deps
-            if (id.includes('react-markdown') || id.includes('remark') || id.includes('rehype') ||
-                id.includes('micromark') || id.includes('mdast') || id.includes('hast') ||
-                id.includes('unified') || id.includes('unist') || id.includes('zwitch') ||
-                id.includes('decode-named-character-reference') || id.includes('character-entities') ||
-                id.includes('property-information') || id.includes('html-void-elements') ||
-                id.includes('markdown-table') || id.includes('trough')) {
-              return 'vendor-markdown';
-            }
-
-            // Syntax highlighting - separate from markdown to avoid conflicts
-            if (id.includes('highlight.js') || id.includes('lowlight') || id.includes('prism')) {
-              return 'vendor-highlight';
-            }
-
-            // React ecosystem - excluding react-markdown (moved to markdown chunk)
-            if (id.includes('react-router') || id.includes('react-hook-form') ||
-                id.includes('@hookform') || id.includes('react-resizable-panels') || 
-                id.includes('react-scroll-parallax') || id.includes('qrcode.react') || 
-                id.includes('react-intersection-observer')) {
-              return 'vendor-react-ecosystem';
-            }
-
-            // UI components - Radix UI
-            if (id.includes('@radix-ui')) {
-              return 'vendor-radix';
-            }
-
-            // Animation and motion
-            if (id.includes('framer-motion')) {
-              return 'vendor-motion';
-            }
-
-            // CodeMirror - large but stable
-            if (id.includes('@codemirror') || id.includes('codemirror')) {
-              return 'vendor-codemirror';
-            }
-
-            // Form validation - separate chunk for zod to prevent init issues
-            if (id.includes('zod') || id.includes('@hookform/resolvers')) {
-              return 'vendor-validation';
-            }
-
-            // Utility libraries - stable
-            if (id.includes('lodash') || id.includes('date-fns') ||
-                id.includes('validator') || id.includes('dompurify') || id.includes('use-debounce')) {
-              return 'vendor-utils';
-            }
-
-            // Data fetching and state management
-            if (id.includes('@tanstack/react-query')) {
-              return 'vendor-data';
-            }
-
-            // Styling utilities
-            if (id.includes('tailwind-merge') || id.includes('clsx') || id.includes('class-variance-authority') ||
-                id.includes('next-themes')) {
-              return 'vendor-styling';
-            }
-
-            // Charts and visualization
-            if (id.includes('recharts') || id.includes('canvas-confetti')) {
-              return 'vendor-charts';
-            }
-
-            // Large icon libraries
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
-
-            // Data processing and parsing (excluding removed export packages)
-            if (id.includes('csv') || id.includes('xlsx')) {
-              return 'vendor-data-processing';
-            }
-
-            // Storage and caching
-            if (id.includes('idb-keyval') || id.includes('lru-cache') || id.includes('keyv')) {
-              return 'vendor-storage';
-            }
-
-            // Network and HTTP utilities
-            if (id.includes('ky') || id.includes('node-fetch') || id.includes('axios')) {
-              return 'vendor-http';
-            }
-
-            // Performance and optimization utilities
-            if (id.includes('limiter') || id.includes('throttles') || id.includes('p-limit') ||
-                id.includes('loadcss')) {
-              return 'vendor-performance';
-            }
-
-            // Form and input handling
-            if (id.includes('react-hook-form') && !id.includes('@hookform/resolvers')) {
-              return 'vendor-forms';
-            }
-
-            // Crypto and security
-            if (id.includes('crypto-js') || id.includes('nanoid') || id.includes('uuid')) {
-              return 'vendor-crypto';
-            }
-
-            // Command palette and search
-            if (id.includes('cmdk') || id.includes('fuse') || id.includes('search')) {
-              return 'vendor-search';
-            }
-
-            // Blurhash and image processing
-            if (id.includes('blurhash') || id.includes('image')) {
-              return 'vendor-image';
-            }
-
-            // All other vendor libraries (much smaller now)
-            return 'vendor-misc';
-          }
-
-          // Application chunks - route-based splitting
-          if (id.includes('src/pages/playground') || id.includes('src/components/playground')) {
-            return 'route-playground';
-          }
-
-          if (id.includes('src/pages/tools') || id.includes('src/components/tools')) {
-            return 'route-tools';
-          }
-
-          if (id.includes('src/pages/shorten') || id.includes('src/components/shorten')) {
-            return 'route-shorten';
-          }
-
-          if (id.includes('src/pages/home') || id.includes('src/components/home')) {
-            return 'route-home';
-          }
-
-          // Shared components and utilities
-          if (id.includes('src/components/ui') || id.includes('src/lib') || id.includes('src/hooks')) {
-            return 'shared';
-          }
-
-          // Services and utilities
-          if (id.includes('src/services') || id.includes('src/utils')) {
-            return 'services';
-          }
-        }
+        // Simplified chunking - no vendor splitting to avoid initialization issues
+        manualChunks: undefined
       }
     },
-    // Enable advanced optimizations
-    cssCodeSplit: true,
+    cssCodeSplit: false, // Keep CSS together to avoid loading issues
     assetsInlineLimit: 4096,
     sourcemap: mode !== 'production'
   }
