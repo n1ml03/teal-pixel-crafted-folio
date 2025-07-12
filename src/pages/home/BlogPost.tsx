@@ -177,15 +177,16 @@ const BlogPost = () => {
       <main className="pt-24 pb-16">
         {/* Hero Section */}
         <section className="relative py-20">
-          <motion.div
+          {/* Remove the bg-background overlay that blocks EnhancedBackground */}
+          {/* <motion.div
             className="absolute inset-0 bg-background"
             style={{ y: y1 }}
-          />
+          /> */}
           
           <div className="container mx-auto px-4 relative z-10">
             <ScrollReveal>
               <div className="max-w-4xl">
-                <Badge variant="secondary" className="mb-6 px-4 py-2">
+                <Badge variant="secondary" className="mb-6 px-4 py-2 bg-white/80 backdrop-blur-sm border border-white/30">
                   <TagIcon className="w-4 h-4 mr-2" />
                   {post.category}
                 </Badge>
@@ -196,17 +197,17 @@ const BlogPost = () => {
 
                 {/* Post Meta */}
                 <div className="flex flex-wrap items-center gap-6 mb-8">
-                  <div className="flex items-center bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/20 shadow-sm">
+                  <div className="flex items-center bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/30 shadow-sm">
                     <Calendar className="w-5 h-5 text-teal-600 mr-2" />
                     <span className="text-muted-foreground">{post.date}</span>
                   </div>
 
-                  <div className="flex items-center bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/20 shadow-sm">
+                  <div className="flex items-center bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/30 shadow-sm">
                     <Clock className="w-5 h-5 text-teal-600 mr-2" />
                     <span className="text-muted-foreground">{post.readingTime} min read</span>
                   </div>
 
-                  <div className="flex items-center bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/20 shadow-sm">
+                  <div className="flex items-center bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/30 shadow-sm">
                     <User className="w-5 h-5 text-teal-600 mr-2" />
                     <span className="text-muted-foreground">{post.author.name}</span>
                   </div>
@@ -218,8 +219,8 @@ const BlogPost = () => {
                     onClick={handleLike}
                     className={`flex items-center px-6 py-3 rounded-xl font-medium transition-all backdrop-blur-sm shadow-sm ${
                       isLiked
-                        ? 'bg-red-50/90 text-red-600 border border-red-200/50'
-                        : 'bg-white/90 text-gray-700 border border-white/30 hover:bg-red-50/90 hover:text-red-600'
+                        ? 'bg-red-50/80 text-red-600 border border-red-200/50'
+                        : 'bg-white/80 text-gray-700 border border-white/30 hover:bg-red-50/80 hover:text-red-600'
                     }`}
                   >
                     <Heart className={`w-5 h-5 mr-2 ${isLiked ? 'fill-current' : ''}`} />
@@ -230,8 +231,8 @@ const BlogPost = () => {
                     onClick={handleBookmark}
                     className={`flex items-center px-6 py-3 rounded-xl font-medium transition-all backdrop-blur-sm shadow-sm ${
                       isBookmarked
-                        ? 'bg-teal-50/90 text-teal-700 border border-teal-200/50'
-                        : 'bg-white/90 text-gray-700 border border-white/30 hover:bg-teal-50/90 hover:text-teal-700'
+                        ? 'bg-teal-50/80 text-teal-700 border border-teal-200/50'
+                        : 'bg-white/80 text-gray-700 border border-white/30 hover:bg-teal-50/80 hover:text-teal-700'
                     }`}
                   >
                     <BookOpen className={`w-5 h-5 mr-2 ${isBookmarked ? 'fill-current' : ''}`} />
@@ -259,11 +260,11 @@ const BlogPost = () => {
                 
                 {/* Reading Time & Author Info */}
                 <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground mb-8">
-                  <div className="flex items-center bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200 shadow-sm">
+                  <div className="flex items-center bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm">
                     <BookOpen className="w-4 h-4 mr-2 text-teal-600" />
                     <span>{post.readingTime} min read</span>
                   </div>
-                  <div className="flex items-center bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200 shadow-sm">
+                  <div className="flex items-center bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm">
                     <User className="w-4 h-4 mr-2 text-teal-600" />
                     <span>By {post.author.name}</span>
                   </div>
@@ -277,7 +278,7 @@ const BlogPost = () => {
               >
                 {/* Enhanced Article Card */}
                 <motion.div
-                  className="bg-gradient-to-br from-white/95 to-white/85 rounded-3xl shadow-2xl border border-gray-200/50 backdrop-blur-sm overflow-hidden"
+                  className="bg-gradient-to-br from-white/90 to-white/80 rounded-3xl shadow-2xl border border-white/30 backdrop-blur-sm overflow-hidden"
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.7, delay: 0.2 }}
@@ -287,7 +288,7 @@ const BlogPost = () => {
                     <div className="relative mb-0">
                       {/* Loading state */}
                       {!imageLoaded && !imageError && (
-                        <div className="absolute inset-0 bg-muted flex items-center justify-center z-10">
+                        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-10">
                           <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
                         </div>
                       )}
@@ -331,7 +332,7 @@ const BlogPost = () => {
                         // Enhanced fallback with better styling
                         <div className="text-foreground whitespace-pre-wrap leading-relaxed">
                           <motion.div
-                            className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 text-yellow-800 px-6 py-4 rounded-xl mb-8"
+                            className="bg-gradient-to-r from-yellow-50/80 to-orange-50/80 border border-yellow-200/50 backdrop-blur-sm text-yellow-800 px-6 py-4 rounded-xl mb-8"
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.3 }}
@@ -351,7 +352,7 @@ const BlogPost = () => {
                     {/* Enhanced Tags Section */}
                     {post.tags && post.tags.length > 0 && (
                       <motion.div
-                        className="mt-12 pt-8 border-t border/30"
+                        className="mt-12 pt-8 border-t border-white/30"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.3 }}
@@ -370,7 +371,7 @@ const BlogPost = () => {
                             >
                               <Badge
                                 variant="secondary"
-                                className="bg-gradient-to-r from-teal-100 to-blue-100 text-teal-700 hover:from-teal-200 hover:to-blue-200 cursor-pointer px-4 py-2 text-sm font-medium border border-teal-200 hover:border-teal-300 transition-all duration-300"
+                                className="bg-gradient-to-r from-teal-100/80 to-blue-100/80 text-teal-700 hover:from-teal-200/80 hover:to-blue-200/80 cursor-pointer px-4 py-2 text-sm font-medium border border-teal-200/50 hover:border-teal-300/50 transition-all duration-300 backdrop-blur-sm"
                               >
                                 #{tag}
                               </Badge>
@@ -382,7 +383,7 @@ const BlogPost = () => {
 
                     {/* Enhanced Action Buttons Section */}
                     <motion.div
-                      className="mt-12 pt-8 border-t border/30"
+                      className="mt-12 pt-8 border-t border-white/30"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.4 }}
@@ -391,10 +392,10 @@ const BlogPost = () => {
                         <div className="flex items-center gap-4">
                           <motion.button
                             onClick={handleLike}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all duration-300 ${
+                            className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all duration-300 backdrop-blur-sm ${
                               isLiked
                                 ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg'
-                                : 'bg-white/90 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-gray-700'
+                                : 'bg-white/80 border border-white/30 hover:bg-red-50/80 hover:text-red-600 hover:border-red-200/50 text-gray-700'
                             }`}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -405,10 +406,10 @@ const BlogPost = () => {
 
                           <motion.button
                             onClick={handleBookmark}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all duration-300 ${
+                            className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all duration-300 backdrop-blur-sm ${
                               isBookmarked
                                 ? 'bg-gradient-to-r from-teal-500 to-blue-500 text-white shadow-lg'
-                                : 'bg-white/90 border border-gray-200 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200 text-gray-700'
+                                : 'bg-white/80 border border-white/30 hover:bg-teal-50/80 hover:text-teal-600 hover:border-teal-200/50 text-gray-700'
                             }`}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -423,7 +424,7 @@ const BlogPost = () => {
                           <span>Share this article</span>
                           <div className="flex gap-2">
                             <motion.button
-                              className="w-10 h-10 rounded-full bg-white/90 border border-gray-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 text-gray-700 flex items-center justify-center transition-colors"
+                              className="w-10 h-10 rounded-full bg-white/80 border border-white/30 hover:bg-blue-50/80 hover:text-blue-600 hover:border-blue-200/50 text-gray-700 flex items-center justify-center transition-colors backdrop-blur-sm"
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => {
@@ -450,7 +451,7 @@ const BlogPost = () => {
 
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
-          <section className="py-16 bg-muted/30">
+          <section className="py-16">
             <div className="container mx-auto px-4">
               <div className="max-w-7xl mx-auto">
                 <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
@@ -461,7 +462,7 @@ const BlogPost = () => {
                   {relatedPosts.map((relatedPost, index) => (
                     <motion.div
                       key={relatedPost.id}
-                      className="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300"
+                      className="bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg border border-white/30 hover:shadow-xl transition-all duration-300"
                       initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -482,7 +483,7 @@ const BlogPost = () => {
                       )}
 
                       <div className="p-6">
-                        <Badge variant="secondary" className="mb-3">
+                        <Badge variant="secondary" className="mb-3 bg-white/60 backdrop-blur-sm border border-white/30">
                           {relatedPost.category}
                         </Badge>
 
