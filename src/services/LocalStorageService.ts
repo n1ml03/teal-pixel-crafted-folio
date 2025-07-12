@@ -4,7 +4,7 @@
  */
 import { get, set, del, keys } from 'idb-keyval';
 import { User } from '../types/playground';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 
 // Error logging utility to prevent sensitive information exposure
 const logError = (message: string, error?: unknown): void => {
@@ -59,9 +59,9 @@ const STORAGE_KEYS = {
   USER_ACTIVITIES: 'testing_playground_user_activities'
 } as const;
 
-// Helper to generate a unique ID using uuid
+// Helper to generate a unique ID using nanoid
 const generateId = (): string => {
-  return uuidv4();
+  return nanoid();
 };
 
 // Default guest user factory

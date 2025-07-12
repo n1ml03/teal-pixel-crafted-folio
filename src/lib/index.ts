@@ -3,7 +3,7 @@
  * This helps reduce import complexity and provides a single source of truth
  */
 
-// Resource management (replaces multiple preload utilities)
+// Resource management
 export {
   resourceManager,
   initResourceManager,
@@ -11,8 +11,6 @@ export {
   CRITICAL_RESOURCES,
   setResourceCleanupEnabled
 } from './resource-manager';
-
-
 
 // CSS optimization utilities
 export {
@@ -26,12 +24,10 @@ export {
   getCSSLoadingMetrics
 } from './css-optimization';
 
-
-
 // Motion utilities
 export * from './motion';
 
-// Render optimization utilities - specific exports to avoid conflicts
+// Render optimization utilities
 export {
   useRenderOptimizer,
   useDebounce,
@@ -43,7 +39,7 @@ export {
 // Scroll optimization utilities
 export * from './scroll-optimization';
 
-// Essential performance hooks - specific exports to avoid conflicts
+// Essential performance hooks
 export {
   useOptimizedState,
   useStableMemo,
@@ -51,8 +47,29 @@ export {
   useMediaQuery,
   useWindowEvent,
   usePerformanceMetrics,
-  useOptimizedCallback
+  useOptimizedCallback,
+  useLifecycleTransition,
+  useStableReference,
+  useErrorRecovery
 } from './performance-hooks';
+
+// React 19 async data hooks
+export {
+  useAsyncData,
+  useOptimisticData,
+  useAsyncAction,
+  useFormState,
+  clearDataCache,
+  getCacheStats
+} from '../hooks/useAsyncData';
+
+// React 19 form action hooks
+export {
+  useFormAction,
+  useFormValidation,
+  useOptimisticForm,
+  useMultiStepForm
+} from '../hooks/useFormActions';
 
 // Component utilities
 export { 

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useNavigateWithTransition } from '@/hooks/useNavigateWithTransition';import { motion, useScroll, useTransform } from 'framer-motion';
+import { useNavigateWithTransition } from '@/hooks/useNavigateWithTransition';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Badge } from "@/components/ui/badge.tsx";
 import { ScrollReveal } from "@/components/ui/scroll-reveal.tsx";
 import { getPostBySlug, getRecentPosts } from '@/data/blog-posts.ts';

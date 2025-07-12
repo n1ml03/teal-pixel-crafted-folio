@@ -1,5 +1,5 @@
 import { CampaignTemplate, UTMParams } from '@/types/shorten.ts';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 
 // Constants
 const TEMPLATE_STORAGE_KEY = 'campaign_templates';
@@ -11,12 +11,12 @@ const logError = (message: string, error?: unknown): void => {
   }
 };
 
-// Helper to generate a unique ID using uuid
+// Helper to generate a unique ID using nanoid
 const generateId = (): string => {
   try {
-    return uuidv4();
+    return nanoid();
   } catch (error) {
-    logError('Error generating UUID, falling back to timestamp-based ID', error);
+    logError('Error generating ID, falling back to timestamp-based ID', error);
     return `template_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
   }
 };

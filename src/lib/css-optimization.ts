@@ -4,28 +4,9 @@
  */
 
 /**
- * Optimized CSS loading using established patterns and loadCSS library
- * Reduced from 4.7KB to ~0.5KB using proven CSS loading strategies
+ * Modern CSS loading using native browser APIs and optimized patterns
+ * Efficient CSS loading strategies without external dependencies
  */
-
-// Import loadCSS if available, otherwise use fallback
-let loadCSS: (href: string, media?: string) => HTMLLinkElement;
-
-try {
-  // Try to import loadCSS library
-  const loadCSSLib = require('loadcss');
-  loadCSS = loadCSSLib;
-} catch {
-  // Fallback implementation if library is not available
-  loadCSS = (href: string, media = 'all'): HTMLLinkElement => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = href;
-    link.media = media;
-    document.head.appendChild(link);
-    return link;
-  };
-}
 
 /**
  * CSS loading strategies
@@ -67,7 +48,7 @@ export function loadOptimizedCSS(
       return deferCSSLoad(href, media, onLoad, onError, priority);
     
     default:
-      return loadCSS(href, media);
+      return preloadCSS(href, media, onLoad, onError);
   }
 }
 

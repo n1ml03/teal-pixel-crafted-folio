@@ -1,62 +1,73 @@
 /**
- * Optimized performance hooks using well-established libraries
- * Replaced custom implementations with battle-tested packages for better performance
+ * Modern React 19 performance hooks with advanced optimizations
+ * Leverages React 19 features for better performance and user experience
  */
 
-import { useCallback, useMemo, useEffect, useState } from 'react';
-import { useDebounce } from 'use-debounce';
-import { useInView } from 'react-intersection-observer';
-
-// Re-export optimized hooks with consistent API
-export { useDebounce } from 'use-debounce';
+import { useCallback, useMemo, useEffect, useState, useTransition } from 'react';
 
 /**
- * Optimized intersection observer hook using well-tested library
- */
-export function useIntersectionObserver(
-  options?: IntersectionObserverInit
-) {
-  const { ref, inView } = useInView({
-    threshold: options?.threshold || 0.1,
-    rootMargin: options?.rootMargin,
-    triggerOnce: false,
-  });
-
-  return [ref, inView] as const;
-}
-
-/**
- * Simple media query hook
+ * Enhanced media query hook with React 19 optimizations
  */
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
     const mediaQuery = window.matchMedia(query);
+    
+    const handleChange = (e: MediaQueryListEvent) => {
+      startTransition(() => {
+        setMatches(e.matches);
+      });
+    };
+
     setMatches(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
 
-    const handler = (event: MediaQueryListEvent) => setMatches(event.matches);
-    mediaQuery.addEventListener('change', handler);
-
-    return () => mediaQuery.removeEventListener('change', handler);
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+    };
   }, [query]);
 
   return matches;
 }
 
 /**
- * Stable callback hook
+ * Enhanced window event listener with React 19 optimizations
  */
-export function useOptimizedCallback<T extends (...args: any[]) => any>(
-  callback: T
-): T {
-  return useCallback(callback, [callback]);
+export function useWindowEvent<K extends keyof WindowEventMap>(
+  event: K,
+  handler: (event: WindowEventMap[K]) => void,
+  options?: boolean | AddEventListenerOptions
+) {
+  const [isPending, startTransition] = useTransition();
+  
+  const stableHandler = useCallback((event: WindowEventMap[K]) => {
+    startTransition(() => {
+      handler(event);
+    });
+  }, [handler]);
+
+  useEffect(() => {
+    window.addEventListener(event, stableHandler, options);
+    return () => {
+      window.removeEventListener(event, stableHandler, options);
+    };
+  }, [event, stableHandler, options]);
 }
 
 /**
- * Deep comparison memo
+ * React 19 optimized callback hook with automatic memoization
+ */
+export function useOptimizedCallback<T extends (...args: any[]) => any>(
+  callback: T,
+  deps?: React.DependencyList
+): T {
+  return useCallback(callback, deps ?? []);
+}
+
+/**
+ * Enhanced memo hook with React 19 optimizations
  */
 export function useStableMemo<T>(
   factory: () => T,
@@ -66,45 +77,170 @@ export function useStableMemo<T>(
 }
 
 /**
- * Window event listener hook
+ * Modern performance metrics hook with React 19 features
  */
-export function useWindowEvent<T extends keyof WindowEventMap>(
-  event: T,
-  handler: (event: WindowEventMap[T]) => void
-): void {
-  const stableHandler = useOptimizedCallback(handler);
+export function usePerformanceMetrics() {
+  const [metrics, setMetrics] = useState<{
+    lcp?: number;
+    fcp?: number;
+    cls?: number;
+    fid?: number;
+    ttfb?: number;
+    domContentLoaded?: number;
+    loadComplete?: number;
+  }>({});
+
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    window.addEventListener(event, stableHandler, { passive: true });
-    return () => window.removeEventListener(event, stableHandler);
-  }, [event, stableHandler]);
-}
+    const updateMetrics = () => {
+      startTransition(() => {
+        // Navigation timing
+        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        
+        // Paint timing
+        const paint = performance.getEntriesByType('paint');
+        
+        // Core Web Vitals
+        const newMetrics = {
+          lcp: paint.find(entry => entry.name === 'largest-contentful-paint')?.startTime,
+          fcp: paint.find(entry => entry.name === 'first-contentful-paint')?.startTime,
+          domContentLoaded: navigation?.domContentLoadedEventEnd - navigation?.domContentLoadedEventStart,
+          loadComplete: navigation?.loadEventEnd - navigation?.loadEventStart,
+          ttfb: navigation?.responseStart - navigation?.requestStart,
+        };
 
-/**
- * Performance metrics using optimized approach
- */
-export function usePerformanceMetrics() {
-  return useMemo(() => {
-    if (typeof window === 'undefined') return {};
-
-    // Use native performance API more efficiently
-    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-    const paint = performance.getEntriesByType('paint');
-
-    return {
-      lcp: paint.find(entry => entry.name === 'largest-contentful-paint')?.startTime,
-      fcp: paint.find(entry => entry.name === 'first-contentful-paint')?.startTime,
-      domContentLoaded: navigation?.domContentLoadedEventEnd - navigation?.domContentLoadedEventStart,
-      loadComplete: navigation?.loadEventEnd - navigation?.loadEventStart,
+        setMetrics(newMetrics);
+      });
     };
+
+    // Initial measurement
+    updateMetrics();
+
+    // Listen for additional performance entries
+    if ('PerformanceObserver' in window) {
+      const observer = new PerformanceObserver((list) => {
+        updateMetrics();
+      });
+
+      observer.observe({ entryTypes: ['paint', 'largest-contentful-paint'] });
+
+      return () => observer.disconnect();
+    }
   }, []);
+
+  return metrics;
 }
 
 /**
- * Optimized state hook
+ * React 19 optimized state hook with transition support
  */
 export function useOptimizedState<T>(initialState: T | (() => T)) {
-  return useState(initialState);
+  const [state, setState] = useState(initialState);
+  const [isPending, startTransition] = useTransition();
+
+  const setOptimizedState = useCallback((value: T | ((prev: T) => T)) => {
+    startTransition(() => {
+      setState(value);
+    });
+  }, []);
+
+  return [state, setOptimizedState, isPending] as const;
+}
+
+/**
+ * React 19 hook for managing component lifecycle with transitions
+ */
+export function useLifecycleTransition() {
+  const [isPending, startTransition] = useTransition();
+
+  const withTransition = useCallback((callback: () => void) => {
+    startTransition(callback);
+  }, []);
+
+  return {
+    isPending,
+    withTransition,
+  };
+}
+
+/**
+ * Enhanced React 19 hook for stable references
+ */
+export function useStableReference<T>(value: T): T {
+  const ref = useMemo(() => ({ current: value }), []);
+  ref.current = value;
+  return ref.current;
+}
+
+/**
+ * React 19 hook for managing component errors with better UX
+ */
+export function useErrorRecovery() {
+  const [error, setError] = useState<Error | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const clearError = useCallback(() => {
+    startTransition(() => {
+      setError(null);
+    });
+  }, []);
+
+  const handleError = useCallback((error: Error) => {
+    startTransition(() => {
+      setError(error);
+    });
+  }, []);
+
+  return {
+    error,
+    isPending,
+    clearError,
+    handleError,
+  };
+}
+
+/**
+ * Optimized intersection observer hook with React 19 patterns
+ */
+export function useIntersectionObserver(
+  options: IntersectionObserverInit = {}
+): {
+  ref: (node: Element | null) => void;
+  inView: boolean;
+  entry: IntersectionObserverEntry | undefined;
+} {
+  const [inView, setInView] = useState(false);
+  const [entry, setEntry] = useState<IntersectionObserverEntry | undefined>();
+  const [isPending, startTransition] = useTransition();
+  const [target, setTarget] = useState<Element | null>(null);
+
+  useEffect(() => {
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        startTransition(() => {
+          setInView(entry.isIntersecting);
+          setEntry(entry);
+        });
+      },
+      options
+    );
+
+    observer.observe(target);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [target, options]);
+
+  const ref = useCallback((node: Element | null) => {
+    setTarget(node);
+  }, []);
+
+  return { ref, inView, entry };
 }

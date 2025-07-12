@@ -3,7 +3,7 @@ import { TestResult } from '../types/playground';
 import { ChallengeLoaderService } from './ChallengeLoaderService';
 import challengesMeta from '@/data/challengesMeta';
 import { get, set, del } from 'idb-keyval';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 
 // Error logging utility to prevent sensitive information exposure
 const logError = (message: string, error?: unknown): void => {
@@ -59,9 +59,9 @@ const STORAGE_KEYS = {
   PROGRESS: 'challenge_service_progress'
 } as const;
 
-// Helper to generate a unique ID using uuid
+// Helper to generate a unique ID using nanoid
 const generateId = (): string => {
-  return uuidv4();
+  return nanoid();
 };
 
 // Input validation helpers

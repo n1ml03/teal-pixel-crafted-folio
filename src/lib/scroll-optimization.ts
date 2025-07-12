@@ -2,10 +2,11 @@
  * Optimized scroll performance utilities using well-established libraries
  */
 import React, { useCallback, useEffect } from 'react';
-import { useDebouncedCallback, useThrottledCallback } from 'use-debounce';
+import { useDebounce } from 'use-debounce';
+import { throttle } from 'lodash-es';
 
-// Re-export optimized throttle from well-tested library
-export { throttle } from 'lodash-es';
+// Re-export throttle for use in components
+export { throttle };
 
 /**
  * Optimized scroll handler using RAF and throttling
@@ -13,7 +14,7 @@ export { throttle } from 'lodash-es';
 export function createOptimizedScrollHandler(
   callback: (scrollY: number) => void
 ): () => void {
-  const throttledCallback = useThrottledCallback((scrollY: number) => {
+  const throttledCallback = throttle((scrollY: number) => {
     callback(scrollY);
   }, 16); // ~60fps
 
@@ -30,7 +31,7 @@ export function usePassiveScroll(
   callback: (e: Event) => void,
   element: HTMLElement | Window = window
 ): void {
-  const throttledCallback = useThrottledCallback(callback, 16); // ~60fps
+  const throttledCallback = throttle(callback, 16); // ~60fps
 
   useEffect(() => {
     element.addEventListener('scroll', throttledCallback, { passive: true });

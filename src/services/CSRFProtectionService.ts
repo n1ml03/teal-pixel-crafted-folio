@@ -1,8 +1,8 @@
 /**
  * Optimized CSRFProtectionService using well-established libraries
- * Enhanced with uuid for better token generation and improved security
+ * Enhanced with nanoid for better token generation and improved security
  */
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import { LRUCache } from 'lru-cache';
 
 interface CSRFToken {
@@ -43,12 +43,12 @@ export class CSRFProtectionService {
   });
 
   /**
-   * Generate a secure random token using uuid
+   * Generate a secure random token using nanoid
    */
   private static generateSecureToken(): string {
     try {
-      // Use uuid for better security and uniqueness
-      const baseToken = uuidv4();
+      // Use nanoid for better security and uniqueness (URL-safe)
+      const baseToken = nanoid();
       const timestamp = Date.now().toString(36);
       const randomSuffix = Math.random().toString(36).substring(2, 8);
       
@@ -56,7 +56,7 @@ export class CSRFProtectionService {
       return `${baseToken}-${timestamp}-${randomSuffix}`;
     } catch (error) {
       logError('Error generating secure token', error);
-      // Fallback to crypto API if uuid fails
+      // Fallback to crypto API if nanoid fails
       try {
         const array = new Uint8Array(32);
         window.crypto.getRandomValues(array);
@@ -77,15 +77,18 @@ export class CSRFProtectionService {
   private static getTokens(): Record<string, CSRFToken> {
     try {
       const tokensJson = localStorage.getItem(this.STORAGE_KEY);
-      const tokens = tokensJson ? JSON.parse(tokensJson) : {};
+      const tokens = tokensJson ? JSON.parse(tokensJson) as Record<string, CSRFToken> : {};
       
       // Clean expired tokens automatically
       const now = Date.now();
       const cleanedTokens: Record<string, CSRFToken> = {};
       
       Object.entries(tokens).forEach(([key, token]) => {
-        if (token.expires > now) {
-          cleanedTokens[key] = token;
+        // Type guard to ensure token has required properties
+        if (token && typeof token === 'object' && 'expires' in token && 'token' in token && 'formId' in token && 'createdAt' in token) {
+          if (token.expires > now) {
+            cleanedTokens[key] = token as CSRFToken;
+          }
         }
       });
 
@@ -251,8 +254,8 @@ export class CSRFProtectionService {
       return false;
     }
 
-    // Check token format (should be a valid uuid-based token with timestamp and suffix)
-    if (!/^[a-f0-9-]{36}-[a-z0-9]+-[a-z0-9]{6}$/i.test(token) && !/^[a-f0-9]{64}$/i.test(token) && !/^fallback-\d+-[a-z0-9]+$/i.test(token)) {
+    // Check token format (should be a valid nanoid-based token with timestamp and suffix)
+    if (!/^[A-Za-z0-9_-]{21}-[a-z0-9]+-[a-z0-9]{6}$/i.test(token) && !/^[a-f0-9]{64}$/i.test(token) && !/^fallback-\d+-[a-z0-9]+$/i.test(token)) {
       logWarning('Token format validation failed');
       return false;
     }

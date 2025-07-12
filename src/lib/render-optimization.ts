@@ -3,10 +3,7 @@
  * Replaced custom implementations with battle-tested packages for better performance
  */
 import React, { useRef, useCallback, useEffect, useMemo } from 'react';
-import { useDebounce } from 'use-debounce';
-
-// Re-export optimized hooks with consistent API
-export { useDebounce };
+import { useIntersectionObserver } from './performance-hooks';
 
 /**
  * Simplified render tracking
@@ -90,15 +87,14 @@ export function useMemoizedCalculation<T>(
 }
 
 /**
- * Optimized lazy loading using intersection observer library
+ * Optimized lazy loading using intersection observer
  */
 export function useLazyLoad(
   options: IntersectionObserverInit = { rootMargin: '200px' }
 ): [React.RefObject<HTMLDivElement>, boolean] {
-  // Use the optimized intersection observer from our performance hooks
-  const [ref, isIntersecting] = useIntersectionObserver(options);
+  const { ref, inView } = useIntersectionObserver(options);
 
-  return [ref as any, isIntersecting];
+  return [ref as any, inView];
 }
 
 /**
@@ -123,5 +119,7 @@ export function useIdleCallback(
   return requestIdleCallback;
 }
 
-// Import the intersection observer from performance hooks
-import { useIntersectionObserver } from './performance-hooks';
+/**
+ * Re-export debounce hook from external library for convenience
+ */
+export { useDebounce } from 'use-debounce';

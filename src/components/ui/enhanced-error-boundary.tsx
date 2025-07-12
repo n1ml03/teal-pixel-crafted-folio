@@ -1,7 +1,8 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode, startTransition, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, Bug, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useErrorRecovery } from '@/lib/performance-hooks';
 
 interface Props {
   children: ReactNode;
@@ -93,12 +94,14 @@ class EnhancedErrorBoundary extends Component<Props, State> {
 
   private handleRetry = () => {
     if (this.state.retryCount < this.maxRetries) {
-      this.setState(prevState => ({
-        hasError: false,
-        error: null,
-        errorInfo: null,
-        retryCount: prevState.retryCount + 1
-      }));
+      startTransition(() => {
+        this.setState(prevState => ({
+          hasError: false,
+          error: null,
+          errorInfo: null,
+          retryCount: prevState.retryCount + 1
+        }));
+      });
 
       // Automatic retry after a delay for certain error types
       if (this.shouldAutoRetry()) {
@@ -290,3 +293,159 @@ class EnhancedErrorBoundary extends Component<Props, State> {
 
 
 export default EnhancedErrorBoundary;
+
+/**
+ * React 19 hook for handling errors in functional components
+ */
+export function useComponentErrorBoundary() {
+  const [error, setError] = useState<Error | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+
+  const resetError = useCallback(() => {
+    startTransition(() => {
+      setError(null);
+      setRetryCount(0);
+    });
+  }, []);
+
+  const retry = useCallback(() => {
+    if (retryCount < maxRetries) {
+      startTransition(() => {
+        setError(null);
+        setRetryCount(prev => prev + 1);
+      });
+    }
+  }, [retryCount, maxRetries]);
+
+  const handleError = useCallback((error: Error) => {
+    startTransition(() => {
+      setError(error);
+    });
+
+    // Report error
+    console.error('Component error:', error);
+    
+    // Send to monitoring service
+    if (typeof window !== 'undefined' && 'gtag' in window) {
+      (window as Window & { gtag?: (...args: unknown[]) => void }).gtag?.('event', 'exception', {
+        description: error.message,
+        fatal: false,
+        functional_component: true
+      });
+    }
+  }, []);
+
+  return {
+    error,
+    retryCount,
+    maxRetries,
+    resetError,
+    retry,
+    handleError,
+    canRetry: retryCount < maxRetries
+  };
+}
+
+/**
+ * React 19 ErrorBoundary HOC for functional components
+ */
+export function withErrorBoundary<P extends object>(
+  Component: React.ComponentType<P>,
+  fallbackComponent?: React.ComponentType<{ error: Error; retry: () => void }>
+) {
+  const WrappedComponent = (props: P) => {
+    const { error, retry, handleError } = useComponentErrorBoundary();
+
+    // Use React's error boundary features
+    React.useEffect(() => {
+      const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+        handleError(new Error(event.reason));
+      };
+
+      window.addEventListener('unhandledrejection', handleUnhandledRejection);
+      return () => window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    }, [handleError]);
+
+    if (error) {
+      if (fallbackComponent) {
+        const FallbackComponent = fallbackComponent;
+        return <FallbackComponent error={error} retry={retry} />;
+      }
+
+      return (
+        <div className="p-8 text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Component Error</h3>
+          <p className="text-gray-600 mb-4">{error.message}</p>
+          <Button onClick={retry}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      );
+    }
+
+    try {
+      return <Component {...props} />;
+    } catch (error) {
+      handleError(error instanceof Error ? error : new Error(String(error)));
+      return null;
+    }
+  };
+
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
+  return WrappedComponent;
+}
+
+/**
+ * React 19 Async Error Boundary for handling async operations
+ */
+export function AsyncErrorBoundary({ 
+  children, 
+  fallback,
+  onError 
+}: {
+  children: ReactNode;
+  fallback?: (error: Error, retry: () => void) => ReactNode;
+  onError?: (error: Error) => void;
+}) {
+  const { error, retry, handleError } = useComponentErrorBoundary();
+
+  React.useEffect(() => {
+    if (error && onError) {
+      onError(error);
+    }
+  }, [error, onError]);
+
+  if (error) {
+    if (fallback) {
+      return <>{fallback(error, retry)}</>;
+    }
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-6 bg-red-50 border border-red-200 rounded-lg"
+      >
+        <div className="flex items-center gap-3 mb-3">
+          <AlertTriangle className="w-5 h-5 text-red-600" />
+          <h4 className="text-red-800 font-medium">Async Operation Failed</h4>
+        </div>
+        <p className="text-red-700 text-sm mb-4">{error.message}</p>
+        <Button 
+          onClick={retry} 
+          size="sm" 
+          variant="outline"
+          className="border-red-300 text-red-700 hover:bg-red-100"
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Try Again
+        </Button>
+      </motion.div>
+    );
+  }
+
+  return <>{children}</>;
+}

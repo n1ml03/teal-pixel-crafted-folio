@@ -4,7 +4,7 @@
  */
 import { UserActivity, ActivityType, Achievement, UserAchievement } from '../types/playground';
 import { LocalStorageService } from './LocalStorageService';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import { get, set, del, clear } from 'idb-keyval';
 import { formatDistanceToNow, isValid, parseISO } from 'date-fns';
 import { groupBy, countBy, sumBy, orderBy } from 'lodash-es';
@@ -180,10 +180,10 @@ export class UserProgressService {
       return existingProgress;
     }
 
-    // Create new challenge progress with UUID
+    // Create new challenge progress with nanoid
     const now = new Date().toISOString();
     const newProgress: ChallengeProgress = {
-      id: uuidv4(),
+      id: nanoid(),
       challengeId,
       userId,
       startedAt: now,
@@ -275,7 +275,7 @@ export class UserProgressService {
       if (!progress) return false;
 
       const snapshot = {
-        id: uuidv4(),
+        id: nanoid(),
         timestamp: new Date().toISOString(),
         code: code.trim()
       };
@@ -350,14 +350,14 @@ export class UserProgressService {
     }
   }
 
-  // Enhanced activity logging with UUID
+  // Enhanced activity logging with nanoid
   static async logActivity(
     userId: string,
     type: ActivityType,
     details: Record<string, string | number | boolean> = {}
   ): Promise<UserActivity> {
     const activity: UserActivity = {
-      id: uuidv4(),
+      id: nanoid(),
       userId,
       type,
       timestamp: new Date().toISOString(),
@@ -482,7 +482,7 @@ export class UserProgressService {
 
       if (isUnlocked) {
         const userAchievement: UserAchievement = {
-          id: uuidv4(),
+          id: nanoid(),
           userId,
           achievementId: achievement.id,
           unlockedAt: new Date().toISOString(),
