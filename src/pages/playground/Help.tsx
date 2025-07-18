@@ -53,14 +53,7 @@ const Sidebar = React.memo(({ navigate }: { navigate: (path: string) => void }) 
       </CardHeader>
       <CardContent className="p-4">
         <div className="space-y-2">
-          <Button
-            variant="ghost"
-            className="w-full justify-start hover:bg-blue-50 transition-colors duration-200 text-gray-700 hover:text-blue-700"
-            onClick={() => navigateWithTransition('/playground/sandbox')}
-          >
-            <Code className="mr-2 h-4 w-4 text-blue-500" />
-            Sandbox Environment
-          </Button>
+
           <Button
             variant="ghost"
             className="w-full justify-start hover:bg-blue-50 transition-colors duration-200 text-gray-700 hover:text-blue-700"
@@ -785,9 +778,9 @@ const Help = () => {
                     <CardFooter className="border-t border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100/20 p-4">
                       <Button
                         className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                        onClick={() => navigateWithTransition('/playground/sandbox')}
+                        onClick={() => navigateWithTransition('/playground/challenges')}
                       >
-                        Try the Sandbox Environment
+                        Try the Challenges
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>

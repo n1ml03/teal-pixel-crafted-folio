@@ -48,8 +48,6 @@ export interface ChallengeWithTests extends Challenge {
     level: 'basic' | 'detailed' | 'solution';
     content: string;
   }[];
-  sandboxUrl: string;
-  sandboxMode: 'secure' | 'open';
   passingScore: number; // minimum score to pass the challenge (0-100)
 }
 

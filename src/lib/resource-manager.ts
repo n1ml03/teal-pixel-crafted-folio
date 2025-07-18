@@ -315,6 +315,177 @@ export function initResourceManager(): void {
   console.log('Resource manager initialized with', CRITICAL_RESOURCES.length, 'critical resources');
 }
 
+/**
+ * Bundle Size Optimization Utilities
+ */
+
+/**
+ * Monitor bundle loading performance
+ */
+export function monitorBundlePerformance(): {
+  totalChunks: number;
+  loadedChunks: number;
+  failedChunks: number;
+  averageLoadTime: number;
+} {
+  const performanceEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+  const resourceEntries = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+
+  const jsChunks = resourceEntries.filter(entry =>
+    entry.name.includes('.js') && entry.name.includes('assets/')
+  );
+
+  const cssChunks = resourceEntries.filter(entry =>
+    entry.name.includes('.css') && entry.name.includes('assets/')
+  );
+
+  const totalChunks = jsChunks.length + cssChunks.length;
+  const failedChunks = resourceEntries.filter(entry =>
+    (entry.name.includes('.js') || entry.name.includes('.css')) &&
+    entry.transferSize === 0
+  ).length;
+
+  const averageLoadTime = totalChunks > 0
+    ? [...jsChunks, ...cssChunks].reduce((sum, entry) => sum + entry.duration, 0) / totalChunks
+    : 0;
+
+  return {
+    totalChunks,
+    loadedChunks: totalChunks - failedChunks,
+    failedChunks,
+    averageLoadTime,
+  };
+}
+
+/**
+ * Preload critical chunks based on route
+ */
+export function preloadCriticalChunks(route: string): void {
+  const chunkMap: Record<string, string[]> = {
+    '/': ['page-home'],
+    '/blog': ['page-blog', 'markdown'],
+    '/blog/*': ['page-blog-post', 'markdown'],
+    '/projects': ['page-projects'],
+    '/services': ['page-services'],
+    '/playground': ['playground-main', 'editor'],
+    '/tools/*': ['tools-api-tester', 'tools-test-generator'],
+  };
+
+  const matchingChunks = Object.entries(chunkMap).find(([pattern]) => {
+    if (pattern.includes('*')) {
+      const basePattern = pattern.replace('*', '');
+      return route.startsWith(basePattern);
+    }
+    return route === pattern;
+  });
+
+  if (matchingChunks) {
+    const [, chunks] = matchingChunks;
+    chunks.forEach(chunk => {
+      resourceManager.preload({
+        href: `/assets/${chunk}.js`,
+        as: 'script',
+        fetchPriority: 'high',
+      });
+    });
+  }
+}
+
+/**
+ * Optimize image loading with modern formats
+ */
+export function optimizeImageLoading(images: HTMLImageElement[]): void {
+  images.forEach(img => {
+    // Add loading="lazy" if not already set
+    if (!img.loading) {
+      img.loading = 'lazy';
+    }
+
+    // Add decoding="async" for better performance
+    if (!img.decoding) {
+      img.decoding = 'async';
+    }
+
+    // Preload critical images
+    if (img.getBoundingClientRect().top < window.innerHeight * 2) {
+      resourceManager.preload({
+        href: img.src,
+        as: 'fetch',
+        fetchPriority: 'high',
+      });
+    }
+  });
+}
+
+/**
+ * Tree shaking analysis helper
+ */
+export function analyzeUnusedCode(): {
+  unusedCSS: string[];
+  unusedJS: string[];
+  recommendations: string[];
+} {
+  const unusedCSS: string[] = [];
+  const unusedJS: string[] = [];
+  const recommendations: string[] = [];
+
+  // Analyze CSS usage
+  const stylesheets = Array.from(document.styleSheets);
+  stylesheets.forEach(stylesheet => {
+    try {
+      const rules = Array.from(stylesheet.cssRules || []);
+      rules.forEach(rule => {
+        if (rule instanceof CSSStyleRule) {
+          const selector = rule.selectorText;
+          if (!document.querySelector(selector)) {
+            unusedCSS.push(selector);
+          }
+        }
+      });
+    } catch (e) {
+      // Cross-origin stylesheets can't be analyzed
+    }
+  });
+
+  // Basic recommendations
+  if (unusedCSS.length > 50) {
+    recommendations.push('Consider removing unused CSS rules');
+    recommendations.push('Use CSS purging tools in production');
+  }
+
+  const scriptTags = document.querySelectorAll('script[src]');
+  if (scriptTags.length > 10) {
+    recommendations.push('Consider bundling more scripts together');
+    recommendations.push('Use dynamic imports for non-critical code');
+  }
+
+  return {
+    unusedCSS: unusedCSS.slice(0, 20), // Limit output
+    unusedJS: [], // Would need more complex analysis
+    recommendations,
+  };
+}
+
+/**
+ * Memory usage optimization
+ */
+export function optimizeMemoryUsage(): void {
+  // Clean up unused event listeners
+  const elements = document.querySelectorAll('*');
+  elements.forEach(element => {
+    // Remove data attributes that might hold references
+    const dataAttrs = Array.from(element.attributes).filter(attr =>
+      attr.name.startsWith('data-') && attr.value.length > 1000
+    );
+    dataAttrs.forEach(attr => element.removeAttribute(attr.name));
+  });
+
+  // Suggest garbage collection if available
+  if ('gc' in window && typeof (window as any).gc === 'function') {
+    (window as any).gc();
+  }
+}
+
 // Export function to enable/disable cleanup if needed
 export function setResourceCleanupEnabled(enabled: boolean): void {
   resourceManager.setCleanupEnabled(enabled);

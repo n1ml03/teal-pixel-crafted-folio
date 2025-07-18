@@ -250,27 +250,6 @@ const BlogPost = () => {
             {/* Enhanced Content Layout */}
             <div className="max-w-7xl mx-auto">
 
-              {/* Article Header Enhancement */}
-              <motion.div
-                className="mb-12"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-              >
-                
-                {/* Reading Time & Author Info */}
-                <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground mb-8">
-                  <div className="flex items-center bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm">
-                    <BookOpen className="w-4 h-4 mr-2 text-teal-600" />
-                    <span>{post.readingTime} min read</span>
-                  </div>
-                  <div className="flex items-center bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm">
-                    <User className="w-4 h-4 mr-2 text-teal-600" />
-                    <span>By {post.author.name}</span>
-                  </div>
-                </div>
-              </motion.div>
-
               {/* Main Article Container */}
               <article
                 ref={articleRef}

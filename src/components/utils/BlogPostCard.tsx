@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Badge } from "@/components/ui/badge.tsx";
 import { BlogPost } from '@/types/blog.ts';
@@ -6,6 +6,8 @@ import { ScrollReveal } from "@/components/ui/scroll-reveal.tsx";
 import { MotionLink } from "@/components/ui/motion-link.tsx";
 import { Calendar, Clock, Tag as TagIcon, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { scrollOptimizedMemo, useStableCallback, usePerformantMemo } from '@/lib/component-optimization';
+import { cardHoverAnimation, fastTween } from '@/lib/motion';
 
 interface BlogPostCardProps {
   post: BlogPost;
@@ -13,36 +15,51 @@ interface BlogPostCardProps {
   onTagClick?: (tag: string) => void;
 }
 
-const BlogPostCard = memo(({ post, index, onTagClick }: BlogPostCardProps) => {
+const BlogPostCard = scrollOptimizedMemo(({ post, index, onTagClick }: BlogPostCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Handle image load
-  const handleImageLoad = () => {
+  // Stable callbacks to prevent re-renders
+  const handleImageLoad = useStableCallback(() => {
     setImageLoaded(true);
-  };
+  }, []);
 
-  // Handle image error
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageError = useStableCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     console.error(`Failed to load image: ${post.coverImage}`);
     setImageError(true);
     // Fallback to a placeholder image if the original fails to load
     e.currentTarget.src = "https://placehold.co/600x400?text=Image+Not+Found";
-  };
+  }, [post.coverImage]);
+
+  // Memoize expensive calculations
+  const processedImageSrc = usePerformantMemo(() => {
+    return post.coverImage.startsWith('./') ? post.coverImage.replace('./', '/') : post.coverImage;
+  }, [post.coverImage], 'BlogPostCard-imageSrc');
+
+  const displayTags = usePerformantMemo(() => {
+    return post.tags.slice(0, 3);
+  }, [post.tags], 'BlogPostCard-tags');
+
+  const remainingTagsCount = usePerformantMemo(() => {
+    return post.tags.length > 3 ? post.tags.length - 3 : 0;
+  }, [post.tags.length], 'BlogPostCard-remainingTags');
 
   return (
-    <ScrollReveal delay={index * 0.05} threshold={0.1}>
+    <ScrollReveal delay={index * 0.03} threshold={0.1}> {/* Reduced delay */}
       <motion.article
         className="bg-white rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 group"
-        whileHover={{ y: -5 }}
-        initial={{ opacity: 0, y: 20 }}
+        whileHover={cardHoverAnimation} // Use optimized animation
+        initial={{ opacity: 0, y: 15 }} // Reduced movement
         animate={{ opacity: 1, y: 0 }}
         transition={{
-          type: "spring",
-          stiffness: 200,
-          damping: 20,
-          mass: 0.8,
-          delay: index * 0.05 // Reduced delay for faster appearance
+          ...fastTween, // Use optimized transition
+          delay: index * 0.03 // Reduced delay for faster appearance
+        }}
+        style={{
+          // Force hardware acceleration
+          transform: 'translateZ(0)',
+          // CSS containment for better performance
+          contain: 'layout paint',
         }}
       >
         <div className="md:flex">
@@ -56,12 +73,19 @@ const BlogPostCard = memo(({ post, index, onTagClick }: BlogPostCardProps) => {
             </div>
             
             <img
-              src={post.coverImage.startsWith('./') ? post.coverImage.replace('./', '/') : post.coverImage}
+              src={processedImageSrc}
               alt={post.title}
-              className={`w-full h-full object-cover transition-all duration-500 ${imageLoaded ? 'opacity-100 group-hover:scale-105' : 'opacity-0'}`}
+              className={`w-full h-full object-cover transition-all duration-300 ${imageLoaded ? 'opacity-100 group-hover:scale-102' : 'opacity-0'}`} // Reduced scale and duration
               onLoad={handleImageLoad}
               onError={handleImageError}
               loading="lazy"
+              decoding="async" // Improve loading performance
+              style={{
+                // Force hardware acceleration
+                transform: 'translateZ(0)',
+                // Improve image rendering
+                imageRendering: 'auto'
+              }}
             />
             
             {/* Category badge */}
@@ -100,9 +124,9 @@ const BlogPostCard = memo(({ post, index, onTagClick }: BlogPostCardProps) => {
             </p>
 
             <div className="flex flex-wrap gap-2 mb-4">
-              {post.tags.slice(0, 3).map((tag, i) => (
+              {displayTags.map((tag, i) => (
                 <span
-                  key={i}
+                  key={`${post.id}-${tag}`} // More stable key
                   className="inline-flex items-center text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full border border-transparent hover:border hover:bg-gray-200 transition-colors cursor-pointer"
                   onClick={() => onTagClick && onTagClick(tag)}
                 >
@@ -110,10 +134,10 @@ const BlogPostCard = memo(({ post, index, onTagClick }: BlogPostCardProps) => {
                   {tag}
                 </span>
               ))}
-              {post.tags.length > 3 && (
+              {remainingTagsCount > 0 && (
                 <span className="text-xs text-gray-500 flex items-center">
                   <span className="w-1 h-1 bg-gray-300 rounded-full mr-1"></span>
-                  +{post.tags.length - 3} more
+                  +{remainingTagsCount} more
                 </span>
               )}
             </div>
@@ -132,7 +156,7 @@ const BlogPostCard = memo(({ post, index, onTagClick }: BlogPostCardProps) => {
       </motion.article>
     </ScrollReveal>
   );
-});
+}, ['index']); // Only re-render when index changes (for scroll-based animations)
 
 BlogPostCard.displayName = 'BlogPostCard';
 

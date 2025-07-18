@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { optimizeForAnimation, cleanupAnimationOptimization } from '@/lib/scroll-optimization';
+import { motion, useTransform } from 'framer-motion';
+import { optimizeForAnimation, cleanupAnimationOptimization, useScrollIntersection } from '@/lib/scroll-optimization';
+import { useOptimizedScroll, useOptimizedSpring, useOptimizedTransform } from '@/lib/motion';
 
 interface SectionBackgroundProps {
   sectionId: string;
@@ -20,56 +21,42 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
   optimizeRendering = false
 }) => {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [isInView, setIsInView] = useState(false);
   const [hasRenderedOnce, setHasRenderedOnce] = useState(false);
 
-  // Use Framer Motion's scroll utilities for section-specific animations with optimized settings
-  const { scrollYProgress } = useScroll({
+  // Use optimized intersection observer for better performance
+  const { ref: intersectionRef, inView: isInView } = useScrollIntersection({
+    threshold: 0.1,
+    rootMargin: '100px 0px', // Larger margin for earlier loading
+    freezeOnceVisible: false,
+    triggerOnce: false,
+  });
+
+  // Combine refs
+  const combinedRef = (node: HTMLDivElement | null) => {
+    sectionRef.current = node;
+    intersectionRef(node);
+  };
+
+  // Use optimized scroll utilities for section-specific animations
+  const { scrollYProgress } = useOptimizedScroll({
     target: sectionRef,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
   });
 
-  // Create smooth spring-based scroll value with optimized settings for smoother scrolling
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 80,  // Reduced for smoother motion
-    damping: 25,    // Increased for less oscillation
+  // Create smooth spring-based scroll value with optimized settings
+  const smoothProgress = useOptimizedSpring(scrollYProgress, {
+    stiffness: 60,    // Further reduced for smoother motion
+    damping: 30,      // Increased for better stability
+    mass: 0.3,        // Lighter for more responsive movement
     restDelta: 0.001,
-    mass: 0.5       // Lighter mass for more responsive movement
   });
 
-  // Set up intersection observer for optimized rendering
+  // Track when component has been in view for performance optimization
   useEffect(() => {
-    if (optimizeRendering && sectionRef.current) {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          // Mark as in view when the section is visible
-          setIsInView(entry.isIntersecting);
-
-          // Once it's been in view, remember that for future renders
-          if (entry.isIntersecting) {
-            setHasRenderedOnce(true);
-          }
-        },
-        {
-          rootMargin: '100px 0px', // Start loading slightly before section comes into view
-          threshold: 0.1
-        }
-      );
-
-      const currentRef = sectionRef.current;
-      observer.observe(currentRef);
-
-      return () => {
-        if (currentRef) {
-          observer.unobserve(currentRef);
-        }
-      };
-    } else {
-      // If not optimizing, always consider it in view
-      setIsInView(true);
+    if (isInView && !hasRenderedOnce) {
       setHasRenderedOnce(true);
     }
-  }, [optimizeRendering]);
+  }, [isInView, hasRenderedOnce]);
 
   // Apply optimizations on mount
   useEffect(() => {
@@ -85,15 +72,15 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
     }
   }, [sectionId, isInView, hasRenderedOnce]);
 
-  // Transform scroll values for parallax effects with enhanced visibility
-  const opacity = useTransform(smoothProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
-  const scale = useTransform(smoothProgress, [0, 0.2, 0.8, 1], [0.9, 1.05, 1.05, 0.9]);
+  // Optimized transform values for parallax effects with reduced motion
+  const opacity = useOptimizedTransform(smoothProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
+  const scale = useOptimizedTransform(smoothProgress, [0, 0.2, 0.8, 1], [0.95, 1.02, 1.02, 0.95]); // Reduced scale range
 
-  // Pre-define all transform values at the component level to avoid hooks in render functions
-  // Hero section transforms
-  const heroTop = useTransform(smoothProgress, [0, 1], [0, -30]);
-  const heroBottom = useTransform(smoothProgress, [0, 1], [30, 0]);
-  const heroMiddle = useTransform(smoothProgress, [0, 1], [0, 20]);
+  // Pre-define all transform values with reduced motion for better performance
+  // Hero section transforms - reduced movement
+  const heroTop = useOptimizedTransform(smoothProgress, [0, 1], [0, -20]); // Reduced from -30
+  const heroBottom = useOptimizedTransform(smoothProgress, [0, 1], [20, 0]); // Reduced from 30
+  const heroMiddle = useOptimizedTransform(smoothProgress, [0, 1], [0, 15]); // Reduced from 20
 
   // Services section transforms
   const servicesTop = useTransform(smoothProgress, [0, 1], [20, -20]);
@@ -352,10 +339,11 @@ const SectionBackground: React.FC<SectionBackgroundProps> = ({
   };
 
   // Only render background elements if section is in view or has been rendered once
-  const shouldRenderBackground = isInView || hasRenderedOnce;
+  // If optimizeRendering is false, always render
+  const shouldRenderBackground = optimizeRendering ? (isInView || hasRenderedOnce) : true;
 
   return (
-    <div ref={sectionRef} className="relative w-full h-full">
+    <div ref={combinedRef} className="relative w-full h-full">
       {/* Section-specific background elements - conditionally rendered for performance */}
       <div className="absolute inset-0 -z-5 overflow-hidden pointer-events-none">
         {shouldRenderBackground ? renderBackgroundElements() : null}

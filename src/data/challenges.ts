@@ -1,5 +1,15 @@
 import { ChallengeWithTests } from '../services/ChallengeService';
-import { TestResult, TestingEnvironment } from '../types/playground';
+import { TestResult } from '../types/playground';
+
+// Type alias for the testing environment used in challenge tests
+type TestingEnvironment = {
+  iframe: HTMLIFrameElement | null;
+  url: string;
+  device: 'desktop' | 'tablet' | 'mobile';
+  consoleLogs: any[];
+  networkRequests: any[];
+  elements: any[];
+};
 
 // Challenge 1: Accessibility Testing
 const accessibilityChallenge: ChallengeWithTests = {
@@ -45,7 +55,14 @@ const accessibilityChallenge: ChallengeWithTests = {
       name: 'Image Alt Text Test',
       description: 'Checks if all images have appropriate alt text',
       weight: 20,
-      testFunction: async (env: TestingEnvironment): Promise<TestResult> => {
+      testFunction: async (env: {
+        iframe: HTMLIFrameElement | null;
+        url: string;
+        device: 'desktop' | 'tablet' | 'mobile';
+        consoleLogs: any[];
+        networkRequests: any[];
+        elements: any[];
+      }): Promise<TestResult> => {
         // In a real implementation, this would analyze the DOM
         // For demo purposes, we'll simulate the test
         return {
@@ -60,7 +77,14 @@ const accessibilityChallenge: ChallengeWithTests = {
       name: 'Heading Structure Test',
       description: 'Validates proper heading hierarchy (h1, h2, etc.)',
       weight: 20,
-      testFunction: async (env: TestingEnvironment): Promise<TestResult> => {
+      testFunction: async (env: {
+        iframe: HTMLIFrameElement | null;
+        url: string;
+        device: 'desktop' | 'tablet' | 'mobile';
+        consoleLogs: any[];
+        networkRequests: any[];
+        elements: any[];
+      }): Promise<TestResult> => {
         return {
           passed: false,
           message: 'Heading structure is not sequential',
@@ -135,8 +159,6 @@ const accessibilityChallenge: ChallengeWithTests = {
       content: 'The page has images missing alt text in the carousel section. The heading structure skips from h1 to h3 in the "Features" section. The light gray text on the white background in the footer fails contrast requirements.'
     }
   ],
-  sandboxUrl: 'https://dequeuniversity.com/demo/mars/',
-  sandboxMode: 'secure',
   passingScore: 70
 };
 
@@ -272,8 +294,6 @@ const performanceChallenge: ChallengeWithTests = {
       content: 'The page has several performance issues: hero.jpg is 1.5MB but displayed at 600x400px, main.css (250KB) is render-blocking, and the carousel initialization in main.js takes 350ms to execute.'
     }
   ],
-  sandboxUrl: 'https://www.webpagetest.org/',
-  sandboxMode: 'secure',
   passingScore: 60
 };
 
@@ -409,8 +429,6 @@ const securityChallenge: ChallengeWithTests = {
       content: 'The search form is vulnerable to XSS via the q parameter. The profile update form has no CSRF token. The login form uses HTTP instead of HTTPS. Changing the user ID in the profile URL allows unauthorized access.'
     }
   ],
-  sandboxUrl: 'https://juice-shop.herokuapp.com/',
-  sandboxMode: 'secure',
   passingScore: 80
 };
 
@@ -546,8 +564,6 @@ const apiTestingChallenge: ChallengeWithTests = {
       content: 'The DELETE /users/{id} endpoint should return 204 No Content instead of 200. The GET /products/{id} needs to return 404 for non-existent IDs. The /users endpoint has inconsistent data types for age fields. The /search endpoint needs better error handling.'
     }
   ],
-  sandboxUrl: 'https://jsonplaceholder.typicode.com/',
-  sandboxMode: 'secure',
   passingScore: 75
 };
 
@@ -683,8 +699,6 @@ const mobileTestingChallenge: ChallengeWithTests = {
       content: 'The application needs to fix content overflow on small screens (iPhone SE), implement proper offline handling with user feedback, and improve input fields with appropriate types and autocomplete support.'
     }
   ],
-  sandboxUrl: 'https://www.amazon.com/',
-  sandboxMode: 'secure',
   passingScore: 70
 };
 
@@ -820,8 +834,6 @@ const automatedUITestingChallenge: ChallengeWithTests = {
       content: 'Replace index-based selectors with data-testid attributes. Replace arbitrary waits with waitUntil or waiting for specific elements/network requests. Extract the login sequence into a custom command in commands.js.'
     }
   ],
-  sandboxUrl: 'https://example.cypress.io/',
-  sandboxMode: 'secure',
   passingScore: 75
 };
 
@@ -957,8 +969,6 @@ const usabilityTestingChallenge: ChallengeWithTests = {
       content: 'The checkout form needs clear error indicators and should preserve data after validation. Navigation needs active state indicators. Implement consistent button styles and terminology across sections. Add confirmation dialogs for delete actions.'
     }
   ],
-  sandboxUrl: 'https://www.saucedemo.com/',
-  sandboxMode: 'secure',
   passingScore: 65
 };
 
@@ -1094,8 +1104,6 @@ const localizationTestingChallenge: ChallengeWithTests = {
       content: 'Complete missing translations in German version. Fix date formats to use locale-specific patterns. Increase button width to accommodate longer German text. Implement proper RTL support with mirrored layouts and correct text alignment.'
     }
   ],
-  sandboxUrl: 'https://www.booking.com/',
-  sandboxMode: 'secure',
   passingScore: 70
 };
 
@@ -1231,8 +1239,6 @@ const regressionTestingChallenge: ChallengeWithTests = {
       content: 'Add checkout, authentication, and payment processes to critical test paths. Reprioritize tests based on traffic and financial risk. Implement smoke tests earlier in the CI/CD pipeline and add parallelization for faster feedback.'
     }
   ],
-  sandboxUrl: 'https://www.demoblaze.com/',
-  sandboxMode: 'secure',
   passingScore: 70
 };
 
@@ -1368,8 +1374,6 @@ const crossBrowserTestingChallenge: ChallengeWithTests = {
       content: 'Fix Safari navigation by avoiding CSS Grid or implementing a flexbox fallback. Add polyfills for ES6 features and date picker in IE11. Include vendor prefixes for critical CSS properties and add proper fallbacks for CSS Grid in older browsers.'
     }
   ],
-  sandboxUrl: 'https://caniuse.com/',
-  sandboxMode: 'secure',
   passingScore: 70
 };
 
@@ -1505,8 +1509,6 @@ const graphqlTestingChallenge: ChallengeWithTests = {
       content: 'Add the missing email field to User type. Create the missing Product type. Implement proper error masking for internal errors. Fix the N+1 query issue in the Comments resolver using DataLoader. Add pagination support to the Author resolver.'
     }
   ],
-  sandboxUrl: 'https://studio.apollographql.com/sandbox',
-  sandboxMode: 'secure',
   passingScore: 70
 };
 
@@ -1642,8 +1644,6 @@ const visualRegressionTestingChallenge: ChallengeWithTests = {
       content: 'Create missing baselines for checkout and product detail pages. Adjust the global threshold to 0.01 to reduce false positives. Add ignore regions for the date display, carousel images, and user-specific data. Ensure consistent A/B test variations during testing.'
     }
   ],
-  sandboxUrl: 'https://percy.io/browser',
-  sandboxMode: 'secure',
   passingScore: 75
 };
 

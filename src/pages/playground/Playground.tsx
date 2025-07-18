@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 import Navigation from '@/components/playground/Navigation';
 import Footer from '@/components/home/Footer';
-import TestingEnvironment from '@/components/playground/TestingEnvironment';
 import EnhancedBackground from '@/components/utils/EnhancedBackground';
 import SectionBackground from '@/components/utils/SectionBackground';
 import EnhancedErrorBoundary from '@/components/ui/enhanced-error-boundary';
@@ -15,7 +14,6 @@ import { useMediaQuery } from '@/lib';
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import('./Dashboard'));
 const Challenges = lazy(() => import('./Challenges'));
-const TestingPlayground = lazy(() => import('./TestingPlayground'));
 const ChallengeDetails = lazy(() => import('./ChallengeDetails'));
 const Leaderboard = lazy(() => import('./Leaderboard'));
 const Help = lazy(() => import('./Help'));
@@ -114,37 +112,7 @@ const RouteWrapper = ({
   </Suspense>
 );
 
-// Sandbox component with consistent design
-const Sandbox = () => {
-  const isMobile = useIsMobile();
 
-  return (
-    <div className="relative flex flex-col">
-      <div className="container flex-1 py-4 md:py-6 pt-20 md:pt-24 relative z-10">
-        <div className="mb-4 md:mb-6">
-          <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-blue-600`}>
-            Testing Sandbox
-          </h1>
-          <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>
-            Use this sandbox environment to practice your testing skills without any specific challenge objectives.
-          </p>
-          <div className={`mt-2 text-xs text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
-            <p>💡 <strong>Tip:</strong> Many websites block iframe embedding. Try these iframe-friendly URLs:</p>
-            <ul className="list-disc list-inside mt-1 space-y-1">
-              <li>https://httpbin.org/html - Simple HTML testing page</li>
-              <li>https://jsonplaceholder.typicode.com/ - JSON API testing site</li>
-              <li>https://reqres.in/ - REST API testing service</li>
-              <li>https://httpstat.us/ - HTTP status code testing</li>
-            </ul>
-          </div>
-        </div>
-        <div className={isMobile ? "h-[calc(100vh-220px)]" : "h-[calc(150vh-290px)]"}>
-          <TestingEnvironment initialUrl="https://httpbin.org/html" sandboxMode="open" />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const PlaygroundRoutes = () => (
   <Routes>
@@ -153,10 +121,9 @@ const PlaygroundRoutes = () => (
     <Route path="challenges" element={<RouteWrapper withTransition sectionId="challenges-section"><Challenges /></RouteWrapper>} />
 
     {/* Routes without footer */}
-    <Route path="challenge/:challengeId" element={<RouteWrapper showFooter={false} sectionId="testing-section"><TestingPlayground /></RouteWrapper>} />
     <Route path="challenge-details/:challengeId" element={<RouteWrapper showFooter={false} sectionId="details-section"><ChallengeDetails /></RouteWrapper>} />
     <Route path="leaderboard" element={<RouteWrapper showFooter={false} sectionId="leaderboard-section"><Leaderboard /></RouteWrapper>} />
-    <Route path="sandbox" element={<RouteWrapper showFooter={false} sectionId="sandbox-section"><Sandbox /></RouteWrapper>} />
+
 
     {/* Help route with footer */}
     <Route path="help" element={<RouteWrapper sectionId="help-section"><Help /></RouteWrapper>} />

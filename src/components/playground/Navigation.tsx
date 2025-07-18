@@ -8,7 +8,6 @@ import {
   Trophy,
   Menu,
   X,
-  Layers,
   Bell,
   Search,
   Sparkles,
@@ -94,12 +93,7 @@ export const Navigation = ({ className }: NavigationProps) => {
       icon: <Trophy className="h-4 w-4 mr-1" />,
       tooltip: 'See how you rank against other testers'
     },
-    {
-      path: '/sandbox',
-      label: 'Sandbox',
-      icon: <Layers className="h-4 w-4 mr-1" />,
-      tooltip: 'Practice in an open testing environment'
-    }
+
   ];
 
   // Mark all notifications as read

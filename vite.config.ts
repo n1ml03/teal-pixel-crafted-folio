@@ -37,12 +37,29 @@ export default defineConfig(({ mode }) => ({
         chunkFileNames: 'assets/[name].[hash].js',
         entryFileNames: 'assets/[name].[hash].js',
         format: 'es',
-        // Simplified chunking - no vendor splitting to avoid initialization issues
-        manualChunks: undefined
+        // Optimized manual chunking for better performance
+        manualChunks: {
+          // Core React libraries
+          'react-vendor': ['react', 'react-dom'],
+          // Router and navigation
+          'router': ['react-router-dom'],
+          // Animation libraries
+          'animation': ['framer-motion'],
+          // UI components
+          'ui-vendor': ['@radix-ui/react-accordion', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+          // Form libraries
+          'form': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          // Utility libraries
+          'utils': ['lodash-es', 'date-fns', 'nanoid'],
+          // Markdown processing (heavy)
+          'markdown': ['react-markdown', 'remark-gfm', 'rehype-highlight'],
+        }
       }
     },
-    cssCodeSplit: false, // Keep CSS together to avoid loading issues
-    assetsInlineLimit: 4096,
-    sourcemap: mode !== 'production'
+    cssCodeSplit: true, // Enable CSS code splitting for better performance
+    assetsInlineLimit: 2048, // Reduced for better caching
+    sourcemap: mode !== 'production',
+    // Additional optimizations
+    chunkSizeWarningLimit: 1000,
   }
 }));

@@ -319,6 +319,205 @@ export function loadCSSForMediaQuery(
 }
 
 /**
+ * CSS Animation and Transform Optimization Utilities
+ */
+
+/**
+ * Optimize elements for smooth animations by setting appropriate CSS properties
+ */
+export function optimizeElementForAnimation(
+  element: HTMLElement,
+  properties: string[] = ['transform', 'opacity'],
+  options: {
+    useContainment?: boolean;
+    useLayerization?: boolean;
+    useGPUAcceleration?: boolean;
+  } = {}
+): void {
+  const { useContainment = true, useLayerization = true, useGPUAcceleration = true } = options;
+
+  // Set will-change for properties that will animate
+  element.style.willChange = properties.join(', ');
+
+  // Force GPU acceleration
+  if (useGPUAcceleration) {
+    element.style.transform = element.style.transform || 'translateZ(0)';
+  }
+
+  // Use CSS containment for better performance
+  if (useContainment) {
+    element.style.contain = 'layout paint';
+  }
+
+  // Create a new stacking context for better layerization
+  if (useLayerization) {
+    element.style.isolation = 'isolate';
+  }
+}
+
+/**
+ * Clean up animation optimizations to free up resources
+ */
+export function cleanupAnimationOptimizations(element: HTMLElement): void {
+  element.style.willChange = 'auto';
+  element.style.contain = '';
+  element.style.isolation = '';
+
+  // Only remove translateZ if it was added for GPU acceleration
+  if (element.style.transform === 'translateZ(0)') {
+    element.style.transform = '';
+  }
+}
+
+/**
+ * Batch optimize multiple elements for animations
+ */
+export function batchOptimizeForAnimation(
+  selector: string,
+  properties: string[] = ['transform', 'opacity'],
+  options: {
+    useContainment?: boolean;
+    useLayerization?: boolean;
+    useGPUAcceleration?: boolean;
+  } = {}
+): HTMLElement[] {
+  const elements = document.querySelectorAll(selector) as NodeListOf<HTMLElement>;
+  const optimizedElements: HTMLElement[] = [];
+
+  elements.forEach(element => {
+    optimizeElementForAnimation(element, properties, options);
+    optimizedElements.push(element);
+  });
+
+  return optimizedElements;
+}
+
+/**
+ * Create optimized CSS keyframes for smooth animations
+ */
+export function createOptimizedKeyframes(
+  name: string,
+  keyframes: Record<string, Record<string, string>>,
+  options: {
+    useGPUAcceleration?: boolean;
+    optimizeForScroll?: boolean;
+  } = {}
+): string {
+  const { useGPUAcceleration = true, optimizeForScroll = false } = options;
+
+  let css = `@keyframes ${name} {\n`;
+
+  Object.entries(keyframes).forEach(([percentage, styles]) => {
+    css += `  ${percentage} {\n`;
+
+    Object.entries(styles).forEach(([property, value]) => {
+      css += `    ${property}: ${value};\n`;
+    });
+
+    // Add GPU acceleration if needed
+    if (useGPUAcceleration && !styles.transform) {
+      css += `    transform: translateZ(0);\n`;
+    }
+
+    // Optimize for scroll-based animations
+    if (optimizeForScroll) {
+      css += `    will-change: transform, opacity;\n`;
+      css += `    contain: layout paint;\n`;
+    }
+
+    css += `  }\n`;
+  });
+
+  css += `}`;
+  return css;
+}
+
+/**
+ * Inject optimized CSS animations into the document
+ */
+export function injectOptimizedAnimations(
+  animations: Record<string, Record<string, Record<string, string>>>,
+  options: {
+    useGPUAcceleration?: boolean;
+    optimizeForScroll?: boolean;
+    id?: string;
+  } = {}
+): HTMLStyleElement {
+  const { id = 'optimized-animations' } = options;
+
+  // Remove existing style element if it exists
+  const existingStyle = document.getElementById(id);
+  if (existingStyle) {
+    existingStyle.remove();
+  }
+
+  let css = '';
+  Object.entries(animations).forEach(([name, keyframes]) => {
+    css += createOptimizedKeyframes(name, keyframes, options) + '\n\n';
+  });
+
+  return inlineCriticalCSS(css, id);
+}
+
+/**
+ * Monitor animation performance and provide recommendations
+ */
+export function monitorAnimationPerformance(
+  selector: string,
+  duration: number = 5000
+): Promise<{
+  averageFPS: number;
+  droppedFrames: number;
+  recommendations: string[];
+}> {
+  return new Promise((resolve) => {
+    const elements = document.querySelectorAll(selector);
+    if (elements.length === 0) {
+      resolve({ averageFPS: 60, droppedFrames: 0, recommendations: ['No elements found'] });
+      return;
+    }
+
+    let frameCount = 0;
+    let lastTime = performance.now();
+    const frameTimes: number[] = [];
+
+    const measureFrame = () => {
+      const currentTime = performance.now();
+      const deltaTime = currentTime - lastTime;
+      frameTimes.push(deltaTime);
+      frameCount++;
+      lastTime = currentTime;
+    };
+
+    const animationId = setInterval(measureFrame, 16); // ~60fps
+
+    setTimeout(() => {
+      clearInterval(animationId);
+
+      const averageFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+      const averageFPS = 1000 / averageFrameTime;
+      const droppedFrames = frameTimes.filter(time => time > 20).length; // Frames longer than 20ms
+
+      const recommendations: string[] = [];
+
+      if (averageFPS < 50) {
+        recommendations.push('Consider reducing animation complexity');
+        recommendations.push('Use transform and opacity properties only');
+        recommendations.push('Enable GPU acceleration with translateZ(0)');
+      }
+
+      if (droppedFrames > frameCount * 0.1) {
+        recommendations.push('Too many dropped frames detected');
+        recommendations.push('Consider using CSS containment');
+        recommendations.push('Reduce the number of animated elements');
+      }
+
+      resolve({ averageFPS, droppedFrames, recommendations });
+    }, duration);
+  });
+}
+
+/**
  * Get CSS loading performance metrics
  */
 export function getCSSLoadingMetrics(): {
@@ -330,11 +529,11 @@ export function getCSSLoadingMetrics(): {
   const stylesheets = document.querySelectorAll('link[rel="stylesheet"]').length;
   const preloaded = document.querySelectorAll('link[rel="preload"][as="style"]').length;
   const inline = document.querySelectorAll('style').length;
-  
+
   // Count unused preloads
   const preloadLinks = document.querySelectorAll('link[rel="preload"][as="style"]');
   let unusedPreloads = 0;
-  
+
   preloadLinks.forEach(link => {
     const href = link.getAttribute('href');
     const hasStylesheet = document.querySelector(`link[rel="stylesheet"][href="${href}"]`);

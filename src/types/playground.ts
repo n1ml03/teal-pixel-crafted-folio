@@ -218,7 +218,14 @@ export interface ChallengeTest {
   name: string;
   description: string;
   weight: number;
-  testFunction: (env: TestingEnvironment) => Promise<TestResult>;
+  testFunction: (env: {
+    iframe: HTMLIFrameElement | null;
+    url: string;
+    device: 'desktop' | 'tablet' | 'mobile';
+    consoleLogs: ConsoleLog[];
+    networkRequests: NetworkRequest[];
+    elements: DOMElement[];
+  }) => Promise<TestResult>;
 }
 
 // Challenge submission result

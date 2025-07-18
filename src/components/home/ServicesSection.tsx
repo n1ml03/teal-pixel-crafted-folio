@@ -472,7 +472,7 @@ const ServicesSection = () => {
           </div>
         </motion.div>
 
-        {/* Enhanced Additional info */}
+        {/* Enhanced Additional info - Mobile Optimized */}
         <motion.div
           className="text-center"
           initial={{ opacity: 0, y: 30 }}
@@ -480,14 +480,15 @@ const ServicesSection = () => {
           transition={{ duration: 0.8, delay: 0.5 }}
           viewport={{ once: true }}
         >
-          <div className="inline-flex items-center justify-center space-x-12 py-8 px-12 bg-gradient-to-r from-teal-50 to-blue-50 rounded-3xl border border-teal-100/50 backdrop-blur-md">
+          {/* Desktop Layout (hidden on mobile) */}
+          <div className="hidden lg:inline-flex items-center justify-center space-x-12 py-8 px-12 bg-gradient-to-r from-teal-50 to-blue-50 rounded-3xl border border-teal-100/50 backdrop-blur-md">
             {[
               { icon: Zap, text: "Fast Delivery", color: "text-teal-600" },
               { icon: Layers, text: "Modern Stack", color: "text-blue-600" },
               { icon: Award, text: "Quality Focused", color: "text-purple-600" },
               { icon: Target, text: "Goal Oriented", color: "text-green-600" }
             ].map((item, index) => (
-              <motion.div 
+              <motion.div
                 key={index}
                 className="flex items-center"
                 whileHover={{ scale: 1.05, y: -2 }}
@@ -502,6 +503,36 @@ const ServicesSection = () => {
                 <span className="text-gray-700 font-semibold">{item.text}</span>
               </motion.div>
             ))}
+          </div>
+
+          {/* Mobile/Tablet Layout (2x2 grid) */}
+          <div className="lg:hidden bg-gradient-to-r from-teal-50 to-blue-50 rounded-3xl border border-teal-100/50 backdrop-blur-md p-6 sm:p-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              {[
+                { icon: Zap, text: "Fast Delivery", color: "text-teal-600" },
+                { icon: Layers, text: "Modern Stack", color: "text-blue-600" },
+                { icon: Award, text: "Quality Focused", color: "text-purple-600" },
+                { icon: Target, text: "Goal Oriented", color: "text-green-600" }
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  className="flex items-center justify-center sm:justify-start p-4 bg-white/60 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200"
+                  initial={!prefersReducedMotion ? { opacity: 0, y: 20 } : {}}
+                  whileInView={!prefersReducedMotion ? { opacity: 1, y: 0 } : {}}
+                  transition={!prefersReducedMotion ? { duration: 0.4, delay: index * 0.1 } : {}}
+                  viewport={{ once: true }}
+                  whileHover={!prefersReducedMotion ? { scale: 1.02, y: -2 } : {}}
+                >
+                  <div className={`w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center mr-3 ${item.color}`}>
+                    {(() => {
+                      const IconComponent = item.icon;
+                      return <IconComponent className="w-6 h-6" />;
+                    })()}
+                  </div>
+                  <span className="text-gray-700 font-semibold text-sm sm:text-base">{item.text}</span>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </motion.div>
       </div>

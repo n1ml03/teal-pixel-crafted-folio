@@ -80,6 +80,7 @@ interface ChallengeTest {
   id: string;
   name: string;
   description: string;
+  weight: number;
   testFunction: (env: {
     iframe: HTMLIFrameElement | null;
     url: string;

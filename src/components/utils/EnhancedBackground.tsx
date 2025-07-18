@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useMediaQuery } from '@/lib/performance-hooks';
+import { useOptimizedScroll, useOptimizedSpring, useParallax } from '@/lib/motion';
 
 interface EnhancedBackgroundProps {
   optimizeForLowPerformance?: boolean;
@@ -66,28 +67,30 @@ const EnhancedBackground: React.FC<EnhancedBackgroundProps> = ({
   return <AnimatedBackground containerRef={containerRef} prefersReducedMotion={reducedAnimations} />;
 };
 
-// Animated background component
+// Optimized animated background component
 const AnimatedBackground: React.FC<{
   containerRef: React.RefObject<HTMLDivElement>;
   prefersReducedMotion?: boolean;
 }> = ({ containerRef, prefersReducedMotion = false }) => {
-  const { scrollY: scrollYProgress } = useScroll({
+  // Use optimized scroll hook with performance settings
+  const { scrollYProgress } = useOptimizedScroll({
     target: containerRef,
     layoutEffect: false,
   });
 
-  const smoothScrollY = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.01,
-    mass: 0.2
+  // Use optimized spring with better performance settings
+  const smoothScrollY = useOptimizedSpring(scrollYProgress, {
+    stiffness: 80,    // Reduced for smoother motion
+    damping: 30,      // Increased for stability
+    mass: 0.15,       // Lighter for better responsiveness
+    restDelta: 0.001, // Smaller for precision
   });
 
-  // Reduced parallax for better performance
-  const parallaxRange = prefersReducedMotion ? 0.1 : 0.2;
-  const topBlobY = useTransform(smoothScrollY, [0, 1], [0, -15 * parallaxRange]);
-  const bottomBlobY = useTransform(smoothScrollY, [0, 1], [0, 20 * parallaxRange]);
-  const middleBlobY = useTransform(smoothScrollY, [0, 1], [0, 8 * parallaxRange]);
+  // Significantly reduced parallax for better performance
+  const parallaxRange = prefersReducedMotion ? 0.05 : 0.1; // Halved the range
+  const topBlobY = useParallax(smoothScrollY, 10 * parallaxRange, 'up');
+  const bottomBlobY = useParallax(smoothScrollY, 15 * parallaxRange, 'down');
+  const middleBlobY = useParallax(smoothScrollY, 6 * parallaxRange, 'down');
 
   const backgroundContent = useMemo(() => (
     <>
