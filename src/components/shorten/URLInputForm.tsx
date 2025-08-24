@@ -118,7 +118,7 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
       const values = form.getValues();
 
       // Prepare options
-      const options: URLOptions = prepareURLOptions(values);
+      const options: URLOptions = await prepareURLOptions(values);
 
       // Create shortened URL with warning flag
       const shortenedURL = await URLShortenerService.shortenURL(suspiciousURL, options);
@@ -143,7 +143,7 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
   };
 
   // Function to prepare URL options
-  const prepareURLOptions = (values: FormValues): URLOptions => {
+  const prepareURLOptions = async (values: FormValues): Promise<URLOptions> => {
     const options: URLOptions = {};
 
     // Add custom alias if enabled
@@ -151,10 +151,11 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
       // Sanitize the custom alias
       const sanitizedAlias = URLSanitizerService.sanitizeAlias(values.customAlias);
 
-      // Check if alias is available
-      const aliasValidation = URLShortenerService.validateAlias(sanitizedAlias);
-      if (!aliasValidation.valid) {
-        throw new Error(aliasValidation.reason || 'Invalid custom alias');
+      // Check if alias is available by getting existing URLs
+      const existingUrls = await URLShortenerService.getURLs();
+      const aliasAvailable = !existingUrls.some(url => url.shortCode === sanitizedAlias);
+      if (!aliasAvailable) {
+        throw new Error('Custom alias is already in use');
       }
       options.customAlias = sanitizedAlias;
     }
@@ -268,23 +269,28 @@ const URLInputForm: React.FC<URLInputFormProps> = ({ onURLShortened, initialUtmP
         return;
       }
 
-      // Prepare options with additional validation
-      const options = prepareURLOptions(values);
+      try {
+        // Prepare options with additional validation
+        const options = await prepareURLOptions(values);
 
-      // Create shortened URL
-      const shortenedURL = await URLShortenerService.shortenURL(sanitizedURL, options);
+        // Create shortened URL
+        const shortenedURL = await URLShortenerService.shortenURL(sanitizedURL, options);
 
-      // Notify parent component
-      onURLShortened(shortenedURL);
+        // Notify parent component
+        onURLShortened(shortenedURL);
 
-      // Show success message
-      toast.success('URL shortened successfully!');
+        // Show success message
+        toast.success('URL shortened successfully!');
 
-      // Reset form
-      resetFormAfterSubmission(values);
+        // Reset form
+        resetFormAfterSubmission(values);
+      } catch (error) {
+        console.error('Error shortening URL:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to shorten URL');
+      }
     } catch (error) {
-      console.error('Error shortening URL:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to shorten URL');
+      console.error('Error in form submission:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to process URL');
     } finally {
       setIsLoading(false);
     }

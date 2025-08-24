@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, KeyboardEvent, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigateWithTransition } from '@/hooks/useNavigateWithTransition';
 import {
   Search,
   Book,
@@ -33,7 +34,7 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useNavigateWithTransition } from '@/hooks/useNavigateWithTransition';import { helpContent, faqs } from '../../data/help-content';
+import { helpContent, faqs } from '../../data/help-content';
 import { useDebouncedCallback } from 'use-debounce';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -57,7 +58,7 @@ const Sidebar = React.memo(({ navigate }: { navigate: (path: string) => void }) 
           <Button
             variant="ghost"
             className="w-full justify-start hover:bg-blue-50 transition-colors duration-200 text-gray-700 hover:text-blue-700"
-            onClick={() => navigateWithTransition('/playground/challenges')}
+            onClick={() => navigate('/playground/challenges')}
           >
             <ChevronRight className="mr-2 h-4 w-4 text-blue-500" />
             Challenges
@@ -65,7 +66,7 @@ const Sidebar = React.memo(({ navigate }: { navigate: (path: string) => void }) 
           <Button
             variant="ghost"
             className="w-full justify-start hover:bg-blue-50 transition-colors duration-200 text-gray-700 hover:text-blue-700"
-            onClick={() => navigateWithTransition('/playground/leaderboard')}
+            onClick={() => navigate('/playground/leaderboard')}
           >
             <Trophy className="mr-2 h-4 w-4 text-blue-500" />
             Leaderboard
@@ -219,7 +220,7 @@ const Help = () => {
     if (searchParam) {
       setSearchQuery(searchParam);
       // Clear the URL parameter after reading it
-      navigateWithTransition('/playground/help', { replace: true });
+      navigate('/playground/help', { replace: true });
     }
   }, [searchParams, navigateWithTransition]);
 
@@ -778,7 +779,7 @@ const Help = () => {
                     <CardFooter className="border-t border-blue-100 bg-gradient-to-r from-blue-50 to-blue-100/20 p-4">
                       <Button
                         className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                        onClick={() => navigateWithTransition('/playground/challenges')}
+                        onClick={() => navigate('/playground/challenges')}
                       >
                         Try the Challenges
                         <ArrowRight className="ml-2 h-4 w-4" />

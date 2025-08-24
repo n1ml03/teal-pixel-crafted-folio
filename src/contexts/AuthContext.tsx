@@ -7,21 +7,29 @@ interface AuthContextType {
   user: User;
   isLoading: boolean;
   isAuthenticated: boolean;
-  updateProfile: (updates: Partial<Pick<User, 'displayName' | 'avatar'>>) => boolean;
+  updateProfile: (updates: Partial<Pick<User, 'displayName' | 'avatar'>>) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User>(LocalStorageService.getCurrentUser());
+  const [user, setUser] = useState<User>({
+    id: '1',
+    email: 'guest@example.com',
+    displayName: 'Guest User',
+    role: 'user',
+    avatar: '',
+    isOnline: true,
+    lastActive: new Date().toISOString()
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   // Update profile function
-  const updateProfile = (
+  const updateProfile = async (
     updates: Partial<Pick<User, 'displayName' | 'avatar'>>
-  ): boolean => {
+  ): Promise<boolean> => {
     try {
-      const updatedUser = LocalStorageService.updateProfile(updates);
+      const updatedUser = await LocalStorageService.updateProfile(updates);
       setUser(updatedUser);
       toast.success('Profile updated successfully.');
       return true;

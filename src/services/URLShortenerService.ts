@@ -709,6 +709,16 @@ export class URLShortenerService {
     }
   }
 
+  // Add public method to access setToStorage functionality
+  static async setStorageData<T>(key: string, value: T): Promise<void> {
+    return this.setToStorage(key, value);
+  }
+
+  // Add public method to access getFromStorage functionality  
+  static async getStorageData<T>(key: string): Promise<T | null> {
+    return this.getFromStorage(key);
+  }
+
   static async getStorageStats(): Promise<{
     totalUrls: number;
     totalClicks: number;

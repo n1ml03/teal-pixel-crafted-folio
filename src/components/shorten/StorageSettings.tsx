@@ -31,17 +31,42 @@ interface StorageSettingsProps {
 }
 
 const StorageSettings: React.FC<StorageSettingsProps> = ({ onClose }) => {
-  const [settings, setSettings] = useState(URLShortenerService.getStorageSettings());
-  const [stats, setStats] = useState(URLShortenerService.getStorageStats());
+  const [settings, setSettings] = useState({
+    defaultExpirationDays: 365,
+    autoCleanup: true,
+    enableBackup: true,
+    maxStorageSize: 50,
+    compressionEnabled: true
+  });
+  const [stats, setStats] = useState({
+    totalUrls: 0,
+    totalClicks: 0,
+    activeUrls: 0,
+    expiredUrls: 0,
+    storageSizeMB: 0,
+    permanentUrls: 0
+  });
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Refresh stats when settings change
+  // Load stats on component mount
   useEffect(() => {
-    const newStats = URLShortenerService.getStorageStats();
-    setStats(newStats);
+    const loadStats = async () => {
+      try {
+        const storageStats = await URLShortenerService.getStorageStats();
+        const permanentUrls = await URLShortenerService.getStorageData('permanent_urls') || [];
+        setStats({
+          ...storageStats,
+          storageSizeMB: (JSON.stringify(storageStats).length / (1024 * 1024)),
+          permanentUrls: Array.isArray(permanentUrls) ? permanentUrls.length : 0
+        });
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    };
+    loadStats();
   }, [settings]);
 
   const handleSettingsChange = (key: string, value: unknown) => {
@@ -51,7 +76,7 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({ onClose }) => {
   const saveSettings = async () => {
     try {
       setIsSaving(true);
-      URLShortenerService.updateStorageSettings(settings);
+      await URLShortenerService.setStorageData('url_storage_settings', settings);
       toast.success('Storage settings saved successfully!');
     } catch (error) {
       toast.error('Failed to save settings');
@@ -63,7 +88,9 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({ onClose }) => {
   const handleExport = async () => {
     try {
       setIsExporting(true);
-      const exportData = URLShortenerService.exportURLs(true);
+      const urls = await URLShortenerService.getURLs();
+      const clicks = await URLShortenerService.getStorageData('url_clicks') || [];
+      const exportData = JSON.stringify({ urls, clicks, settings, exportDate: new Date().toISOString() }, null, 2);
       
       // Create blob and download
       const blob = new Blob([exportData], { type: 'application/json' });
@@ -91,16 +118,26 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({ onClose }) => {
     try {
       setIsImporting(true);
       const text = await file.text();
-      const success = URLShortenerService.importURLs(text, true);
+      const importData = JSON.parse(text);
       
-      if (success) {
+      if (importData.urls && Array.isArray(importData.urls)) {
+        await URLShortenerService.setStorageData('shortened_urls', importData.urls);
+        if (importData.clicks) {
+          await URLShortenerService.setStorageData('url_clicks', importData.clicks);
+        }
+        if (importData.settings) {
+          setSettings(importData.settings);
+        }
         toast.success('URLs imported successfully!');
-        setStats(URLShortenerService.getStorageStats());
+        
+        // Refresh stats
+        const newStats = await URLShortenerService.getStorageStats();
+        setStats({ ...newStats, storageSizeMB: (JSON.stringify(newStats).length / (1024 * 1024)), permanentUrls: 0 });
       } else {
-        toast.error('Failed to import URLs');
+        toast.error('Invalid import file format');
       }
     } catch (error) {
-      toast.error('Failed to import URLs: ' + error.message);
+      toast.error('Failed to import URLs: ' + (error as Error).message);
     } finally {
       setIsImporting(false);
       // Reset file input
@@ -111,11 +148,16 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({ onClose }) => {
   const handleRestore = async () => {
     try {
       setIsRestoring(true);
-      const success = URLShortenerService.restoreFromBackup();
+      const backupData = await URLShortenerService.getStorageData('url_backup_data') as any;
       
-      if (success) {
+      if (backupData && backupData.urls) {
+        await URLShortenerService.setStorageData('shortened_urls', backupData.urls || []);
+        await URLShortenerService.setStorageData('url_clicks', backupData.clicks || []);
         toast.success('Backup restored successfully!');
-        setStats(URLShortenerService.getStorageStats());
+        
+        // Refresh stats
+        const newStats = await URLShortenerService.getStorageStats();
+        setStats({ ...newStats, storageSizeMB: (JSON.stringify(newStats).length / (1024 * 1024)), permanentUrls: 0 });
       } else {
         toast.error('No backup found or restore failed');
       }
@@ -126,9 +168,10 @@ const StorageSettings: React.FC<StorageSettingsProps> = ({ onClose }) => {
     }
   };
 
-  const handleCleanup = () => {
-    URLShortenerService.initialize();
-    setStats(URLShortenerService.getStorageStats());
+  const handleCleanup = async () => {
+    await URLShortenerService.initialize();
+    const newStats = await URLShortenerService.getStorageStats();
+    setStats({ ...newStats, storageSizeMB: (JSON.stringify(newStats).length / (1024 * 1024)), permanentUrls: 0 });
     toast.success('Storage cleanup completed!');
   };
 

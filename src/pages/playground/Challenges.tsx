@@ -96,13 +96,17 @@ const LazyChallenge = memo(({ challenge, isSaved, onSave, onStart, onDetails }: 
   return (
     <div ref={elementRef} style={{ minHeight: hasLoaded ? 'auto' : '300px' }}>
       {isInView || hasLoaded ? (
-        <ChallengeCard
-          challenge={challenge}
-          isSaved={isSaved}
-          onSave={onSave}
-          onStart={onStart}
-          onDetails={onDetails}
-        />
+        challenge ? (
+          <ChallengeCard
+            challenge={challenge}
+            isSaved={isSaved}
+            onSave={onSave}
+            onStart={onStart}
+            onDetails={onDetails}
+          />
+        ) : (
+          <div className="p-4 text-center text-gray-500">Challenge not found</div>
+        )
       ) : (
         <div className="bg-white/90 rounded-lg p-6 shadow-sm border border-white/50 animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>

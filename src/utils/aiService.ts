@@ -492,6 +492,38 @@ Please provide a JSON response with detailed analysis including specific issues,
   }
 
   /**
+   * Generate API test cases for testing endpoints
+   */
+  async generateAPITests(
+    apiSpec: any,
+    options: {
+      endpoint?: string;
+      method?: string;
+      authType?: string;
+    } = {}
+  ): Promise<AIResponse<any>> {
+    const prompt = `Generate comprehensive API test cases for the following API specification:
+
+API Specification:
+${JSON.stringify(apiSpec, null, 2)}
+
+Endpoint: ${options.endpoint || 'N/A'}
+Method: ${options.method || 'N/A'}
+Auth Type: ${options.authType || 'N/A'}
+
+Please provide a JSON response with test cases including:
+- Happy path tests
+- Edge cases
+- Error scenarios
+- Authentication tests
+- Data validation tests`;
+
+    return this.callAI(prompt, {
+      systemPrompt: 'You are an expert API testing specialist. Generate comprehensive test cases that cover all scenarios.'
+    });
+  }
+
+  /**
    * Stream responses (simplified implementation)
    */
   async streamResponse(
