@@ -1,8 +1,7 @@
 /**
- * Optimized AI Service using ky for HTTP requests
- * Reduced from 16KB to ~8KB using established HTTP client library
+ * Optimized AI Service using native fetch API
+ * Lightweight implementation without external dependencies
  */
-import ky, { HTTPError, TimeoutError } from 'ky';
 import { AIConfiguration, AIPromptTemplate } from '@/contexts/AIConfigContext';
 
 export interface TestCase {
@@ -69,56 +68,74 @@ export interface AICallOptions {
 
 class AIService {
   private config: AIConfiguration;
-  private httpClient: typeof ky;
-  analyzeBugReport: any;
+  analyzeBugReport: ((description: string, options?: Record<string, unknown>) => Promise<AIResponse>) | undefined;
 
   constructor(config: AIConfiguration) {
     this.config = config;
-    this.httpClient = this.createOptimizedClient();
-  }
-
-  /**
-   * Create optimized HTTP client with ky
-   */
-  private createOptimizedClient(): typeof ky {
-    if (!this.config.useAI || !this.config.apiKey || !this.config.apiEndpoint) {
-      throw new Error('AI service not properly configured');
-    }
-
-    return ky.create({
-      prefixUrl: this.config.apiEndpoint,
-      timeout: this.config.timeout || 30000,
-      retry: {
-        limit: this.config.maxRetries || 3,
-        methods: ['get', 'post'],
-        statusCodes: [408, 413, 429, 500, 502, 503, 504],
-        backoffLimit: 30000
-      },
-      hooks: {
-        beforeRequest: [
-          (request) => {
-            // Add authentication
-            request.headers.set('Authorization', `Bearer ${this.config.apiKey}`);
-            request.headers.set('Content-Type', 'application/json');
-            
-            // Provider-specific headers
-            if (this.config.selectedModel.startsWith('claude')) {
-              request.headers.set('anthropic-version', '2023-06-01');
-            }
-          }
-        ],
-        beforeRetry: [
-          ({ request, error, retryCount }) => {
-            console.warn(`Retrying AI request (${retryCount}):`, request.url, error);
-          }
-        ]
-      }
-    });
   }
 
   updateConfig(config: AIConfiguration): void {
     this.config = config;
-    this.httpClient = this.createOptimizedClient();
+  }
+
+  /**
+   * Make HTTP request with retry logic using native fetch
+   */
+  private async fetchWithRetry(
+    url: string,
+    options: RequestInit,
+    retries: number = 3
+  ): Promise<Response> {
+    const retryStatusCodes = [408, 413, 429, 500, 502, 503, 504];
+    
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(
+          () => controller.abort(),
+          this.config.timeout || 30000
+        );
+
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        // If response is ok or not retryable, return it
+        if (response.ok || !retryStatusCodes.includes(response.status)) {
+          return response;
+        }
+
+        // If this was the last attempt, return the response
+        if (attempt === retries) {
+          return response;
+        }
+
+        // Log retry
+        console.warn(`Retrying AI request (${attempt + 1}/${retries}): ${response.status}`);
+
+        // Exponential backoff
+        const backoffDelay = Math.min(1000 * Math.pow(2, attempt), 30000);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+
+      } catch (error) {
+        // If this was the last attempt, throw the error
+        if (attempt === retries) {
+          throw error;
+        }
+
+        // Log retry
+        console.warn(`Retrying AI request (${attempt + 1}/${retries}):`, error);
+
+        // Exponential backoff
+        const backoffDelay = Math.min(1000 * Math.pow(2, attempt), 30000);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
+    }
+
+    throw new Error('Max retries exceeded');
   }
 
   /**
@@ -282,14 +299,36 @@ class AIService {
       // Prepare request body
       const requestBody = this.buildRequestBody(prompt, systemPrompt);
 
-      // Make API call with ky
-      const response = await this.httpClient.post('', {
-        json: requestBody,
-        timeout: options.timeout || this.config.timeout || 30000
-      }).json<Record<string, unknown>>();
+      // Prepare headers
+      const headers: HeadersInit = {
+        'Authorization': `Bearer ${this.config.apiKey}`,
+        'Content-Type': 'application/json'
+      };
+
+      // Provider-specific headers
+      if (this.config.selectedModel.startsWith('claude')) {
+        headers['anthropic-version'] = '2023-06-01';
+      }
+
+      // Make API call with native fetch and retry logic
+      const response = await this.fetchWithRetry(
+        this.config.apiEndpoint,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(requestBody)
+        },
+        this.config.maxRetries || 3
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json() as Record<string, unknown>;
 
       // Extract content
-      const content = this.extractResponseContent(response);
+      const content = this.extractResponseContent(data);
       
       if (!content) {
         throw new Error('No content in AI response');
@@ -323,31 +362,20 @@ class AIService {
       // Enhanced error handling
       let errorMessage = 'Unknown error occurred';
       
-      if (error instanceof HTTPError) {
-        const status = error.response.status;
-        switch (status) {
-          case 401:
-            errorMessage = 'Invalid API key or authentication failed';
-            break;
-          case 403:
-            errorMessage = 'Access forbidden - check your API permissions';
-            break;
-          case 429:
-            errorMessage = 'Rate limit exceeded - please try again later';
-            break;
-          case 500:
-          case 502:
-          case 503:
-          case 504:
-            errorMessage = 'AI service temporarily unavailable';
-            break;
-          default:
-            errorMessage = `HTTP ${status}: ${error.message}`;
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = 'Request timed out - AI service took too long to respond';
+        } else if (error.message.includes('401')) {
+          errorMessage = 'Invalid API key or authentication failed';
+        } else if (error.message.includes('403')) {
+          errorMessage = 'Access forbidden - check your API permissions';
+        } else if (error.message.includes('429')) {
+          errorMessage = 'Rate limit exceeded - please try again later';
+        } else if (error.message.match(/5\d{2}/)) {
+          errorMessage = 'AI service temporarily unavailable';
+        } else {
+          errorMessage = error.message;
         }
-      } else if (error instanceof TimeoutError) {
-        errorMessage = 'Request timed out - AI service took too long to respond';
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
       }
 
       console.error('AI service error:', error);

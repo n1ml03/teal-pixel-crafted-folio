@@ -23,7 +23,7 @@ interface TimeSeriesData {
   value?: number;
   challenges?: number;
   tests?: number;
-  [key: string]: any;
+  [key: string]: string | number | undefined;
 }
 
 interface DynamicChartsProps {

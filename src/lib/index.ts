@@ -3,27 +3,6 @@
  * This helps reduce import complexity and provides a single source of truth
  */
 
-// Resource management
-export {
-  resourceManager,
-  initResourceManager,
-  preloadCSS,
-  CRITICAL_RESOURCES,
-  setResourceCleanupEnabled
-} from './resource-manager';
-
-// CSS optimization utilities
-export {
-  loadOptimizedCSS,
-  loadCSSBatch,
-  inlineCriticalCSS,
-  cleanupUnusedCSS,
-  isElementInViewport,
-  loadCSSOnElementVisible,
-  loadCSSForMediaQuery,
-  getCSSLoadingMetrics
-} from './css-optimization';
-
 // Motion utilities
 export * from './motion';
 
@@ -52,24 +31,6 @@ export {
   useStableReference,
   useErrorRecovery
 } from './performance-hooks';
-
-// React 19 async data hooks
-export {
-  useAsyncData,
-  useOptimisticData,
-  useAsyncAction,
-  useFormState,
-  clearDataCache,
-  getCacheStats
-} from '../hooks/useAsyncData';
-
-// React 19 form action hooks
-export {
-  useFormAction,
-  useFormValidation,
-  useOptimisticForm,
-  useMultiStepForm
-} from '../hooks/useFormActions';
 
 // Component utilities
 export { 

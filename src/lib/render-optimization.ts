@@ -94,7 +94,7 @@ export function useLazyLoad(
 ): [React.RefObject<HTMLDivElement>, boolean] {
   const { ref, inView } = useIntersectionObserver(options);
 
-  return [ref as any, inView];
+  return [ref as React.RefObject<HTMLDivElement>, inView];
 }
 
 /**
@@ -120,6 +120,6 @@ export function useIdleCallback(
 }
 
 /**
- * Re-export debounce hook from external library for convenience
+ * Re-export debounce hook from native utilities
  */
-export { useDebounce } from 'use-debounce';
+export { useDebounce } from '@/lib/native-utils';

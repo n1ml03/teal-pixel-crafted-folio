@@ -1,6 +1,6 @@
 /**
- * Optimized URLShortenerService using well-established libraries
- * Enhanced with additional optimization packages for better performance
+ * Optimized URLShortenerService with native JavaScript utilities
+ * Lightweight implementation with minimal dependencies
  */
 import { nanoid, customAlphabet } from 'nanoid';
 import { get, set, del, clear, keys } from 'idb-keyval';
@@ -8,7 +8,7 @@ import { SHA256, PBKDF2 } from 'crypto-js';
 import validator from 'validator';
 import { LRUCache } from 'lru-cache';
 import { UAParser } from 'ua-parser-js';
-import { groupBy, countBy, sortBy, take, orderBy } from 'lodash-es';
+import { groupBy, countBy, sortBy, take, orderBy } from '@/lib/native-utils';
 import { format, parseISO, isValid } from 'date-fns';
 import { ShortenedURL, URLClickData, URLOptions, URLAnalytics, GeoLocation } from '@/types/shorten.ts';
 import { RateLimiterService } from './RateLimiterService.ts';
@@ -57,7 +57,7 @@ export class URLShortenerService {
   private static isInitialized = false;
   
   // Use LRU cache for better memory management and automatic cleanup
-  private static cache = new LRUCache<string, any>({
+  private static cache = new LRUCache<string, ShortenedURL>({
     max: 200, // Maximum number of cached items
     ttl: CACHE_EXPIRY, // Auto-expire after 5 minutes
     updateAgeOnGet: true, // Reset TTL when accessed
@@ -197,7 +197,7 @@ export class URLShortenerService {
   private static async ensureStorageIntegrity(): Promise<void> {
     try {
       // Check if URLs storage exists and is valid
-      const urls = await this.getFromStorage<any>(STORAGE_KEYS.URLS);
+      const urls = await this.getFromStorage<unknown>(STORAGE_KEYS.URLS);
       if (urls !== null && !Array.isArray(urls)) {
         console.warn('URLs storage is corrupted, resetting to empty array');
         await this.setToStorage(STORAGE_KEYS.URLS, []);
@@ -206,7 +206,7 @@ export class URLShortenerService {
       }
 
       // Check if clicks storage exists and is valid
-      const clicks = await this.getFromStorage<any>(STORAGE_KEYS.CLICKS);
+      const clicks = await this.getFromStorage<unknown>(STORAGE_KEYS.CLICKS);
       if (clicks !== null && !Array.isArray(clicks)) {
         console.warn('Clicks storage is corrupted, resetting to empty array');
         await this.setToStorage(STORAGE_KEYS.CLICKS, []);
@@ -215,7 +215,7 @@ export class URLShortenerService {
       }
 
       // Check if permanent storage exists and is valid
-      const permanent = await this.getFromStorage<any>(STORAGE_KEYS.PERMANENT);
+      const permanent = await this.getFromStorage<unknown>(STORAGE_KEYS.PERMANENT);
       if (permanent !== null && !Array.isArray(permanent)) {
         console.warn('Permanent storage is corrupted, resetting to empty array');
         await this.setToStorage(STORAGE_KEYS.PERMANENT, []);
@@ -310,16 +310,12 @@ export class URLShortenerService {
   }
 
   static async shortenURL(originalURL: string, options: URLOptions = {}): Promise<ShortenedURL> {
-    try {
-      // Input validation
-      if (!originalURL || typeof originalURL !== 'string') {
-        throw new Error('URL is required and must be a string');
-      }
-
-      return await this.performURLShortening(originalURL, options);
-    } catch (error) {
-      throw error;
+    // Input validation
+    if (!originalURL || typeof originalURL !== 'string') {
+      throw new Error('URL is required and must be a string');
     }
+
+    return await this.performURLShortening(originalURL, options);
   }
 
   private static async performURLShortening(originalURL: string, options: URLOptions = {}): Promise<ShortenedURL> {
@@ -393,11 +389,11 @@ export class URLShortenerService {
       urls.push(url);
       await this.setToStorage(STORAGE_KEYS.URLS, urls);
 
-             return url;
-     } catch (error) {
-       console.error('Error in performURLShortening:', error);
-       throw error instanceof Error ? error : new Error('Failed to shorten URL');
-     }
+      return url;
+    } catch (error) {
+      console.error('Error in performURLShortening:', error);
+      throw error instanceof Error ? error : new Error('Failed to shorten URL');
+    }
   }
 
   static async getURLByShortCode(shortCode: string): Promise<ShortenedURL | null> {

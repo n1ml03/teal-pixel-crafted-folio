@@ -284,12 +284,24 @@ const CodeReviewTool = () => {
   };
 
   // Convert AI response to CodeIssue format
-  const convertAIResponseToIssues = (aiData: { issues?: any[] }): CodeIssue[] => {
+  const convertAIResponseToIssues = (aiData: { 
+    issues?: Array<{
+      id?: string;
+      lineNumbers?: number[];
+      severity?: string;
+      category?: string;
+      title?: string;
+      description?: string;
+      suggestedFix?: string;
+      explanation?: string;
+      currentCode?: string;
+    }>
+  }): CodeIssue[] => {
     if (!aiData.issues || !Array.isArray(aiData.issues)) {
       return [];
     }
 
-    return aiData.issues.map((issue: any, index: number) => ({
+    return aiData.issues.map((issue, index: number) => ({
       id: issue.id || `ai-issue-${index}`,
       line: Array.isArray(issue.lineNumbers) && issue.lineNumbers.length > 0 ? issue.lineNumbers[0] : 1,
       column: 1,
@@ -337,7 +349,13 @@ const CodeReviewTool = () => {
 
   // Calculate metrics from AI response
   const calculateMetricsFromAI = (
-    aiData: { issues?: any[]; summary?: any },
+    aiData: { 
+      issues?: unknown[];
+      summary?: {
+        qualityScore?: number;
+        criticalIssues?: number;
+      };
+    },
     codeText: string
   ): ReviewMetrics => {
     const lines = codeText.split('\n');

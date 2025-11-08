@@ -59,11 +59,11 @@ export function useWindowEvent<K extends keyof WindowEventMap>(
 /**
  * React 19 optimized callback hook with automatic memoization
  */
-export function useOptimizedCallback<T extends (...args: any[]) => any>(
+export function useOptimizedCallback<T extends (...args: never[]) => unknown>(
   callback: T,
   deps?: React.DependencyList
 ): T {
-  return useCallback(callback, deps ?? []);
+  return useCallback(callback, deps ?? []) as T;
 }
 
 /**

@@ -169,10 +169,25 @@ const TestCaseGenerator = () => {
     }
 
     // Parse the AI response and convert to TestCase format
-    const aiData = response.data;
+    const aiData = response.data as {
+      testCases?: Array<{
+        id?: string;
+        title?: string;
+        description?: string;
+        preconditions?: string[];
+        steps?: string[];
+        expectedResults?: string[];
+        priority?: string;
+        type?: string;
+        category?: string;
+        estimatedTime?: number;
+        testData?: string;
+        tags?: string[];
+      }>;
+    };
     
     if (aiData.testCases && Array.isArray(aiData.testCases)) {
-      return aiData.testCases.map((tc: any, index: number) => ({
+      return aiData.testCases.map((tc, index: number) => ({
         id: tc.id || `ai-tc-${Date.now()}-${index}`,
         title: tc.title || `AI Generated Test Case ${index + 1}`,
         description: tc.description || '',
@@ -224,6 +239,15 @@ const TestCaseGenerator = () => {
 
       if (response.success && response.data) {
         // Build AI test suite
+        const responseData = response.data as {
+          recommendations?: string[];
+          coverageGaps?: string[];
+          riskAreas?: string[];
+          optimizations?: string[];
+          qualityScore?: number;
+          confidence?: number;
+        };
+        
         const aiTestSuite: AITestSuite = {
           id: `ai-suite-${Date.now()}`,
           name: `AI Generated Test Suite - ${new Date().toLocaleDateString()}`,
@@ -231,7 +255,7 @@ const TestCaseGenerator = () => {
           testCases,
           coverage: calculateAICoverage(testCases),
           metrics: calculateAIMetrics(testCases),
-          recommendations: (response.data as any).recommendations || [],
+          recommendations: responseData.recommendations || [],
           generatedAt: new Date().toISOString(),
           aiModel: config.selectedModel
         };
@@ -240,14 +264,14 @@ const TestCaseGenerator = () => {
         const analysisResult: AIAnalysisResult = {
           testSuite: aiTestSuite,
           insights: {
-            coverageGaps: (response.data as any).coverageGaps || [],
-            riskAreas: (response.data as any).riskAreas || [],
-            optimizationSuggestions: (response.data as any).optimizations || [],
-            qualityScore: (response.data as any).qualityScore || 85
+            coverageGaps: responseData.coverageGaps || [],
+            riskAreas: responseData.riskAreas || [],
+            optimizationSuggestions: responseData.optimizations || [],
+            qualityScore: responseData.qualityScore || 85
           },
           metadata: {
             analysisTime: response.metadata?.responseTime || 0,
-            confidence: (response.data as any).confidence || 90,
+            confidence: responseData.confidence || 90,
             model: response.metadata?.model || config.selectedModel
           }
         };

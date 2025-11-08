@@ -31,7 +31,14 @@ const isTrustedDomain = (domain: string): boolean => {
 };
 
 // Utility function to append UTM parameters to a URL
-const appendUtmParameters = (url: string, utmParams: any): string => {
+const appendUtmParameters = (url: string, utmParams: {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  term?: string;
+  content?: string;
+  custom?: Record<string, string>;
+}): string => {
   try {
     const urlObj = new URL(url);
 

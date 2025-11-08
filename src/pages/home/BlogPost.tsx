@@ -64,7 +64,7 @@ const BlogPost = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [markdownDependencies, setMarkdownDependencies] = useState<{
-    ReactMarkdown: React.ComponentType<any>;
+    ReactMarkdown: React.ComponentType<{ children: string; remarkPlugins?: unknown[]; rehypePlugins?: unknown[] }>;
     remarkGfm: unknown;
     rehypeSlug: unknown;
     rehypeAutolinkHeadings: unknown;

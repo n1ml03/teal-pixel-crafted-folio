@@ -1,6 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Route,
   createBrowserRouter,
@@ -8,7 +7,6 @@ import {
   createRoutesFromElements,
   Navigate
 } from "react-router-dom";
-import { ParallaxProvider } from "@/components/utils/ParallaxProvider";
 import RouterWrapper from "@/components/utils/RouterWrapper";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -57,8 +55,6 @@ const PageLoader = () => (
   </div>
 );
 
-const queryClient = new QueryClient();
-
 
 // Create router with future flags to address warnings
 const router = createBrowserRouter(
@@ -102,20 +98,16 @@ const router = createBrowserRouter(
 const App = () => {
   return (
     <EnhancedErrorBoundary>
-      <ParallaxProvider>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <AIConfigProvider>
-              <SkipLink targetId="main-content" />
-              <Suspense fallback={<PageLoader />}>
-                <RouterProvider router={router} />
-              </Suspense>
-              <GlobalAIConfig />
-              <Toaster />
-            </AIConfigProvider>
-          </TooltipProvider>
-        </QueryClientProvider>
-      </ParallaxProvider>
+      <TooltipProvider>
+        <AIConfigProvider>
+          <SkipLink targetId="main-content" />
+          <Suspense fallback={<PageLoader />}>
+            <RouterProvider router={router} />
+          </Suspense>
+          <GlobalAIConfig />
+          <Toaster />
+        </AIConfigProvider>
+      </TooltipProvider>
     </EnhancedErrorBoundary>
   );
 };

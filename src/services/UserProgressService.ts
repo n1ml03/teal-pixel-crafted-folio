@@ -1,13 +1,13 @@
 /**
- * Optimized UserProgressService using well-established libraries
- * Replaced custom implementations with battle-tested packages
+ * Optimized UserProgressService with native JavaScript utilities
+ * Lightweight implementation without heavy dependencies
  */
 import { UserActivity, ActivityType, Achievement, UserAchievement } from '../types/playground';
 import { LocalStorageService } from './LocalStorageService';
 import { nanoid } from 'nanoid';
 import { get, set, del, clear } from 'idb-keyval';
 import { formatDistanceToNow, isValid, parseISO } from 'date-fns';
-import { groupBy, countBy, sumBy, orderBy } from 'lodash-es';
+import { groupBy, countBy, sumBy, orderBy } from '@/lib/native-utils';
 
 // Storage keys with consistent naming
 const STORAGE_KEYS = {

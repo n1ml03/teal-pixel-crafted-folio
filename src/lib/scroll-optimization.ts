@@ -2,8 +2,7 @@
  * Advanced scroll performance utilities with multiple optimization strategies
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useDebounce } from 'use-debounce';
-import { throttle } from 'lodash-es';
+import { throttle } from '@/lib/native-utils';
 
 // Re-export throttle for use in components
 export { throttle };
@@ -40,10 +39,10 @@ export function createOptimizedScrollHandler(
 
   const throttledCallback = throttle(optimizedCallback, throttleMs);
 
-  return useCallback(() => {
+  return () => {
     const scrollY = window.scrollY;
     throttledCallback(scrollY);
-  }, [throttledCallback]);
+  };
 }
 
 /**

@@ -184,11 +184,11 @@ export class RateLimiterService {
   /**
    * Check if an action is rate limited and execute if allowed with validation
    */
-  static async checkLimit(
+  static async checkLimit<T = unknown>(
     key: string,
-    action: () => Promise<any> | any,
+    action: () => Promise<T> | T,
     options: Partial<RateLimitOptions> = {}
-  ): Promise<{ allowed: boolean; result?: any; remaining?: number; error?: string }> {
+  ): Promise<{ allowed: boolean; result?: T; remaining?: number; error?: string }> {
     validateKey(key);
     validateAction(action);
     validateRateLimitOptions(options);
@@ -355,7 +355,7 @@ export class RateLimiterService {
   /**
    * Create a rate-limited version of a function with validation
    */
-  static createRateLimitedFunction<T extends (...args: any[]) => any>(
+  static createRateLimitedFunction<T extends (...args: never[]) => unknown>(
     key: string,
     fn: T,
     options: Partial<RateLimitOptions> = {}

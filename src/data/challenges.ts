@@ -1,14 +1,35 @@
 import { ChallengeWithTests } from '../services/ChallengeService';
 import { TestResult } from '../types/playground';
 
+// Type definitions for testing environment
+interface ConsoleLog {
+  type: string;
+  message: string;
+  timestamp: number;
+}
+
+interface NetworkRequest {
+  url: string;
+  method: string;
+  status?: number;
+  timestamp: number;
+}
+
+interface ElementInfo {
+  tagName: string;
+  id?: string;
+  className?: string;
+  attributes?: Record<string, string>;
+}
+
 // Type alias for the testing environment used in challenge tests
 type TestingEnvironment = {
   iframe: HTMLIFrameElement | null;
   url: string;
   device: 'desktop' | 'tablet' | 'mobile';
-  consoleLogs: any[];
-  networkRequests: any[];
-  elements: any[];
+  consoleLogs: ConsoleLog[];
+  networkRequests: NetworkRequest[];
+  elements: ElementInfo[];
 };
 
 // Challenge 1: Accessibility Testing
@@ -55,14 +76,7 @@ const accessibilityChallenge: ChallengeWithTests = {
       name: 'Image Alt Text Test',
       description: 'Checks if all images have appropriate alt text',
       weight: 20,
-      testFunction: async (env: {
-        iframe: HTMLIFrameElement | null;
-        url: string;
-        device: 'desktop' | 'tablet' | 'mobile';
-        consoleLogs: any[];
-        networkRequests: any[];
-        elements: any[];
-      }): Promise<TestResult> => {
+      testFunction: async (env: TestingEnvironment): Promise<TestResult> => {
         // In a real implementation, this would analyze the DOM
         // For demo purposes, we'll simulate the test
         return {
@@ -77,14 +91,7 @@ const accessibilityChallenge: ChallengeWithTests = {
       name: 'Heading Structure Test',
       description: 'Validates proper heading hierarchy (h1, h2, etc.)',
       weight: 20,
-      testFunction: async (env: {
-        iframe: HTMLIFrameElement | null;
-        url: string;
-        device: 'desktop' | 'tablet' | 'mobile';
-        consoleLogs: any[];
-        networkRequests: any[];
-        elements: any[];
-      }): Promise<TestResult> => {
+      testFunction: async (env: TestingEnvironment): Promise<TestResult> => {
         return {
           passed: false,
           message: 'Heading structure is not sequential',

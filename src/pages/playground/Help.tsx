@@ -33,8 +33,9 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useNavigateWithTransition } from '@/hooks/useNavigateWithTransition';import { helpContent, faqs } from '../../data/help-content';
-import { useDebouncedCallback } from 'use-debounce';
+import { useNavigateWithTransition } from '@/hooks/useNavigateWithTransition';
+import { helpContent, faqs } from '../../data/help-content';
+import { useDebouncedCallback } from '@/lib/native-utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Memoized components for better performance
@@ -42,7 +43,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const Sidebar = React.memo(({ navigate }: { navigate: (path: string) => void }) => (
   <div className="w-full lg:w-80 space-y-6">
     {/* Quick Links */}
-    <Card className="bg-white/90 backdrop-blur-md border border shadow-md overflow-hidden">
+    <Card className="bg-white/90 backdrop-blur-md border shadow-md overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border">
         <div className="flex items-center gap-3">
           <div className="bg-blue-100 p-2 rounded-full">
@@ -75,7 +76,7 @@ const Sidebar = React.memo(({ navigate }: { navigate: (path: string) => void }) 
     </Card>
 
     {/* External Resources */}
-    <Card className="bg-white/90 backdrop-blur-md border border shadow-md overflow-hidden">
+    <Card className="bg-white/90 backdrop-blur-md border shadow-md overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border">
         <div className="flex items-center gap-3">
           <div className="bg-teal-100 p-2 rounded-full">
@@ -124,7 +125,7 @@ const Sidebar = React.memo(({ navigate }: { navigate: (path: string) => void }) 
     </Card>
 
     {/* Contact Support */}
-    <Card className="bg-white/90 backdrop-blur-md border border shadow-md overflow-hidden">
+    <Card className="bg-white/90 backdrop-blur-md border shadow-md overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border">
         <div className="flex items-center gap-3">
           <div className="bg-purple-100 p-2 rounded-full">
@@ -518,7 +519,7 @@ const Help = () => {
 
               {/* Recent Searches Dropdown */}
               {showRecentSearches && recentSearches.length > 0 && (
-                <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border py-2 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="px-3 py-1 text-xs font-medium text-gray-500 uppercase">Recent Searches</div>
                   {recentSearches.map((search, index) => (
                     <button

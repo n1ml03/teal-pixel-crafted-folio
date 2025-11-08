@@ -333,7 +333,7 @@ const ContactForm = () => {
                           </div>
                           <div className="flex justify-between">
                             <span>Timezone</span>
-                            <span className="text-teal-600 font-medium">UTC+7 (Bangkok)</span>
+                            <span className="text-teal-600 font-medium">UTC+7 (Vietnam)</span>
                           </div>
                         </div>
                       </motion.div>

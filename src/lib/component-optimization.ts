@@ -55,7 +55,7 @@ export function scrollOptimizedMemo<P extends object>(
 /**
  * Hook for stable callback references that don't cause re-renders
  */
-export function useStableCallback<T extends (...args: any[]) => any>(
+export function useStableCallback<T extends (...args: never[]) => unknown>(
   callback: T,
   deps: React.DependencyList = []
 ): T {
@@ -69,7 +69,7 @@ export function useStableCallback<T extends (...args: any[]) => any>(
 
   // Create stable callback only once
   if (!stableCallback.current) {
-    stableCallback.current = ((...args: any[]) => {
+    stableCallback.current = ((...args: Parameters<T>) => {
       return callbackRef.current(...args);
     }) as T;
   }

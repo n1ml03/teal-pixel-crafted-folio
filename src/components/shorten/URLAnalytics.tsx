@@ -247,7 +247,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
           </div>
         </CardHeader>
         <CardContent className="px-4 sm:px-6 py-5 sm:py-7">
-          <div className="flex flex-col items-center justify-center h-[300px] bg-white p-4 sm:p-6 rounded-lg border border shadow-sm">
+          <div className="flex flex-col items-center justify-center h-[300px] bg-white p-4 sm:p-6 rounded-lg border shadow-sm">
             <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-amber-50 rounded-full mb-3 sm:mb-4">
               <BarChartIcon className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500" />
             </div>
@@ -290,7 +290,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
       </CardHeader>
       <CardContent className="px-4 sm:px-6 py-5 sm:py-7">
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg border border shadow-sm p-1 mb-6 sm:mb-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg border shadow-sm p-1 mb-6 sm:mb-8">
             <TabsList className="grid w-full grid-cols-4 gap-1.5 bg-transparent">
               <TabsTrigger
                 value="overview"
@@ -329,7 +329,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white rounded-lg p-4 flex flex-col border border shadow-sm"
+                className="bg-white rounded-lg p-4 flex flex-col border shadow-sm"
               >
                 <span className="text-sm text-gray-700 font-medium">Total Clicks</span>
                 <span className="text-3xl font-bold text-gray-900 mt-2">{analytics.totalClicks}</span>
@@ -339,7 +339,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.1 }}
-                className="bg-white rounded-lg p-4 flex flex-col border border shadow-sm"
+                className="bg-white rounded-lg p-4 flex flex-col border shadow-sm"
               >
                 <span className="text-sm text-gray-700 font-medium">Unique Visitors</span>
                 <span className="text-3xl font-bold text-gray-900 mt-2">
@@ -351,7 +351,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.2 }}
-                className="bg-white rounded-lg p-4 flex flex-col border border shadow-sm"
+                className="bg-white rounded-lg p-4 flex flex-col border shadow-sm"
               >
                 <span className="text-sm text-gray-700 font-medium">Avg. Daily Clicks</span>
                 <span className="text-3xl font-bold text-gray-900 mt-2">
@@ -473,7 +473,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
 
           <TabsContent value="utm" className="mt-0">
             <div className="mb-6">
-              <div className="bg-white p-4 rounded-lg mb-6 border border shadow-sm">
+              <div className="bg-white p-4 rounded-lg mb-6 border shadow-sm">
                 <h3 className="text-sm font-medium text-amber-700 mb-2">What are UTM Parameters?</h3>
                 <p className="text-xs text-gray-700 mb-3">
                   UTM parameters are tags added to URLs to track the effectiveness of marketing campaigns across different channels.
@@ -506,7 +506,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-white rounded-lg p-4 flex flex-col border border shadow-sm"
+                  className="bg-white rounded-lg p-4 flex flex-col border shadow-sm"
                 >
                   <span className="text-sm text-gray-700 font-medium">UTM Sources</span>
                   <span className="text-3xl font-bold text-gray-900 mt-2">
@@ -518,7 +518,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.1 }}
-                  className="bg-white rounded-lg p-4 flex flex-col border border shadow-sm"
+                  className="bg-white rounded-lg p-4 flex flex-col border shadow-sm"
                 >
                   <span className="text-sm text-gray-700 font-medium">UTM Mediums</span>
                   <span className="text-3xl font-bold text-gray-900 mt-2">
@@ -530,7 +530,7 @@ const URLAnalytics: React.FC<URLAnalyticsProps> = ({ url }) => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.2 }}
-                  className="bg-white rounded-lg p-4 flex flex-col border border shadow-sm"
+                  className="bg-white rounded-lg p-4 flex flex-col border shadow-sm"
                 >
                   <span className="text-sm text-gray-700 font-medium">UTM Campaigns</span>
                   <span className="text-3xl font-bold text-gray-900 mt-2">

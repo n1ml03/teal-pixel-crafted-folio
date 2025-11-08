@@ -1,6 +1,3 @@
-/* Import focus styles for accessibility */
-@import './components/ui/focus-styles.css';
-
 /* Base font system */
 :root {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
