@@ -50,7 +50,7 @@ export default defineConfig(({ mode }) => ({
           // Form libraries
           'form': ['react-hook-form', '@hookform/resolvers', 'zod'],
           // Utility libraries
-          'utils': ['lodash-es', 'date-fns', 'nanoid'],
+          'utils': ['date-fns', 'nanoid'],
           // Markdown processing (heavy)
           'markdown': ['react-markdown', 'remark-gfm', 'rehype-highlight'],
         }
